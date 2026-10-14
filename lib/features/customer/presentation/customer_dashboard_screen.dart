@@ -1,3 +1,4 @@
+import '../../../core/widgets/mobile_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/app_primary_button.dart';
-import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/foundation_pages.dart';
 import '../../../core/widgets/quick_action_card.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -103,17 +104,17 @@ class CustomerDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            SectionHeader(title: 'Service aktif'),
-            const SizedBox(height: 12),
-            const EmptyState(
-              title: 'Belum ada servis aktif',
-              description: 'Booking dan status servis akan muncul di sini.',
+            const Text(
+              'Kendaraan, riwayat, reminder, dan pembayaran: contoh data demo.',
             ),
+            SectionHeader(title: 'Booking aktif'),
+            const SizedBox(height: 12),
+            const BookingListContent(customer: true),
             const SizedBox(height: 24),
             SectionHeader(title: 'Quick Action'),
             const SizedBox(height: 12),
             SizedBox(
-              height: 120,
+              height: 230,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -127,19 +128,19 @@ class CustomerDashboardScreen extends ConsumerWidget {
                     title: 'Kendaraan Saya',
                     icon: Icons.car_repair_rounded,
                     color: AppColors.secondary,
-                    onTap: () {},
+                    onTap: () => showUnavailable(context),
                   ),
                   QuickActionCard(
-                    title: 'Riwayat Servis',
+                    title: 'Riwayat Booking',
                     icon: Icons.history_rounded,
                     color: AppColors.warning,
-                    onTap: () {},
+                    onTap: () => context.go('/customer/history'),
                   ),
                   QuickActionCard(
                     title: 'Pembayaran',
                     icon: Icons.payments_rounded,
                     color: AppColors.success,
-                    onTap: () {},
+                    onTap: () => showUnavailable(context),
                   ),
                 ],
               ),
@@ -153,7 +154,7 @@ class CustomerDashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SectionHeader(title: 'Booking Berikutnya'),
+                        SectionHeader(title: 'Contoh Jadwal Demo'),
                         const SizedBox(height: 12),
                         Card(
                           child: Padding(
@@ -163,9 +164,9 @@ class CustomerDashboardScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'BengkelKu - Service Berkala',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -174,8 +175,9 @@ class CustomerDashboardScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 16),
                                 AppPrimaryButton(
-                                  label: 'Detail Booking',
-                                  onPressed: () {},
+                                  label: 'Lihat Booking',
+                                  onPressed: () =>
+                                      context.go('/customer/history'),
                                 ),
                               ],
                             ),
@@ -208,7 +210,7 @@ class CustomerDashboardScreen extends ConsumerWidget {
                 ],
               )
             else ...[
-              SectionHeader(title: 'Booking Berikutnya'),
+              SectionHeader(title: 'Contoh Jadwal Demo'),
               const SizedBox(height: 12),
               Card(
                 child: Padding(
@@ -227,8 +229,8 @@ class CustomerDashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       AppPrimaryButton(
-                        label: 'Detail Booking',
-                        onPressed: () {},
+                        label: 'Lihat Booking',
+                        onPressed: () => context.go('/customer/history'),
                       ),
                     ],
                   ),
@@ -260,12 +262,14 @@ class CustomerDashboardScreen extends ConsumerWidget {
                   children: [
                     _NotificationRow(
                       title: 'Reminder servis: 2,500 km',
-                      subtitle: 'Silakan booking terlebih dahulu untuk menjaga performa kendaraan.',
+                      subtitle:
+                          'Silakan booking terlebih dahulu untuk menjaga performa kendaraan.',
                     ),
                     const SizedBox(height: 16),
                     _NotificationRow(
                       title: 'Pembayaran terverifikasi',
-                      subtitle: 'Pembayaran Service Berkala dengan nomor INV-2048 telah berhasil.',
+                      subtitle:
+                          'Pembayaran Service Berkala dengan nomor INV-2048 telah berhasil.',
                     ),
                   ],
                 ),
@@ -276,61 +280,9 @@ class CustomerDashboardScreen extends ConsumerWidget {
       ),
     );
 
-    if (isDesktop) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              extended: false,
-              backgroundColor: AppColors.surface,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_rounded),
-                  label: Text('Beranda'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.calendar_month_rounded),
-                  label: Text('Booking'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.receipt_long_rounded),
-                  label: Text('Riwayat'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  label: Text('Profil'),
-                ),
-              ],
-              selectedIndex: 0,
-            ),
-            Expanded(child: body),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       body: body,
-      bottomNavigationBar: NavigationBar(
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded),
-            label: 'Beranda',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_rounded),
-            label: 'Booking',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: 'Riwayat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      bottomNavigationBar: MobileNavigation(role: 'customer'),
     );
   }
 }
@@ -378,8 +330,9 @@ class _HistoryCard extends StatelessWidget {
             ),
             Text(
               amount,
-              style: Theme.of(context).textTheme.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ),

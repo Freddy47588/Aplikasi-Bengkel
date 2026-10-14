@@ -1,3 +1,5 @@
+import '../../../app/router/app_router.dart';
+import '../../../core/widgets/mobile_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,11 +12,16 @@ class TechnicianJobsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final admin = ref.watch(authSessionProvider).role?.name == 'admin';
     return Scaffold(
+      bottomNavigationBar: MobileNavigation(
+        role: admin ? 'admin' : 'technician',
+      ),
       appBar: AppBar(
-        title: const Text('Pekerjaan'),
+        title: Text(admin ? 'Teknisi (Demo)' : 'Pekerjaan (Demo)'),
         leading: IconButton(
-          onPressed: () => context.go('/technician/home'),
+          onPressed: () =>
+              context.go(admin ? '/admin/home' : '/technician/home'),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
@@ -39,25 +46,9 @@ class TechnicianJobsScreen extends ConsumerWidget {
                   children: [
                     const SizedBox(height: 6),
                     Text(job.plateNumber),
+                    Text(job.status, style: TextStyle(color: chipColor)),
                     Text('Mulai: ${job.startTime} • ${job.assignee}'),
                   ],
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: chipColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    job.status,
-                    style: TextStyle(
-                      color: chipColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
                 ),
               ),
             );

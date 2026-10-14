@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Private signing material
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+/android/key.properties

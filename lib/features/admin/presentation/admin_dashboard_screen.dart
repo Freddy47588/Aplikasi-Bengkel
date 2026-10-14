@@ -1,3 +1,6 @@
+import '../../../core/data/booking_repository.dart';
+import '../../../core/widgets/foundation_pages.dart';
+import '../../../core/widgets/mobile_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,14 +48,17 @@ class AdminDashboardScreen extends ConsumerWidget {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isDesktop ? 4 : 2,
+              crossAxisCount: isDesktop
+                  ? 4
+                  : (MediaQuery.sizeOf(context).width < 700 ? 1 : 2),
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: isDesktop ? 1.6 : 1.7,
-              children: const [
+              mainAxisExtent: 200,
+              children: [
                 DashboardStatCard(
-                  label: 'Booking Hari Ini',
-                  value: '24',
+                  label: 'Booking tersimpan',
+                  value:
+                      '${ref.watch(bookingsProvider).asData?.value.length ?? 0}',
                   icon: Icons.calendar_today_rounded,
                   color: AppColors.primary,
                 ),
@@ -77,12 +83,16 @@ class AdminDashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
+            const Text('Statistik, aktivitas, dan stok: contoh data demo.'),
+            const BookingListContent(customer: false),
             SectionHeader(title: 'Quick Menu'),
             const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isDesktop ? 4 : 2,
+              crossAxisCount: isDesktop
+                  ? 4
+                  : (MediaQuery.sizeOf(context).width < 700 ? 1 : 2),
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               children: [
@@ -93,13 +103,13 @@ class AdminDashboardScreen extends ConsumerWidget {
                   onTap: () => context.go('/admin/bookings'),
                 ),
                 QuickActionCard(
-                  title: 'Antrean',
+                  title: 'Antrean (Demo)',
                   icon: Icons.queue_rounded,
                   color: AppColors.secondary,
                   onTap: () => context.go('/admin/bookings'),
                 ),
                 QuickActionCard(
-                  title: 'Service Order',
+                  title: 'Service Order (Demo)',
                   icon: Icons.fact_check_rounded,
                   color: AppColors.accent,
                   onTap: () => context.go('/admin/bookings'),
@@ -108,31 +118,31 @@ class AdminDashboardScreen extends ConsumerWidget {
                   title: 'Teknisi',
                   icon: Icons.engineering_rounded,
                   color: AppColors.warning,
-                  onTap: () => context.go('/technician/jobs'),
+                  onTap: () => context.go('/admin/technicians'),
                 ),
                 QuickActionCard(
                   title: 'Sparepart',
                   icon: Icons.inventory_2_rounded,
                   color: AppColors.success,
-                  onTap: () {},
+                  onTap: () => showUnavailable(context),
                 ),
                 QuickActionCard(
                   title: 'Customer',
                   icon: Icons.people_alt_rounded,
                   color: AppColors.primary,
-                  onTap: () {},
+                  onTap: () => showUnavailable(context),
                 ),
                 QuickActionCard(
                   title: 'Pembayaran',
                   icon: Icons.payments_rounded,
                   color: AppColors.secondary,
-                  onTap: () {},
+                  onTap: () => showUnavailable(context),
                 ),
                 QuickActionCard(
                   title: 'Laporan',
                   icon: Icons.bar_chart_rounded,
                   color: AppColors.danger,
-                  onTap: () {},
+                  onTap: () => showUnavailable(context),
                 ),
               ],
             ),
@@ -178,60 +188,9 @@ class AdminDashboardScreen extends ConsumerWidget {
       ),
     );
 
-    if (isDesktop) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              backgroundColor: AppColors.surface,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.dashboard_rounded),
-                  label: Text('Dashboard'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.calendar_month_rounded),
-                  label: Text('Booking'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.settings_rounded),
-                  label: Text('Operasional'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  label: Text('Profil'),
-                ),
-              ],
-              selectedIndex: 0,
-            ),
-            Expanded(child: body),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       body: body,
-      bottomNavigationBar: NavigationBar(
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_rounded),
-            label: 'Booking',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_rounded),
-            label: 'Laporan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      bottomNavigationBar: MobileNavigation(role: 'admin'),
     );
   }
 }

@@ -3,29 +3,6 @@ import '../models/workshop_models.dart';
 class MockWorkshopData {
   const MockWorkshopData._();
 
-  static const List<VehicleBooking> bookings = [
-    VehicleBooking(
-      id: 'BKG-001',
-      customerName: 'Achmad',
-      vehicleName: 'Honda Brio RS',
-      vehiclePlate: 'B 1234 XYZ',
-      serviceType: 'Service Berkala',
-      date: 'Jumat, 25 Oktober 2026',
-      time: '09:30 - 11:00',
-      status: 'Dikonfirmasi',
-    ),
-    VehicleBooking(
-      id: 'BKG-002',
-      customerName: 'Nadia',
-      vehicleName: 'Toyota Avanza',
-      vehiclePlate: 'N 1234 AB',
-      serviceType: 'Ganti Oli',
-      date: 'Sabtu, 26 Oktober 2026',
-      time: '10:00 - 10:45',
-      status: 'Menunggu',
-    ),
-  ];
-
   static const List<ServiceJob> jobs = [
     ServiceJob(
       id: 'SO-2026-001',
