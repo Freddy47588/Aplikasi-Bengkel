@@ -12,7 +12,11 @@ void main() {
     });
 
     test('customer role marks the user as authenticated', () {
-      const session = AuthSession(role: UserRole.customer);
+      const session = AuthSession(
+        uid: 'a',
+        role: UserRole.customer,
+        verified: true,
+      );
 
       expect(session.isAuthenticated, isTrue);
       expect(session.role, UserRole.customer);

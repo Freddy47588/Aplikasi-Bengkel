@@ -1,3 +1,4 @@
+import 'test_support.dart';
 import 'package:bengkel_kendaraan/app/app.dart';
 import 'package:bengkel_kendaraan/app/router/app_router.dart';
 import 'package:bengkel_kendaraan/core/constants/user_role.dart';
@@ -15,9 +16,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    final container = ProviderContainer();
+    final container = testContainer();
     addTearDown(container.dispose);
-    container.read(authSessionProvider.notifier).signIn(UserRole.customer);
+    testAuth(container).signIn(UserRole.customer);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,

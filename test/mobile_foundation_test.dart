@@ -1,3 +1,4 @@
+import 'test_support.dart';
 import 'dart:async';
 import 'package:bengkel_kendaraan/core/models/booking.dart';
 import 'package:bengkel_kendaraan/app/app.dart';
@@ -12,7 +13,7 @@ void main() {
   testWidgets(
     'router stays alive across role changes; guards and nav track active route',
     (tester) async {
-      final container = ProviderContainer();
+      final container = testContainer();
       addTearDown(container.dispose);
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -22,7 +23,7 @@ void main() {
       );
       final router = container.read(appRouterProvider);
       for (final role in UserRole.values) {
-        await tester.tap(find.text('Masuk sebagai ${role.label}'));
+        testAuth(container).signIn(role);
         await tester.pumpAndSettle();
         expect(identical(router, container.read(appRouterProvider)), isTrue);
         expect(
@@ -49,9 +50,9 @@ void main() {
           router.routeInformationProvider.value.uri.path,
           '/${role.name}/home',
         );
-        container.read(authSessionProvider.notifier).signOut();
+        testAuth(container).signOut();
         await tester.pumpAndSettle();
-        expect(find.text('Mode Demo'), findsOneWidget);
+        expect(find.text('Masuk'), findsOneWidget);
       }
       await tester.pumpWidget(const SizedBox());
     },
@@ -60,7 +61,7 @@ void main() {
   testWidgets(
     'customer creates booking, admin confirms, customer sees status and cancels',
     (tester) async {
-      final container = ProviderContainer();
+      final container = testContainer();
       addTearDown(container.dispose);
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -69,7 +70,7 @@ void main() {
         ),
       );
       final router = container.read(appRouterProvider);
-      final auth = container.read(authSessionProvider.notifier);
+      final auth = testAuth(container);
       auth.signIn(UserRole.customer);
       router.go('/customer/booking');
       await tester.pumpAndSettle();
@@ -139,14 +140,12 @@ void main() {
 
   testWidgets('booking loading, empty, error and retry states', (tester) async {
     final stream = StreamController<List<Booking>>.broadcast();
-    final container = ProviderContainer(
-      overrides: [bookingsProvider.overrideWith((ref) => stream.stream)],
-    );
+    final container = testContainer(bookings: stream.stream);
     addTearDown(() async {
       container.dispose();
       await stream.close();
     });
-    container.read(authSessionProvider.notifier).signIn(UserRole.admin);
+    testAuth(container).signIn(UserRole.admin);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -181,9 +180,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewInsets);
-      final container = ProviderContainer();
+      final container = testContainer();
       addTearDown(container.dispose);
-      container.read(authSessionProvider.notifier).signIn(UserRole.customer);
+      testAuth(container).signIn(UserRole.customer);
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -219,7 +218,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final container = ProviderContainer();
+      final container = testContainer();
       addTearDown(container.dispose);
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -236,7 +235,7 @@ void main() {
       final router = container.read(appRouterProvider);
       expect(tester.takeException(), isNull, reason: 'login $size');
       for (final role in UserRole.values) {
-        container.read(authSessionProvider.notifier).signIn(role);
+        testAuth(container).signIn(role);
         for (final path in [
           'home',
           role == UserRole.customer
@@ -263,7 +262,7 @@ void main() {
   testWidgets('system back from booking detail returns to the booking list', (
     tester,
   ) async {
-    final container = ProviderContainer();
+    final container = testContainer();
     addTearDown(container.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -273,7 +272,7 @@ void main() {
     );
     final router = container.read(appRouterProvider);
     for (final role in [UserRole.customer, UserRole.admin]) {
-      container.read(authSessionProvider.notifier).signIn(role);
+      testAuth(container).signIn(role);
       router.go('/${role.name}/bookings/missing');
       await tester.pumpAndSettle();
       expect(
@@ -293,7 +292,7 @@ void main() {
   testWidgets('admin rejects and customer cannot cancel rejected booking', (
     tester,
   ) async {
-    final container = ProviderContainer();
+    final container = testContainer();
     addTearDown(container.dispose);
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     final booking = await container
@@ -312,7 +311,7 @@ void main() {
             complaint: 'Rem berbunyi saat digunakan',
           ),
         );
-    container.read(authSessionProvider.notifier).signIn(UserRole.admin);
+    testAuth(container).signIn(UserRole.admin);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -327,9 +326,9 @@ void main() {
     await tester.tap(find.text('Ya, lanjutkan'));
     await tester.pumpAndSettle();
     expect(find.text('Ditolak'), findsOneWidget);
-    container.read(authSessionProvider.notifier).signOut();
+    testAuth(container).signOut();
     await tester.pumpAndSettle();
-    container.read(authSessionProvider.notifier).signIn(UserRole.customer);
+    testAuth(container).signIn(UserRole.customer);
     router.go('/customer/bookings/${booking.id}');
     await tester.pumpAndSettle();
     expect(find.text('Ditolak'), findsOneWidget);

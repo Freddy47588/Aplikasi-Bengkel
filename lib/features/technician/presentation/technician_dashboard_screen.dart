@@ -1,9 +1,9 @@
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/logout_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/router/app_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/dashboard_stat_card.dart';
@@ -35,13 +35,7 @@ class TechnicianDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
-                    ref.read(authSessionProvider.notifier).signOut();
-                    context.go('/login');
-                  },
-                  icon: const Icon(Icons.logout_rounded),
-                ),
+                const LogoutButton(icon: true),
               ],
             ),
             const SizedBox(height: 24),
