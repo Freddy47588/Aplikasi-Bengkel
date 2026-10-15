@@ -62,13 +62,18 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Keluhan: Mesin bising'), findsOneWidget);
-      await tester.ensureVisible(find.text('Dikerjakan'));
-      await tester.tap(find.text('Dikerjakan'));
+      final start = find.widgetWithText(OutlinedButton, 'Dikerjakan');
+      await tester.ensureVisible(start);
+      await tester.pumpAndSettle();
+      await tester.tap(start);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lanjutkan'));
       await tester.pumpAndSettle();
       expect(find.text('Status: Dikerjakan'), findsOneWidget);
-      await tester.ensureVisible(find.text('Checklist dan catatan kerja'));
+      await tester.ensureVisible(
+        find.widgetWithText(OutlinedButton, 'Checklist dan catatan kerja'),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Checklist dan catatan kerja'));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CheckboxListTile).first);
