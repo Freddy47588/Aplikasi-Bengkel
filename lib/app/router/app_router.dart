@@ -16,6 +16,7 @@ import '../../features/technician/presentation/technician_dashboard_screen.dart'
 import '../../features/technician/presentation/technician_jobs_screen.dart';
 import '../../features/technician/presentation/service_orders_screen.dart';
 import '../../features/technician/presentation/technicians_screen.dart';
+import '../../features/inventory/presentation/inventory_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -30,6 +31,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       description: 'Gunakan navigasi untuk kembali ke halaman utama.',
     ),
     routes: [
+      GoRoute(
+        path: '/admin/inventory',
+        builder: (_, _) => const InventoryScreen(),
+      ),
       GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
       GoRoute(
         path: '/customer/vehicles',

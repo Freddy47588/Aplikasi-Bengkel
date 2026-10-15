@@ -7,6 +7,7 @@ import '../../../core/data/service_order_repository.dart';
 import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
 import 'technicians_screen.dart';
+import '../../inventory/presentation/order_parts_screen.dart';
 
 final ordersPageProvider = StreamProvider.autoDispose
     .family<RecordPage<ServiceOrder>, DocumentSnapshot<Map<String, dynamic>>?>((
@@ -213,6 +214,15 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                     Text('Diagnosis: ${order.text('diagnosis')}'),
                     Text('Tindakan: ${order.text('actions')}'),
                     Text('Catatan: ${order.text('notes')}'),
+                    OutlinedButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OrderPartsScreen(orderId: order.id),
+                        ),
+                      ),
+                      child: const Text('Sparepart dan permintaan'),
+                    ),
                     if (busy) const LinearProgressIndicator(),
                     if (role == 'admin' &&
                         [

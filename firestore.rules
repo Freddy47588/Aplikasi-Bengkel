@@ -259,6 +259,165 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // Phase 04: every stock delta has one fresh ledger witness, and vice versa.
+    function partPath(sku) { return /databases/$(database)/documents/spareparts/$(sku); }
+    function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
+    function requestPath(so, id) { return /databases/$(database)/documents/serviceOrders/$(so)/partRequests/$(id); }
+    function usagePath(so, id) { return /databases/$(database)/documents/serviceOrders/$(so)/partUsages/$(id); }
+    function skuValid(sku) { return sku is string && sku.matches('^[A-Z0-9][A-Z0-9_-]{0,39}$'); }
+    function qtyValid(q) { return q is int && q > 0 && q <= 1000000; }
+    function reasonValid(s) { return s is string && s.size() > 0 && s.size() <= 500 && s.matches('(?s).*[^ \\t\\r\\n].*'); }
+    function moneyValid(n) { return n is int && n >= 0 && n <= 1000000000; }
+    match /spareparts/{sku} {
+      function valid(d) {
+        return d.keys().hasAll(['sku', 'name', 'category', 'unit', 'supplier', 'buyPrice', 'sellPrice', 'minimumStock', 'active', 'stock', 'lowStock', 'stockRevision', 'lastMovementId', 'version', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+          && d.keys().hasOnly(['sku', 'name', 'category', 'unit', 'supplier', 'buyPrice', 'sellPrice', 'minimumStock', 'active', 'stock', 'lowStock', 'stockRevision', 'lastMovementId', 'version', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+          && skuValid(sku) && d.sku == sku
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+          && d.category is string && d.category.size() > 0 && d.category.size() <= 60
+          && d.unit is string && d.unit.size() > 0 && d.unit.size() <= 20
+          && d.supplier is string && d.supplier.size() <= 160
+          && moneyValid(d.buyPrice) && moneyValid(d.sellPrice)
+          && d.minimumStock is int && d.minimumStock >= 0 && d.minimumStock <= 1000000000
+          && d.stock is int && d.stock >= 0 && d.stock <= 1000000000
+          && d.active is bool && d.lowStock == (d.stock <= d.minimumStock)
+          && d.stockRevision is int && d.stockRevision >= 0 && d.version is int && d.version >= 0
+          && (d.lastMovementId == null || d.lastMovementId is string)
+          && d.createdAt is timestamp && d.createdBy is string
+          && d.updatedAt == request.time && d.updatedBy == request.auth.uid;
+      }
+      function stockChange(d, old) {
+        let m = getAfter(movementPath(d.lastMovementId)).data;
+        return d.diff(old).affectedKeys().hasOnly(['stock', 'lowStock', 'stockRevision', 'lastMovementId', 'version', 'updatedAt', 'updatedBy'])
+          && d.stock != old.stock && d.stockRevision == old.stockRevision + 1
+          && !exists(movementPath(d.lastMovementId))
+          && m.sku == sku && m.stockRevision == d.stockRevision
+          && m.balanceBefore == old.stock && m.balanceAfter == d.stock
+          && m.delta == d.stock - old.stock && m.actorId == request.auth.uid && m.createdAt == request.time;
+      }
+      allow get: if admin();
+      allow list: if admin() && bounded(20);
+      allow create: if admin() && valid(request.resource.data)
+        && request.resource.data.stock == 0 && request.resource.data.stockRevision == 0
+        && request.resource.data.version == 0 && request.resource.data.lastMovementId == null
+        && request.resource.data.createdAt == request.time && request.resource.data.createdBy == request.auth.uid;
+      allow update: if admin() && valid(request.resource.data) && request.resource.data.version == resource.data.version + 1
+        && (stockChange(request.resource.data, resource.data)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'category', 'unit', 'supplier', 'buyPrice', 'sellPrice', 'minimumStock', 'active', 'lowStock', 'version', 'updatedAt', 'updatedBy']));
+      // Archive instead of deleting or freeing a historical SKU.
+      allow delete: if false;
+    }
+    match /stockMovements/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['sku', 'kind', 'quantity', 'delta', 'reason', 'serviceOrderId', 'requestId', 'reversalOf', 'balanceBefore', 'balanceAfter', 'stockRevision', 'name', 'unit', 'buyPrice', 'sellPrice', 'actorId', 'createdAt'])
+          && d.keys().hasOnly(['sku', 'kind', 'quantity', 'delta', 'reason', 'serviceOrderId', 'requestId', 'reversalOf', 'balanceBefore', 'balanceAfter', 'stockRevision', 'name', 'unit', 'buyPrice', 'sellPrice', 'actorId', 'createdAt'])
+          && id.matches('^[A-Za-z0-9_~\\-]{1,180}$') && skuValid(d.sku)
+          && d.kind in ['receipt', 'adjustment', 'usage', 'reversal'] && qtyValid(d.quantity)
+          && d.delta is int && (d.delta == d.quantity || d.delta == -d.quantity)
+          && reasonValid(d.reason) && d.balanceBefore is int && d.balanceAfter is int
+          && d.balanceBefore >= 0 && d.balanceAfter >= 0 && d.balanceAfter <= 1000000000
+          && d.balanceAfter == d.balanceBefore + d.delta && d.stockRevision is int
+          && (d.serviceOrderId == null || d.serviceOrderId is string)
+          && (d.requestId == null || d.requestId is string) && (d.reversalOf == null || d.reversalOf is string)
+          && d.name is string && d.unit is string && moneyValid(d.buyPrice) && moneyValid(d.sellPrice)
+          && d.actorId == request.auth.uid && d.createdAt == request.time;
+      }
+      function balances(d) {
+        let before = get(partPath(d.sku)).data;
+        let after = getAfter(partPath(d.sku)).data;
+        return d.balanceBefore == before.stock && d.balanceAfter == after.stock
+          && after.lastMovementId == id && after.stockRevision == before.stockRevision + 1
+          && d.stockRevision == after.stockRevision && after.version == before.version + 1;
+      }
+      function snapshot(d) {
+        let p = get(partPath(d.sku)).data;
+        return p.active == true && d.name == p.name && d.unit == p.unit
+          && d.buyPrice == p.buyPrice && d.sellPrice == p.sellPrice;
+      }
+      function usageLine(d) {
+        let u = getAfter(usagePath(d.serviceOrderId, id)).data;
+        return !exists(usagePath(d.serviceOrderId, id)) && u.movementId == id && u.sku == d.sku
+          && u.name == d.name && u.unit == d.unit && u.quantity == d.quantity && u.sellPrice == d.sellPrice
+          && u.kind == d.kind && u.reversalOf == d.reversalOf && u.actorId == request.auth.uid && u.createdAt == request.time;
+      }
+      function approval(d) {
+        let before = get(requestPath(d.serviceOrderId, d.requestId)).data;
+        let after = getAfter(requestPath(d.serviceOrderId, d.requestId)).data;
+        return id == 'Q~' + d.serviceOrderId + '~' + d.requestId
+          && before.status == 'pending' && before.sku == d.sku && before.quantity == d.quantity
+          && after.status == 'approved' && after.movementId == id && after.decidedAt == request.time
+          && after.decidedBy == request.auth.uid && after.decisionReason == d.reason;
+      }
+      function regular(d) {
+        return d.reversalOf == null && id.size() <= 178 && !id.matches('^R~.*') && snapshot(d)
+          && ((d.kind == 'receipt' && d.delta == d.quantity && d.serviceOrderId == null && d.requestId == null && !id.matches('^Q~.*'))
+            || (d.kind == 'adjustment' && d.serviceOrderId == null && d.requestId == null && !id.matches('^Q~.*'))
+            || (d.kind == 'usage' && d.delta == -d.quantity && d.serviceOrderId is string
+              && !terminal(getAfter(orderPath(d.serviceOrderId)).data.status) && usageLine(d)
+              && (d.requestId == null ? !id.matches('^Q~.*') : approval(d))));
+      }
+      function reversing(d) {
+        let original = get(movementPath(d.reversalOf)).data;
+        return d.kind == 'reversal' && d.reversalOf is string && id == 'R~' + d.reversalOf
+          && original.kind in ['receipt', 'adjustment', 'usage'] && original.sku == d.sku
+          && d.delta == -original.delta && d.quantity == original.quantity
+          && d.serviceOrderId == original.serviceOrderId && d.requestId == null
+          && d.name == original.name && d.unit == original.unit
+          && d.buyPrice == original.buyPrice && d.sellPrice == original.sellPrice
+          && (original.kind != 'usage' || usageLine(d));
+      }
+      allow get: if admin();
+      allow list: if admin() && bounded(20);
+      allow create: if admin() && valid(request.resource.data) && balances(request.resource.data)
+        && (regular(request.resource.data) || reversing(request.resource.data));
+      allow update, delete: if false;
+    }
+    match /serviceOrders/{so}/partUsages/{id} {
+      function valid(d) {
+        let m = getAfter(movementPath(id)).data;
+        return d.keys().hasAll(['movementId', 'sku', 'name', 'unit', 'quantity', 'sellPrice', 'kind', 'reversalOf', 'actorId', 'createdAt'])
+          && d.keys().hasOnly(['movementId', 'sku', 'name', 'unit', 'quantity', 'sellPrice', 'kind', 'reversalOf', 'actorId', 'createdAt'])
+          && !exists(movementPath(id)) && d.movementId == id && m.serviceOrderId == so
+          && d.sku == m.sku && d.name == m.name && d.unit == m.unit && d.quantity == m.quantity
+          && d.sellPrice == m.sellPrice && d.kind == m.kind && d.kind in ['usage', 'reversal']
+          && (d.kind == 'usage' || get(movementPath(m.reversalOf)).data.kind == 'usage')
+          && d.reversalOf == m.reversalOf && d.actorId == request.auth.uid && d.createdAt == request.time;
+      }
+      allow get: if readableOrder(get(orderPath(so)).data);
+      allow list: if bounded(20) && readableOrder(get(orderPath(so)).data);
+      allow create: if admin() && valid(request.resource.data);
+      allow update, delete: if false;
+    }
+    match /serviceOrders/{so}/partRequests/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['sku', 'quantity', 'reason', 'status', 'createdBy', 'createdAt', 'decidedBy', 'decidedAt', 'decisionReason', 'movementId'])
+          && d.keys().hasOnly(['sku', 'quantity', 'reason', 'status', 'createdBy', 'createdAt', 'decidedBy', 'decidedAt', 'decisionReason', 'movementId'])
+          && skuValid(d.sku) && qtyValid(d.quantity) && reasonValid(d.reason)
+          && d.status in ['pending', 'approved', 'rejected'] && d.createdAt is timestamp && d.createdBy is string;
+      }
+      function assigned() { return technician() && get(orderPath(so)).data.technicianId == request.auth.uid; }
+      function approved(d) {
+        let m = getAfter(movementPath(d.movementId)).data;
+        return d.status == 'approved' && d.movementId == 'Q~' + so + '~' + id
+          && !exists(movementPath(d.movementId)) && m.kind == 'usage' && m.serviceOrderId == so
+          && m.requestId == id && m.sku == d.sku && m.quantity == d.quantity && m.reason == d.decisionReason;
+      }
+      allow get: if admin() || assigned();
+      allow list: if bounded(20) && (admin() || assigned());
+      allow create: if assigned() && valid(request.resource.data)
+        && getAfter(orderPath(so)).data.technicianId == request.auth.uid
+        && getAfter(orderPath(so)).data.status in ['inProgress', 'paused']
+        && get(techPath(request.auth.uid)).data.active == true
+        && request.resource.data.status == 'pending' && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time && request.resource.data.decidedBy == null
+        && request.resource.data.decidedAt == null && request.resource.data.decisionReason == '' && request.resource.data.movementId == null;
+      allow update: if admin() && valid(request.resource.data) && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedBy', 'decidedAt', 'decisionReason', 'movementId'])
+        && request.resource.data.decidedBy == request.auth.uid && request.resource.data.decidedAt == request.time
+        && reasonValid(request.resource.data.decisionReason)
+        && ((request.resource.data.status == 'rejected' && request.resource.data.movementId == null) || approved(request.resource.data));
+      allow delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

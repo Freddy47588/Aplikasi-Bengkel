@@ -1,7 +1,7 @@
 # BengkelKu
 
 Aplikasi Flutter Android/iOS untuk akun pelanggan, kendaraan, booking dan pekerjaan bengkel.
-Phase 03 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
+Phase 04 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
 asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP.
 
 ## Fitur
@@ -18,11 +18,14 @@ asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP
 - Pekerjaan teknisi sendiri, checklist, diagnosis, tindakan, catatan dan progres realtime pelanggan.
 - Start/pause/finish, persetujuan admin, revision dan event audit immutable.
 - Daftar SO dan teknisi memakai cursor pagination 20 dokumen; dashboard teknisi memakai pekerjaan nyata.
+- Master sparepart admin dengan SKU unik, harga integer rupiah, kategori, satuan, supplier opsional dan arsip.
+- Ledger immutable stok masuk/koreksi/pemakaian/reversal, saldo atomik, idempotency dan stok minimum.
+- Permintaan teknisi → approval admin, snapshot sparepart/harga pada SO; customer membaca pemakaian miliknya.
 - Riverpod, repository abstraction, GoRouter stabil dan Material 3 dipertahankan.
 
 ## Menjalankan
 
-Status dan batas verifikasi terbaru: [laporan Phase 03](docs/PHASE_03_REPORT.md).
+Status dan batas verifikasi terbaru: [laporan Phase 04](docs/PHASE_04_REPORT.md).
 
 ```sh
 flutter pub get

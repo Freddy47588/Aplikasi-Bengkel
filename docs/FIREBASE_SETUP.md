@@ -1,5 +1,15 @@
 # Firebase Setup — BengkelKu
 
+## Phase 04: inventori
+
+Lihat [PHASE_04_REPORT.md](PHASE_04_REPORT.md) untuk schema, invariant ledger,
+approval teknisi, reversal, pengujian dan batas transaksi client-only. Deploy
+rules dan indexes Phase 04 bersama-sama setelah review; tunggu indexes READY dan
+smoke query semua kombinasi filter. Tidak ada backfill stok tersembunyi: master
+baru selalu stok 0; stok awal harus dicatat sebagai receipt atau adjustment dengan
+alasan. SKU canonical permanen; penghapusan memakai arsip. Tidak memakai Functions,
+Storage atau Blaze. Native iOS dan production E2E tetap belum diverifikasi.
+
 ## Phase 03: teknisi dan Service Order
 
 Schema/transisi, index tambahan dan acceptance Phase 03 dijelaskan di
