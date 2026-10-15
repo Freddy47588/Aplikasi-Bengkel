@@ -1,4 +1,4 @@
-﻿# BengkelKu
+# BengkelKu
 
 Rancang Bangun Aplikasi Mobile Sistem Manajemen Bengkel Berbasis Flutter.
 Perbaikan ini melanjutkan prototype yang ada dengan satu codebase mobile-first
@@ -103,7 +103,7 @@ Ikon geometris B tersedia lokal di
 Untuk menghasilkan ulang aset yang sama di Windows, jalankan dari root:
 `powershell -File tools/generate-brand-assets.ps1`.
 Script menggambar geometri sederhana dan mengisi ukuran katalog Android/iOS.
-Screenshot aplikasi belum tersedia; tidak ada tautan screenshot buatan.
+Screenshot aplikasi belum dipublikasikan; hasil smoke lokal dicatat di PHASE_STATUS.
 
 ## Testing
 
@@ -118,7 +118,8 @@ flutter build apk --debug
 Test meliputi login/logout tiga role, router tidak dibuat ulang, guard role,
 selectedIndex, validasi booking, duplikat, ownership, transisi status,
 submission form, konfirmasi Admin, status Customer, pembatalan, serta
-layar 320x568, 430x932, 1280x800 dengan teks 1.3x.
+layar 320x568, 360x640, 390x844, 430x932, 1280x800 dengan teks 1.3x,
+keyboard, review 500 karakter, penolakan Admin, serta kembali sistem dari detail.
 Hasil akhir dan audit ada di [laporan fondasi](docs/mobile-foundation-report.md).
 
 ## Roadmap lima modul TA
@@ -131,3 +132,7 @@ Hasil akhir dan audit ada di [laporan fondasi](docs/mobile-foundation-report.md)
 
 Phase 2 disarankan memprioritaskan persistensi, identitas pelanggan, dan kapasitas booking,
 kemudian verifikasi native Android/iPhone dan signing produksi. Modul lain tetap roadmap.
+
+Audit Phase 01 lanjutan: [status dan bukti pengujian](docs/PHASE_STATUS.md).
+Rencana delapan fase dan branch fork: [ROADMAP](docs/ROADMAP.md).
+Fase berikutnya belum dimulai oleh audit ini.

@@ -176,6 +176,8 @@ void main() {
     (tester) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewInsets);
@@ -205,6 +207,8 @@ void main() {
 
   for (final size in [
     const Size(320, 568),
+    const Size(360, 640),
+    const Size(390, 844),
     const Size(430, 932),
     const Size(1280, 800),
   ]) {
@@ -230,6 +234,7 @@ void main() {
         ),
       );
       final router = container.read(appRouterProvider);
+      expect(tester.takeException(), isNull, reason: 'login $size');
       for (final role in UserRole.values) {
         container.read(authSessionProvider.notifier).signIn(role);
         for (final path in [
@@ -254,4 +259,81 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
+
+  testWidgets('system back from booking detail returns to the booking list', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const BengkelKuApp(),
+      ),
+    );
+    final router = container.read(appRouterProvider);
+    for (final role in [UserRole.customer, UserRole.admin]) {
+      container.read(authSessionProvider.notifier).signIn(role);
+      router.go('/${role.name}/bookings/missing');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        role == UserRole.customer ? 2 : 1,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/${role.name}/bookings',
+      );
+    }
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('admin rejects and customer cannot cancel rejected booking', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final booking = await container
+        .read(bookingRepositoryProvider)
+        .submit(
+          'customer-demo',
+          BookingDraft(
+            vehicleId: 'brio',
+            service: 'Ganti Oli',
+            scheduledAt: DateTime(
+              tomorrow.year,
+              tomorrow.month,
+              tomorrow.day,
+              9,
+            ),
+            complaint: 'Rem berbunyi saat digunakan',
+          ),
+        );
+    container.read(authSessionProvider.notifier).signIn(UserRole.admin);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const BengkelKuApp(),
+      ),
+    );
+    final router = container.read(appRouterProvider);
+    router.go('/admin/bookings/${booking.id}');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tolak'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ya, lanjutkan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ditolak'), findsOneWidget);
+    container.read(authSessionProvider.notifier).signOut();
+    await tester.pumpAndSettle();
+    container.read(authSessionProvider.notifier).signIn(UserRole.customer);
+    router.go('/customer/bookings/${booking.id}');
+    await tester.pumpAndSettle();
+    expect(find.text('Ditolak'), findsOneWidget);
+    expect(find.text('Batalkan Booking'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

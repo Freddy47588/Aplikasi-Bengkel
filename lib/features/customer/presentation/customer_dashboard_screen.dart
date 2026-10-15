@@ -107,7 +107,7 @@ class CustomerDashboardScreen extends ConsumerWidget {
             const Text(
               'Kendaraan, riwayat, reminder, dan pembayaran: contoh data demo.',
             ),
-            SectionHeader(title: 'Booking aktif'),
+            SectionHeader(title: 'Booking Saya'),
             const SizedBox(height: 12),
             const BookingListContent(customer: true),
             const SizedBox(height: 24),

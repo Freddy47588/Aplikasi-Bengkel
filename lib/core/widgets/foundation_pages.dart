@@ -180,8 +180,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
         title: const Text('Detail Booking'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              context.go(customer ? '/customer/history' : '/admin/bookings'),
+          onPressed: () => context.pop(),
         ),
       ),
       bottomNavigationBar: MobileNavigation(

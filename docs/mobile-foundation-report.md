@@ -163,3 +163,34 @@ Aset build/log/SDK lokal tidak dimasukkan commit. File signing umum diabaikan.
 - `test/booking_repository_test.dart`
 - `test/mobile_foundation_test.dart`
 - `tools/generate-brand-assets.ps1`
+
+## Audit lanjutan Phase 01 - 15 Oktober 2026
+
+Audit melanjutkan commit `522541d`, yang sudah di-merge ke main fork melalui
+PR #1 (`d16c0d5`). Checkout awal berada di `feat/firebase-auth-booking` dengan
+perubahan lokal Firebase yang belum di-commit. Perubahan tersebut dipertahankan;
+audit memakai worktree terpisah pada branch existing `fix/mobile-foundation`
+dan pull `--ff-only` (already up to date). Tidak ditemukan AGENTS.md yang berlaku.
+Remote origin fetch/push hanya fork Freddy47588.
+
+Bug yang dibuktikan: detail booking memakai route datar sehingga tombol kembali
+sistem tidak menuju daftar. Test awal gagal (tetap di detail). Route detail kini
+menjadi child daftar untuk customer/admin; tombol toolbar memakai pop yang sama.
+Navigasi customer mencocokkan segmen path secara utuh: `/customer/bookings/:id`
+memilih Riwayat, bukan tertangkap prefix `/customer/booking` dan memilih form.
+Judul dashboard `Booking aktif` menjadi `Booking Saya`, sesuai daftar yang memang
+memuat seluruh status termasuk ditolak/dibatalkan.
+
+Cakupan tambahan: customer/admin system back dan selectedIndex detail, penolakan
+Admin yang terlihat Customer tanpa opsi pembatalan, 360x640 dan 390x844 dp selain
+320x568/430x932/1280x800, login pada text scale 1.3, keyboard kecil pada scale 1.3,
+serta review/kirim keluhan 500 karakter pada 320dp. Status detail panjang diuji
+setelah scroll karena ListView membangun isi sesuai viewport.
+
+Identifier Android/iOS sumber tetap `id.bengkelku.mobile`; tidak diubah. Audit ini
+tidak membuktikan registrasi identifier di toko atau layanan eksternal. Aset ikon,
+splash, label BengkelKu dan batas demo README sudah tersedia dari commit lama.
+Firebase, inventori, payment dan target desktop tidak diubah.
+
+Hasil validasi akhir dan batas smoke test dicatat di [PHASE_STATUS.md](PHASE_STATUS.md).
+Rencana delapan fase ada di [ROADMAP.md](ROADMAP.md). Berhenti pada Phase 01.
