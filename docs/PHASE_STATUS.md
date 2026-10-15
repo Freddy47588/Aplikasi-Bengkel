@@ -1,11 +1,11 @@
 # Phase status - BengkelKu
 
-Status terbaru: **Phase 05 - riwayat servis dan pelacakan**.
-Base `main` fork setelah PR #5 merged (`2f82b76`). Branch
-`feat/service-history-tracking`. Lihat [laporan Phase 05](PHASE_05_REPORT.md)
-untuk sumber riwayat, snapshot immutable, rules, pengujian dan batas verifikasi.
+Status terbaru: **Phase 06 - pembayaran manual, invoice PDF dan laporan**.
+Base `main` fork setelah PR #6 merged (`44f7cce`). Branch
+`feat/payments-invoices-reports`. Lihat [laporan Phase 06](PHASE_06_REPORT.md)
+dan [schema pembayaran](PAYMENT_SCHEMA.md) untuk rules, biaya dan batas verifikasi.
 Implementasi disiapkan untuk review PR ke fork main; tanpa auto-merge.
-**STOP PHASE 05. Phase 06 belum dimulai.**
+**STOP PHASE 06. Phase 07 belum dimulai.**
 
 ## Arsip audit Phase 01
 

@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 /coverage/
 node_modules/
+/firebase.phase06.local.json
 .firebase/
 *-debug.log*
 *-service-account*.json

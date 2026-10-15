@@ -97,8 +97,13 @@ class LiveDashboard extends ConsumerWidget {
                 const SizedBox(height: 12),
                 BookingListContent(customer: customer),
                 const SizedBox(height: 24),
-                const Text(
-                  'Riwayat servis tersedia dari Service Order selesai. Pencatatan pembayaran dan laporan belum tersedia.',
+                OutlinedButton(
+                  onPressed: () => context.go('/$role/invoices'),
+                  child: Text(
+                    customer
+                        ? 'Invoice Saya'
+                        : 'Pembayaran, transaksi & laporan',
+                  ),
                 ),
               ],
             ),

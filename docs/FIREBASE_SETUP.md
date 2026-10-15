@@ -257,3 +257,11 @@ Deploy production belum dilakukan. Review dan deploy rules/indexes bersama sebel
 memakai client Phase 05, tunggu indexes ready, lalu acceptance dua akun/perangkat.
 Tidak menggunakan Storage, Functions, billing upgrade, export atau upload dokumen.
 Lihat [laporan Phase 05](PHASE_05_REPORT.md). STOP PHASE 05.
+
+
+## Phase 06: pembayaran manual
+
+Schema invoice/payment, role kasir sebagai admin, transisi, indexes, estimasi reads,
+PDF lokal dan batas verifikasi: [PAYMENT_SCHEMA.md](PAYMENT_SCHEMA.md).
+Review/deploy rules dan indexes bersama setelah review PR, tunggu READY.
+Tidak ada deploy production atau billing upgrade pada Phase 06.
