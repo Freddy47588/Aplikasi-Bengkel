@@ -6,6 +6,8 @@ import '../../../app/router/app_router.dart';
 import '../../../core/data/service_order_repository.dart';
 import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/service_timeline.dart';
+import '../../../core/models/service_history.dart';
 import 'technicians_screen.dart';
 import '../../inventory/presentation/order_parts_screen.dart';
 
@@ -207,6 +209,41 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                       'Diperbarui: ${order.date('updatedAt')?.toLocal() ?? 'Menyinkronkan…'}',
                     ),
                     const SizedBox(height: 16),
+                    ServiceTimeline(order: order),
+                    Text(
+                      'Biaya jasa: ${order.data['laborPrice'] == null ? 'Belum dicatat' : rupiah(order.data['laborPrice'] as int)}',
+                    ),
+                    if (order.status == ServiceOrderStatus.completed)
+                      TextButton(
+                        onPressed: () =>
+                            context.go('/$role/history/${order.id}'),
+                        child: const Text('Buka riwayat dan rincian biaya'),
+                      ),
+                    if (role == 'admin' && !order.status.terminal)
+                      OutlinedButton(
+                        onPressed: busy
+                            ? null
+                            : () async {
+                                final price = await showDialog<int>(
+                                  context: context,
+                                  builder: (_) => LaborPriceDialog(
+                                    initial: order.data['laborPrice'] as int?,
+                                  ),
+                                );
+                                if (price != null && mounted) {
+                                  await run(
+                                    () => ref
+                                        .read(serviceOrderRepositoryProvider)
+                                        .setLaborPrice(
+                                          order.id,
+                                          order.revision,
+                                          price,
+                                        ),
+                                  );
+                                }
+                              },
+                        child: const Text('Catat biaya jasa'),
+                      ),
                     for (final entry in order.checklist.entries)
                       Text(
                         '${entry.value ? '✓' : '○'} ${inspectionLabel(entry.key)}',
@@ -410,5 +447,64 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
         ],
       ),
     ),
+  );
+}
+
+class LaborPriceDialog extends StatefulWidget {
+  const LaborPriceDialog({super.key, this.initial});
+  final int? initial;
+  @override
+  State<LaborPriceDialog> createState() => _LaborPriceState();
+}
+
+class _LaborPriceState extends State<LaborPriceDialog> {
+  late final controller = TextEditingController(
+    text: widget.initial?.toString() ?? '',
+  );
+  String? error;
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Snapshot biaya jasa'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Masukkan rupiah bulat, termasuk 0 untuk jasa gratis. Biaya terkunci setelah servis selesai.',
+          ),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Biaya jasa (Rp)',
+              errorText: error,
+            ),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Kembali'),
+      ),
+      FilledButton(
+        onPressed: () {
+          final value = int.tryParse(controller.text.trim());
+          if (value == null || value < 0 || value > 1000000000) {
+            setState(() => error = 'Masukkan 0 sampai 1000000000 rupiah.');
+            return;
+          }
+          Navigator.pop(context, value);
+        },
+        child: const Text('Simpan'),
+      ),
+    ],
   );
 }

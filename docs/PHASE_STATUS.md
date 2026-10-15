@@ -1,9 +1,11 @@
 # Phase status - BengkelKu
 
-Status terbaru: **Phase 04 — sparepart inventory ledger**.
-Base `main` fork setelah PR #4 merged (`6d52399`). Branch
-`feat/sparepart-inventory`. Lihat [laporan Phase 04](PHASE_04_REPORT.md)
-untuk transaksi, rules, pengujian dan batas verifikasi. Phase 05 belum dimulai.
+Status terbaru: **Phase 05 - riwayat servis dan pelacakan**.
+Base `main` fork setelah PR #5 merged (`2f82b76`). Branch
+`feat/service-history-tracking`. Lihat [laporan Phase 05](PHASE_05_REPORT.md)
+untuk sumber riwayat, snapshot immutable, rules, pengujian dan batas verifikasi.
+Implementasi disiapkan untuk review PR ke fork main; tanpa auto-merge.
+**STOP PHASE 05. Phase 06 belum dimulai.**
 
 ## Arsip audit Phase 01
 

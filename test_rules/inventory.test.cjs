@@ -163,3 +163,18 @@ test('customers and technicians cannot read purchase prices, edit stock/price/le
   await assertFails(getDoc(doc(client('customer'), 'serviceOrders', 'so', 'partRequests', 'req')));
   await assertFails(setDoc(doc(client('ta'), 'serviceOrders', 'so', 'partUsages', 'fake'), { sellPrice: 1 }));
 });
+
+
+test('Phase 05 completed history cannot receive usage or reversal, even with a fresh ledger witness', async () => {
+  const db = client('admin');
+  await post(db, 'receipt');
+  await post(db, 'use', {kind: 'usage', quantity: 2, so: 'so'});
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'serviceOrders', 'so'), {status:'completed'}));
+  await assertFails(post(db, 'R~use', {kind:'reversal', quantity:2, so:'so', reversalOf:'use'}));
+  await assertFails(post(db, 'later', {kind:'usage', quantity:1, so:'so'}));
+  await assertFails(updateDoc(doc(db, 'serviceOrders', 'so', 'partUsages', 'use'), {sellPrice: 1}));
+  const line = await assertSucceeds(getDoc(doc(client('customer'), 'serviceOrders', 'so', 'partUsages', 'use')));
+  assert.equal(line.data().sellPrice, 55000);
+  await assertFails(getDoc(doc(client('other'), 'serviceOrders', 'so', 'partUsages', 'use')));
+  await assertFails(getDoc(doc(client('tb'), 'serviceOrders', 'so', 'partUsages', 'use')));
+});

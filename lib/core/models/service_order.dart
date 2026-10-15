@@ -50,7 +50,13 @@ class ServiceOrder {
 const inspectionKeys = ['vehicleChecked', 'safetyChecked', 'workChecked'];
 
 class RecordPage<T> {
-  const RecordPage(this.items, this.cursor, this.hasMore);
+  const RecordPage(
+    this.items,
+    this.cursor,
+    this.hasMore, {
+    this.fromCache = false,
+  });
+  final bool fromCache;
   final List<T> items;
   final DocumentSnapshot<Map<String, dynamic>>? cursor;
   final bool hasMore;

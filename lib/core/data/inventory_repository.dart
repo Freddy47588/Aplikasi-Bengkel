@@ -150,7 +150,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
           throw StateError('Reversal tidak cocok dengan movement asli.');
         }
       }
-      if (c.kind == MovementKind.usage) {
+      if (c.kind == MovementKind.usage || original?['kind'] == 'usage') {
         final so = await tx.get(
           db.collection('serviceOrders').doc(c.serviceOrderId),
         );

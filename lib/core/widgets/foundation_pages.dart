@@ -8,6 +8,7 @@ import '../data/service_order_repository.dart';
 import 'empty_state.dart';
 import 'mobile_navigation.dart';
 import 'logout_button.dart';
+import 'service_timeline.dart';
 
 String bookingSchedule(DateTime value) {
   final date = value.isUtc ? value.add(const Duration(hours: 7)) : value;
@@ -237,6 +238,10 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                     Text('Keluhan: ${b.draft.complaint}'),
                     const SizedBox(height: 16),
                     Chip(label: Text(b.status.label)),
+                    ServiceTimeline(
+                      booking: b.status,
+                      order: orderState?.asData?.value,
+                    ),
                     if (b.status == BookingStatus.confirmed &&
                         !customer &&
                         !hasOrder)
