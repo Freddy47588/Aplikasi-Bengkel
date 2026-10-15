@@ -433,6 +433,87 @@ service cloud.firestore {
         && ((request.resource.data.status == 'rejected' && request.resource.data.movementId == null) || approved(request.resource.data));
       allow delete: if false;
     }
+    function invoicePath(id) { return /databases/$(database)/documents/invoices/$(id); }
+    function paymentPath(id, key) { return /databases/$(database)/documents/invoices/$(id)/payments/$(key); }
+    function invoiceReadable(d) { return admin() || (customer() && d.customerId == request.auth.uid); }
+    function invoiceMoney(v) { return v is int && v >= 0 && v <= 9000000000000000; }
+    match /invoices/{id} {
+      function valid(d) {
+        return d.keys().hasOnly(['invoiceNo', 'serviceOrderId', 'customerId', 'serviceName', 'vehiclePlate',
+          'laborPrice', 'parts', 'partSubtotal', 'subtotal', 'discount', 'fee', 'grandTotal', 'paidAmount',
+          'change', 'due', 'method', 'status', 'recordedBy', 'paidAt', 'createdAt', 'updatedAt', 'notes', 'revision', 'lastKey'])
+          && d.invoiceNo == 'INV~' + id && d.serviceOrderId == id
+          && invoiceMoney(d.partSubtotal) && invoiceMoney(d.subtotal) && moneyValid(d.laborPrice)
+          && moneyValid(d.discount) && moneyValid(d.fee)
+          && d.subtotal == d.laborPrice + d.partSubtotal
+          && d.grandTotal == d.subtotal - d.discount + d.fee && d.grandTotal > 0 && invoiceMoney(d.grandTotal)
+          && invoiceMoney(d.paidAmount) && invoiceMoney(d.change) && invoiceMoney(d.due)
+          && d.recordedBy == request.auth.uid && d.updatedAt == request.time
+          && reasonValid(d.notes) && d.revision is int && d.parts is list && d.parts.size() <= 100;
+      }
+      function issued(d) {
+        let so = get(orderPath(id)).data;
+        let e = getAfter(paymentPath(id, 'issued')).data;
+        return so.status == 'completed' && d.customerId == so.customerId
+          && d.serviceName == so.serviceName && d.vehiclePlate == so.vehiclePlate && d.laborPrice == so.laborPrice
+          && d.status == 'unpaid' && d.paidAmount == 0 && d.change == 0 && d.due == d.grandTotal
+          && d.method == 'none' && d.paidAt == null && d.createdAt == request.time
+          && d.revision == 0 && d.lastKey == 'issued' && e.kind == 'issued' && e.revision == 0;
+      }
+      function paid(d, old, e) {
+        return e.kind == 'payment' && old.status in ['unpaid', 'partial'] && e.amount > 0
+          && e.method in ['cash', 'transfer'] && e.applied > 0 && e.applied <= old.due
+          && e.applied == (e.amount > old.due ? old.due : e.amount)
+          && e.change == e.amount - e.applied && (e.method == 'cash' || e.change == 0)
+          && d.paidAmount == old.paidAmount + e.applied && d.due == old.due - e.applied
+          && d.change == old.change + e.change
+          && (d.due == 0 ? (d.status == 'paid' && d.paidAt == request.time)
+            : (d.status == 'partial' && d.paidAt == old.paidAt));
+      }
+      function cancelled(d, old, e) {
+        return d.due == 0 && d.change == old.change && d.paidAmount == 0 && d.paidAt == old.paidAt
+          && ((e.kind == 'void' && old.status == 'unpaid' && d.status == 'void'
+              && e.method == 'none' && e.amount == 0 && e.applied == 0 && e.change == 0)
+            || (e.kind == 'refund' && old.status in ['partial', 'paid'] && d.status == 'refunded'
+              && e.method in ['cash', 'transfer'] && e.amount == old.paidAmount
+              && e.applied == -old.paidAmount && e.change == 0));
+      }
+      function changed(d, old) {
+        let e = getAfter(paymentPath(id, d.lastKey)).data;
+        return d.diff(old).affectedKeys().hasOnly(['paidAmount', 'change', 'due', 'status', 'method', 'recordedBy',
+            'updatedAt', 'paidAt', 'notes', 'revision', 'lastKey'])
+          && d.revision == old.revision + 1 && d.lastKey.matches('^[A-Za-z0-9_-]{10,100}$')
+          && !exists(paymentPath(id, d.lastKey)) && e.key == d.lastKey && e.revision == d.revision
+          && e.recordedBy == d.recordedBy && e.notes == d.notes && e.method == d.method && e.paidAt == request.time
+          && (paid(d, old, e) || cancelled(d, old, e));
+      }
+      allow get: if admin() || (customer() && (!exists(invoicePath(id)) || resource.data.customerId == request.auth.uid));
+      allow list: if bounded(20) && invoiceReadable(resource.data);
+      allow create: if admin() && valid(request.resource.data) && issued(request.resource.data);
+      allow update: if admin() && valid(request.resource.data) && changed(request.resource.data, resource.data);
+      allow delete: if false;
+      match /payments/{key} {
+        function validEvent(d) {
+          let inv = getAfter(invoicePath(id)).data;
+          return d.keys().hasAll(['key', 'revision', 'kind', 'amount', 'applied', 'change', 'method', 'notes', 'recordedBy', 'paidAt'])
+            && d.keys().hasOnly(['key', 'revision', 'kind', 'amount', 'applied', 'change', 'method', 'notes', 'recordedBy', 'paidAt'])
+            && d.key == key && inv.lastKey == key && inv.revision == d.revision
+            && inv.updatedAt == request.time && inv.recordedBy == request.auth.uid
+            && d.recordedBy == request.auth.uid && d.paidAt == request.time
+            && d.notes == inv.notes && d.method == inv.method && invoiceMoney(d.amount) && invoiceMoney(d.change)
+            && d.applied is int
+            && (key == 'issued' ? (!exists(invoicePath(id)) && d.kind == 'issued'
+                && d.revision == 0 && d.amount == 0 && d.applied == 0 && d.change == 0)
+              : (exists(invoicePath(id)) && inv.revision == get(invoicePath(id)).data.revision + 1));
+        }
+        allow get: if admin() || (customer() && invoiceReadable(get(invoicePath(id)).data));
+        allow list: if bounded(20) && invoiceReadable(get(invoicePath(id)).data);
+        allow create: if admin() && validEvent(request.resource.data);
+        allow update, delete: if false;
+      }
+    }
+    // Reports query the canonical collections; no client-written report totals.
+    match /reports/{id} { allow read, write: if false; }
     match /{document=**} { allow read, write: if false; }
   }
 }

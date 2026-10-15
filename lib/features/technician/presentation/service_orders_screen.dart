@@ -213,6 +213,23 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                     Text(
                       'Biaya jasa: ${order.data['laborPrice'] == null ? 'Belum dicatat' : rupiah(order.data['laborPrice'] as int)}',
                     ),
+                    if (order.status == ServiceOrderStatus.completed &&
+                        role != 'technician')
+                      OutlinedButton(
+                        onPressed: () => context.push(
+                          role == 'admin'
+                              ? Uri(
+                                  path: '/admin/invoices',
+                                  queryParameters: {'orderId': order.id},
+                                ).toString()
+                              : '/customer/invoices/${order.id}',
+                        ),
+                        child: Text(
+                          role == 'admin'
+                              ? 'Pembayaran / terbitkan invoice'
+                              : 'Lihat invoice',
+                        ),
+                      ),
                     if (order.status == ServiceOrderStatus.completed)
                       TextButton(
                         onPressed: () =>
