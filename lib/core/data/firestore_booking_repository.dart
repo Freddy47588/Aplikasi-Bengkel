@@ -122,6 +122,14 @@ class FirestoreBookingRepository implements BookingRepository {
     await db.runTransaction((tx) async {
       final doc = await tx.get(booking);
       if (!doc.exists) throw StateError('Booking tidak ditemukan.');
+      if (status == BookingStatus.cancelled) {
+        final order = await tx.get(db.collection('serviceOrders').doc(id));
+        if (order.exists) {
+          throw StateError(
+            'Servis sudah diproses. Hubungi admin untuk pembatalan.',
+          );
+        }
+      }
       final before = BookingStatus.values.byName(doc['status'] as String);
       if (!canChangeBooking(before, status, role, doc['customerId'] == uid)) {
         throw StateError('Perubahan status tidak diizinkan.');

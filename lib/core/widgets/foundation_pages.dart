@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router/app_router.dart';
 import '../data/booking_repository.dart';
 import '../models/booking.dart';
+import '../data/service_order_repository.dart';
 import 'empty_state.dart';
 import 'mobile_navigation.dart';
 import 'logout_button.dart';
@@ -55,7 +56,14 @@ class BookingListPage extends StatelessWidget {
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
-        children: [BookingListContent(customer: customer)],
+        children: [
+          OutlinedButton(
+            onPressed: () =>
+                context.go('/${customer ? 'customer' : 'admin'}/orders'),
+            child: const Text('Lihat progres Service Order'),
+          ),
+          BookingListContent(customer: customer),
+        ],
       ),
     ),
   );
@@ -209,6 +217,10 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                   );
                 }
                 final b = matches.first;
+                final orderState = b.status == BookingStatus.confirmed
+                    ? ref.watch(serviceOrderProvider(b.id))
+                    : null;
+                final hasOrder = orderState?.asData?.value != null;
                 return ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
@@ -225,8 +237,60 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                     Text('Keluhan: ${b.draft.complaint}'),
                     const SizedBox(height: 16),
                     Chip(label: Text(b.status.label)),
+                    if (b.status == BookingStatus.confirmed &&
+                        !customer &&
+                        !hasOrder)
+                      FilledButton(
+                        onPressed: busy
+                            ? null
+                            : () async {
+                                setState(() => busy = true);
+                                try {
+                                  await ref
+                                      .read(serviceOrderRepositoryProvider)
+                                      .create(b.id);
+                                  if (context.mounted) {
+                                    context.go('/admin/orders/${b.id}');
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Gagal membuat Service Order: $e',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) setState(() => busy = false);
+                                }
+                              },
+                        child: const Text('Buat Service Order'),
+                      ),
+                    if (hasOrder)
+                      TextButton(
+                        onPressed: () => context.go(
+                          '/${customer ? 'customer' : 'admin'}/orders/${b.id}',
+                        ),
+                        child: const Text('Buka Service Order'),
+                      ),
+                    if (orderState?.hasError == true)
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(serviceOrderProvider(b.id)),
+                        child: const Text('Gagal memuat progres. Coba lagi'),
+                      ),
+                    if (customer && hasOrder)
+                      const Text(
+                        'Servis sudah diproses. Hubungi admin untuk pembatalan.',
+                      ),
                     if (busy) const Center(child: CircularProgressIndicator()),
-                    if (customer && b.status.isActive)
+                    if (customer &&
+                        b.status.isActive &&
+                        !hasOrder &&
+                        orderState?.isLoading != true &&
+                        orderState?.hasError != true)
                       OutlinedButton(
                         onPressed: busy
                             ? null

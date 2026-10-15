@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:bengkel_kendaraan/core/data/firebase_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bengkel_kendaraan/app/router/app_router.dart';
 import 'package:bengkel_kendaraan/core/constants/user_role.dart';
@@ -117,6 +119,7 @@ TestAuthController testAuth(ProviderContainer container) =>
 ProviderContainer testContainer({Stream<List<Booking>>? bookings}) =>
     ProviderContainer(
       overrides: [
+        firestoreProvider.overrideWithValue(FakeFirebaseFirestore()),
         authSessionProvider.overrideWith(TestAuthController.new),
         authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
         bookingRepositoryProvider.overrideWith((ref) {

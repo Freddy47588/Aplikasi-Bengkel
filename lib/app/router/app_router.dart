@@ -14,6 +14,8 @@ import '../../features/customer/presentation/customer_booking_screen.dart';
 import '../../features/customer/presentation/customer_dashboard_screen.dart';
 import '../../features/technician/presentation/technician_dashboard_screen.dart';
 import '../../features/technician/presentation/technician_jobs_screen.dart';
+import '../../features/technician/presentation/service_orders_screen.dart';
+import '../../features/technician/presentation/technicians_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -35,6 +37,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       for (final role in UserRole.values) ...[
         GoRoute(
+          path: '/${role.name}/orders',
+          builder: (_, _) => const ServiceOrdersScreen(),
+          routes: [
+            GoRoute(
+              path: ':id',
+              builder: (_, state) =>
+                  ServiceOrderDetailScreen(id: state.pathParameters['id']!),
+            ),
+          ],
+        ),
+        GoRoute(
           path: '/${role.name}/profile',
           builder: (_, _) => FoundationPage(
             title: 'Profil ${role.label}',
@@ -55,7 +68,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ],
       GoRoute(
         path: '/admin/technicians',
-        builder: (_, _) => const TechnicianJobsScreen(),
+        builder: (_, _) => const TechniciansScreen(),
       ),
       GoRoute(
         path: '/customer/bookings',

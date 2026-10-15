@@ -1,4 +1,13 @@
-# Firebase Phase 02 — BengkelKu
+# Firebase Setup — BengkelKu
+
+## Phase 03: teknisi dan Service Order
+
+Schema/transisi, index tambahan dan acceptance Phase 03 dijelaskan di
+[PHASE_03_REPORT.md](PHASE_03_REPORT.md). Deploy rules dan indexes bersama-sama
+setelah review. Aplikasi tetap Firebase Spark Auth + Firestore, tanpa Functions
+atau Storage. Instruksi dan batas Phase 02 di bawah adalah catatan sebelumnya.
+
+## Phase 02
 
 Audit: 15 Oktober 2026 (Asia/Jakarta). Base `9413c42` di fork
 `Freddy47588/Aplikasi-Bengkel`, setelah Phase 01 merged melalui PR #2.

@@ -24,10 +24,11 @@ class MobileNavigation extends StatelessWidget {
             ('profile', 'Profil', Icons.person),
           ];
     final path = GoRouterState.of(context).uri.path;
-    final index =
-        role == 'customer' &&
-            (path == '/customer/bookings' ||
-                path.startsWith('/customer/bookings/'))
+    final index = path == '/$role/orders' || path.startsWith('/$role/orders/')
+        ? (role == 'customer' ? 2 : 1)
+        : role == 'customer' &&
+              (path == '/customer/bookings' ||
+                  path.startsWith('/customer/bookings/'))
         ? 2
         : destinations.indexWhere(
             (d) =>
