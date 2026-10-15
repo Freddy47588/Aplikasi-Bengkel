@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function enabled() {
+      return signedIn() && request.auth.token.email_verified == true && profile().active == true;
+    }
+    function customer() { return enabled() && profile().role == 'customer'; }
+    function admin() { return enabled() && profile().role == 'admin'; }
+    function bounded(max) { return request.query.limit != null && request.query.limit <= max; }
+    function activeStatus(status) { return status in ['pending', 'confirmed']; }
+
+    match /users/{uid} {
+      allow get: if signedIn() && uid == request.auth.uid;
+      allow create: if signedIn() && uid == request.auth.uid
+        && request.resource.data.keys().hasAll(['email', 'role', 'active', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['email', 'role', 'active', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'customer'
+        && request.resource.data.active == true
+        && request.resource.data.createdAt == request.time;
+      // Roles and deactivation are managed only through the trusted Admin SDK/console.
+      allow update, delete, list: if false;
+    }
+
+    match /vehicles/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['ownerId', 'name', 'plate', 'active', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['ownerId', 'name', 'plate', 'active', 'createdAt', 'updatedAt'])
+          && d.ownerId == request.auth.uid && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+          && d.plate is string && d.plate.matches('^[A-Z]{1,2} [0-9]{1,4}( [A-Z]{1,3})?$')
+          && d.active is bool && d.createdAt is timestamp && d.updatedAt == request.time;
+      }
+      allow get: if customer() && resource.data.ownerId == request.auth.uid;
+      allow list: if customer() && bounded(50) && resource.data.ownerId == request.auth.uid;
+      allow create: if customer() && valid(request.resource.data)
+        && request.resource.data.active == true && request.resource.data.createdAt == request.time;
+      allow update: if customer() && resource.data.ownerId == request.auth.uid && resource.data.active == true
+        && valid(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'plate', 'active', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /services/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['name', 'active', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['name', 'active', 'createdAt', 'updatedAt'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+          && d.active is bool && d.createdAt is timestamp && d.updatedAt == request.time;
+      }
+      allow get: if enabled() && (resource.data.active == true || admin());
+      allow list: if enabled() && bounded(50) && (resource.data.active == true || admin());
+      allow create: if admin() && valid(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if admin() && valid(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'active', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /bookings/{id} {
+      function slot(d) { return getAfter(/databases/$(database)/documents/bookingSlots/$(d.slotId)).data; }
+      function lockMatches(d, active) {
+        return slot(d).bookingId == id && slot(d).scheduledAt == d.scheduledAt && slot(d).active == active;
+      }
+      function validCreate(d) {
+        let vehicle = get(/databases/$(database)/documents/vehicles/$(d.vehicleId)).data;
+        let catalog = get(/databases/$(database)/documents/services/$(d.serviceId)).data;
+        return d.keys().hasAll(['customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'scheduledAt', 'complaint', 'status', 'slotId', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'scheduledAt', 'complaint', 'status', 'slotId', 'createdAt', 'updatedAt'])
+          && d.customerId == request.auth.uid && d.status == 'pending'
+          && vehicle.ownerId == request.auth.uid && vehicle.active == true
+          && d.vehicleName == vehicle.name && d.vehiclePlate == vehicle.plate
+          && catalog.active == true && d.serviceName == catalog.name
+          && d.complaint is string && d.complaint.size() >= 5 && d.complaint.size() <= 500
+          && d.scheduledAt is timestamp && d.scheduledAt > request.time
+          && d.scheduledAt <= request.time + duration.value(90, 'd')
+          // Workshop time is always WIB (UTC+7), independent of device timezone.
+          && d.scheduledAt.hours() in [2, 3, 4, 6, 7, 8, 9]
+          && d.scheduledAt.toMillis() % 3600000 == 0
+          && d.slotId == string(d.scheduledAt.toMillis())
+          && d.createdAt == request.time && d.updatedAt == request.time
+          && lockMatches(d, true);
+      }
+      allow get: if admin() || (customer() && resource.data.customerId == request.auth.uid);
+      allow list: if bounded(100) && (admin() || (customer() && resource.data.customerId == request.auth.uid));
+      allow create: if customer() && validCreate(request.resource.data);
+      allow update: if enabled()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && ((admin() && resource.data.status == 'pending' && request.resource.data.status in ['confirmed', 'rejected'])
+          || (customer() && resource.data.customerId == request.auth.uid && activeStatus(resource.data.status) && request.resource.data.status == 'cancelled'))
+        && lockMatches(request.resource.data, activeStatus(request.resource.data.status));
+      allow delete: if false;
+    }
+
+    // Shared capacity-one locks contain no customer identity or complaint.
+    // Single-document reads support transactions; collection enumeration is denied.
+    match /bookingSlots/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['bookingId', 'scheduledAt', 'active'])
+          && d.keys().hasOnly(['bookingId', 'scheduledAt', 'active'])
+          && d.bookingId is string && d.scheduledAt is timestamp && d.active is bool
+          && id == string(d.scheduledAt.toMillis());
+      }
+      function newBooking(d) {
+        let b = getAfter(/databases/$(database)/documents/bookings/$(d.bookingId)).data;
+        return !exists(/databases/$(database)/documents/bookings/$(d.bookingId))
+          && b.customerId == request.auth.uid && b.status == 'pending'
+          && b.scheduledAt == d.scheduledAt && b.slotId == id && b.createdAt == request.time;
+      }
+      function released(d) {
+        let b = getAfter(/databases/$(database)/documents/bookings/$(d.bookingId)).data;
+        return d.active == false && b.status in ['rejected', 'cancelled']
+          && b.slotId == id && b.scheduledAt == d.scheduledAt
+          && (admin() || (customer() && b.customerId == request.auth.uid))
+          && d.diff(resource.data).affectedKeys().hasOnly(['active']);
+      }
+      allow get: if enabled();
+      allow list, delete: if false;
+      allow create: if customer() && valid(request.resource.data)
+        && request.resource.data.active == true && newBooking(request.resource.data);
+      allow update: if enabled() && valid(request.resource.data)
+        && ((customer() && resource.data.active == false && request.resource.data.active == true && newBooking(request.resource.data))
+          || (resource.data.active == true && released(request.resource.data)));
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

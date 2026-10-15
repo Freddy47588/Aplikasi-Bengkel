@@ -1,8 +1,7 @@
+import 'test_support.dart';
 import 'package:bengkel_kendaraan/app/router/app_router.dart';
 import 'package:bengkel_kendaraan/core/constants/user_role.dart';
-import 'package:bengkel_kendaraan/core/data/booking_repository.dart';
 import 'package:bengkel_kendaraan/core/models/booking.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -20,9 +19,9 @@ void main() {
   );
   for (final role in UserRole.values) {
     test('login/logout ${role.name} and role guards', () {
-      final container = ProviderContainer();
+      final container = testContainer();
       addTearDown(container.dispose);
-      final auth = container.read(authSessionProvider.notifier);
+      final auth = testAuth(container);
       expect(
         sessionRedirect(
           container.read(authSessionProvider),

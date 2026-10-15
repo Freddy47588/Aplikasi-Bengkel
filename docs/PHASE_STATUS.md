@@ -1,4 +1,9 @@
-﻿# Phase status - BengkelKu
+# Phase status - BengkelKu
+
+> Dokumen ini menyimpan audit historis Phase 01. Finalisasi Phase 01 sudah merged
+> ke main fork melalui PR #2 pada `9413c42`. Status implementasi terbaru berada di
+> [laporan Phase 02](PHASE_02_REPORT.md); setup backend dan batas acceptance ada di
+> [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 
 Tanggal audit: 15 Oktober 2026, Asia/Jakarta. Scope berhenti pada Phase 01.
 Branch existing: `fix/mobile-foundation`; base PR: `Freddy47588:main`.

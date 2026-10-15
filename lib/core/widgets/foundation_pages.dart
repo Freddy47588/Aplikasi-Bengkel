@@ -6,9 +6,12 @@ import '../data/booking_repository.dart';
 import '../models/booking.dart';
 import 'empty_state.dart';
 import 'mobile_navigation.dart';
+import 'logout_button.dart';
 
-String bookingSchedule(DateTime date) =>
-    '${date.day}/${date.month}/${date.year} • ${date.hour.toString().padLeft(2, '0')}:00';
+String bookingSchedule(DateTime value) {
+  final date = value.isUtc ? value.add(const Duration(hours: 7)) : value;
+  return '${date.day}/${date.month}/${date.year} • ${date.hour.toString().padLeft(2, '0')}:00 WIB';
+}
 
 class FoundationPage extends ConsumerWidget {
   const FoundationPage({
@@ -32,10 +35,7 @@ class FoundationPage extends ConsumerWidget {
           children: [
             EmptyState(title: title, description: description),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
-              child: const Text('Keluar'),
-            ),
+            const LogoutButton(),
           ],
         ),
       ),
@@ -83,8 +83,6 @@ class BookingListContent extends ConsumerWidget {
           data: (items) {
             final bookings = items
                 .where((b) => !customer || b.customerId == session.userId)
-                .toList()
-                .reversed
                 .toList();
             if (bookings.isEmpty) {
               return const EmptyState(
@@ -94,22 +92,23 @@ class BookingListContent extends ConsumerWidget {
               );
             }
             return Column(
-              children: bookings
-                  .map(
-                    (b) => Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        title: Text('${b.id} • ${b.vehicle.name}'),
-                        subtitle: Text(
-                          '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}\n${b.status.label}',
-                        ),
-                        onTap: () => context.go(
-                          '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
-                        ),
+              children: [
+                const Text('Menampilkan hingga 100 booking terbaru.'),
+                ...bookings.map(
+                  (b) => Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      title: Text('${b.id} • ${b.vehicle.name}'),
+                      subtitle: Text(
+                        '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}\n${b.status.label}',
+                      ),
+                      onTap: () => context.go(
+                        '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
                       ),
                     ),
-                  )
-                  .toList(),
+                  ),
+                ),
+              ],
             );
           },
         );

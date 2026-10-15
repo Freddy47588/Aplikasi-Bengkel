@@ -32,6 +32,14 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+node_modules/
+.firebase/
+*-debug.log*
+*-service-account*.json
+serviceAccount*.json
+.env
+.env.*
+!.env.example
 
 # Symbolication related
 app.*.symbols

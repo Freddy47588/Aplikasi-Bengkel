@@ -1,184 +1,245 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../data/auth_repository.dart';
 
-import '../../../app/router/app_router.dart';
-import '../../../app/theme/app_colors.dart';
-import '../../../core/constants/user_role.dart';
-import '../../../core/widgets/app_primary_button.dart';
-
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
+  @override
+  ConsumerState<LoginScreen> createState() => _LoginState();
+}
+
+class _LoginState extends ConsumerState<LoginScreen> {
+  final form = GlobalKey<FormState>();
+  final email = TextEditingController();
+  final password = TextEditingController();
+  bool register = false;
+  bool busy = false;
+  String? message;
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
+  Future<void> submit({bool reset = false}) async {
+    if (reset) {
+      if (!email.text.trim().contains('@')) {
+        setState(
+          () => message = 'Isi email yang valid untuk reset kata sandi.',
+        );
+        return;
+      }
+    } else if (!form.currentState!.validate()) {
+      return;
+    }
+    setState(() {
+      busy = true;
+      message = null;
+    });
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      if (reset) {
+        await repo.resetPassword(email.text);
+        if (mounted) {
+          setState(
+            () => message =
+                'Jika email terdaftar, tautan reset akan dikirim. Periksa inbox dan spam.',
+          );
+        }
+      } else if (register) {
+        await repo.register(email.text, password.text);
+      } else {
+        await repo.login(email.text, password.text);
+      }
+    } catch (e) {
+      if (mounted) setState(() => message = authError(e));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 1100;
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0EA5E9)],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1100),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('BengkelKu')),
+    body: SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text(
+                register ? 'Daftar Pelanggan' : 'Masuk',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 20),
+              Form(
+                key: form,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: email,
+                      enabled: !busy,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      validator: (v) =>
+                          RegExp(
+                            r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                          ).hasMatch(v?.trim() ?? '')
+                          ? null
+                          : 'Email tidak valid.',
                     ),
-                    child: SizedBox(
-                      height: isDesktop ? 620 : null,
-                      child: isDesktop
-                          ? Row(
-                              children: [
-                                Expanded(child: _BrandPanel()),
-                                Expanded(
-                                  child: _LoginPanel(
-                                    onLogin: (role) {
-                                      ref
-                                          .read(authSessionProvider.notifier)
-                                          .signIn(role);
-                                      context.go(switch (role) {
-                                        UserRole.customer => '/customer/home',
-                                        UserRole.technician =>
-                                          '/technician/home',
-                                        UserRole.admin => '/admin/home',
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            )
-                          : _LoginPanel(
-                              onLogin: (role) {
-                                ref
-                                    .read(authSessionProvider.notifier)
-                                    .signIn(role);
-                                context.go(switch (role) {
-                                  UserRole.customer => '/customer/home',
-                                  UserRole.technician => '/technician/home',
-                                  UserRole.admin => '/admin/home',
-                                });
-                              },
-                            ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: password,
+                      enabled: !busy,
+                      obscureText: true,
+                      autofillHints: [
+                        register
+                            ? AutofillHints.newPassword
+                            : AutofillHints.password,
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Kata sandi',
+                      ),
+                      validator: (v) => (v?.length ?? 0) < (register ? 8 : 1)
+                          ? (register
+                                ? 'Minimal 8 karakter.'
+                                : 'Isi kata sandi.')
+                          : null,
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    if (message != null)
+                      Text(message!, key: const Key('auth-message')),
+                    if (busy) const Center(child: CircularProgressIndicator()),
+                    FilledButton(
+                      onPressed: busy ? null : submit,
+                      child: Text(register ? 'Daftar' : 'Masuk dengan Email'),
+                    ),
+                    TextButton(
+                      onPressed: busy
+                          ? null
+                          : () => setState(() {
+                              register = !register;
+                              message = null;
+                            }),
+                      child: Text(
+                        register
+                            ? 'Sudah punya akun? Masuk'
+                            : 'Daftar akun pelanggan',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: busy ? null : () => submit(reset: true),
+                      child: const Text('Lupa kata sandi'),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _BrandPanel extends StatelessWidget {
+class AccountScreen extends ConsumerStatefulWidget {
+  const AccountScreen({super.key});
+  @override
+  ConsumerState<AccountScreen> createState() => _AccountState();
+}
+
+class _AccountState extends ConsumerState<AccountScreen>
+    with WidgetsBindingObserver {
+  bool busy = false;
+  String? message;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !busy) {
+      run(() => ref.read(authRepositoryProvider).refresh());
+    }
+  }
+
+  Future<void> run(Future<void> Function() action, [String? success]) async {
+    setState(() {
+      busy = true;
+      message = null;
+    });
+    try {
+      await action();
+      if (mounted) setState(() => message = success);
+    } catch (e) {
+      if (mounted) setState(() => message = authError(e));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(28),
-          bottomLeft: Radius.circular(28),
+    final s = ref.watch(authSessionProvider);
+    final repo = ref.read(authRepositoryProvider);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Status Akun')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            if (s.loading || busy)
+              const Center(child: CircularProgressIndicator()),
+            Text(s.email ?? 'Memuat sesi...'),
+            if (s.error != null) Text(s.error!),
+            if (s.uid != null && !s.loading) ...[
+              if (!s.active && s.role != null)
+                const Text('Akun dinonaktifkan. Hubungi pengelola bengkel.'),
+              if (!s.verified && s.role != null && s.active) ...[
+                const Text(
+                  'Verifikasi email untuk mengakses kendaraan dan booking. Periksa inbox dan spam.',
+                ),
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () => run(
+                          repo.sendVerification,
+                          'Email verifikasi dikirim.',
+                        ),
+                  child: const Text('Kirim ulang verifikasi'),
+                ),
+              ],
+              if (s.role == null)
+                OutlinedButton(
+                  onPressed: busy ? null : () => run(repo.completeProfile),
+                  child: const Text('Lengkapi profil pelanggan'),
+                ),
+              OutlinedButton(
+                onPressed: busy ? null : () => run(repo.refresh),
+                child: const Text('Periksa ulang status akun'),
+              ),
+            ],
+            if (message != null) Text(message!),
+            TextButton(
+              onPressed: busy ? null : () => run(repo.signOut),
+              child: const Text('Keluar'),
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: const Icon(
-              Icons.build_circle_rounded,
-              color: Colors.white,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 28),
-          const Text(
-            'BengkelKu',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Sistem Manajemen Bengkel',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Kelola servis kendaraan dengan mudah dan terintegrasi.',
-            style: TextStyle(fontSize: 15, height: 1.6, color: Colors.white70),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LoginPanel extends StatelessWidget {
-  const _LoginPanel({required this.onLogin});
-
-  final void Function(UserRole role) onLogin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Mode Demo',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppPrimaryButton(
-            label: 'Masuk sebagai Pelanggan',
-            icon: Icons.person_outline_rounded,
-            onPressed: () => onLogin(UserRole.customer),
-          ),
-          const SizedBox(height: 14),
-          AppPrimaryButton(
-            label: 'Masuk sebagai Teknisi',
-            icon: Icons.engineering_rounded,
-            onPressed: () => onLogin(UserRole.technician),
-          ),
-          const SizedBox(height: 14),
-          AppPrimaryButton(
-            label: 'Masuk sebagai Admin',
-            icon: Icons.admin_panel_settings_rounded,
-            onPressed: () => onLogin(UserRole.admin),
-          ),
-        ],
       ),
     );
   }

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/user_role.dart';
+import '../../features/auth/data/auth_repository.dart';
+export '../../features/auth/data/auth_repository.dart';
+import '../../features/customer/presentation/vehicles_screen.dart';
 import '../../core/widgets/foundation_pages.dart';
 import '../../features/admin/presentation/admin_bookings_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
@@ -11,36 +14,6 @@ import '../../features/customer/presentation/customer_booking_screen.dart';
 import '../../features/customer/presentation/customer_dashboard_screen.dart';
 import '../../features/technician/presentation/technician_dashboard_screen.dart';
 import '../../features/technician/presentation/technician_jobs_screen.dart';
-
-class AuthSession {
-  const AuthSession({this.role});
-
-  final UserRole? role;
-
-  String get userId => role == UserRole.customer
-      ? 'customer-demo'
-      : '${role?.name ?? 'guest'}-demo';
-
-  bool get isAuthenticated => role != null;
-}
-
-class AuthSessionController extends Notifier<AuthSession> {
-  @override
-  AuthSession build() => const AuthSession();
-
-  void signIn(UserRole role) {
-    state = AuthSession(role: role);
-  }
-
-  void signOut() {
-    state = const AuthSession();
-  }
-}
-
-final authSessionProvider =
-    NotifierProvider<AuthSessionController, AuthSession>(
-      AuthSessionController.new,
-    );
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -55,13 +28,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       description: 'Gunakan navigasi untuk kembali ke halaman utama.',
     ),
     routes: [
+      GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
+      GoRoute(
+        path: '/customer/vehicles',
+        builder: (_, _) => const VehiclesScreen(),
+      ),
       for (final role in UserRole.values) ...[
         GoRoute(
           path: '/${role.name}/profile',
           builder: (_, _) => FoundationPage(
             title: 'Profil ${role.label}',
             description:
-                'Sesi demo ${role.label}. Autentikasi produksi belum tersedia.',
+                'Akun ${role.label}. Identitas dan akses dikelola Firebase.',
           ),
         ),
         GoRoute(
@@ -141,9 +119,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 String? sessionRedirect(AuthSession session, String path) {
-  if (!session.isAuthenticated) return path == '/login' ? null : '/login';
+  if (session.loading) return path == '/account' ? null : '/account';
+  if (session.uid == null) return path == '/login' ? null : '/login';
+  if (!session.isAuthenticated) return path == '/account' ? null : '/account';
   final home = '/${session.role!.name}/home';
-  if (path == '/login' || path == '/' || path == '/${session.role!.name}') {
+  if (path == '/login' ||
+      path == '/account' ||
+      path == '/' ||
+      path == '/${session.role!.name}') {
     return home;
   }
   if (!path.startsWith('/${session.role!.name}/')) return home;
