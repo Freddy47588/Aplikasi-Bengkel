@@ -24,9 +24,15 @@ class MobileNavigation extends StatelessWidget {
             ('profile', 'Profil', Icons.person),
           ];
     final path = GoRouterState.of(context).uri.path;
-    final index = destinations.indexWhere(
-      (d) => path.startsWith('/$role/${d.$1}'),
-    );
+    final index =
+        role == 'customer' &&
+            (path == '/customer/bookings' ||
+                path.startsWith('/customer/bookings/'))
+        ? 2
+        : destinations.indexWhere(
+            (d) =>
+                path == '/$role/${d.$1}' || path.startsWith('/$role/${d.$1}/'),
+          );
     return NavigationBar(
       selectedIndex: index < 0 ? 0 : index,
       onDestinationSelected: (i) => context.go('/$role/${destinations[i].$1}'),

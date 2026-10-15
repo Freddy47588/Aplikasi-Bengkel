@@ -80,14 +80,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const TechnicianJobsScreen(),
       ),
       GoRoute(
-        path: '/customer/bookings/:id',
-        builder: (_, state) =>
-            BookingDetailPage(id: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/admin/bookings/:id',
-        builder: (_, state) =>
-            BookingDetailPage(id: state.pathParameters['id']!),
+        path: '/customer/bookings',
+        builder: (_, _) => const BookingListPage(customer: true),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                BookingDetailPage(id: state.pathParameters['id']!),
+          ),
+        ],
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
@@ -122,6 +123,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/bookings',
         builder: (context, state) => const AdminBookingsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                BookingDetailPage(id: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
   );
