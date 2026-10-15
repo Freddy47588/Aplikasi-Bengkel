@@ -19,7 +19,7 @@ class QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 140,
+      width: 180,
       child: Card(
         child: InkWell(
           onTap: onTap,

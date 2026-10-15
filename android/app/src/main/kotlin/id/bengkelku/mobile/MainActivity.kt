@@ -1,4 +1,4 @@
-package com.example.bengkel_kendaraan
+package id.bengkelku.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

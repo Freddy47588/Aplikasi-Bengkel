@@ -1,3 +1,4 @@
+import '../../../core/widgets/mobile_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,14 +26,15 @@ class TechnicianDashboardScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text(
-                  'Halo, Teknisi',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+                Expanded(
+                  child: Text(
+                    'Halo, Teknisi',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
-                const Spacer(),
                 IconButton(
                   onPressed: () {
                     ref.read(authSessionProvider.notifier).signOut();
@@ -46,10 +48,12 @@ class TechnicianDashboardScreen extends ConsumerWidget {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isDesktop ? 3 : 2,
+              crossAxisCount: isDesktop
+                  ? 3
+                  : (MediaQuery.sizeOf(context).width < 700 ? 1 : 2),
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 1.6,
+              mainAxisExtent: 200,
               children: const [
                 DashboardStatCard(
                   label: 'Ditugaskan',
@@ -72,6 +76,7 @@ class TechnicianDashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
+            const Text('Pekerjaan dan statistik: contoh data demo.'),
             SectionHeader(title: 'Pekerjaan Hari Ini'),
             const SizedBox(height: 12),
             const _ServiceJobCard(
@@ -92,21 +97,18 @@ class TechnicianDashboardScreen extends ConsumerWidget {
               tone: StatusChipTone.info,
             ),
             const SizedBox(height: 20),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: AppPrimaryButton(
-                    label: 'Lihat Semua Pekerjaan',
-                    onPressed: () => context.go('/technician/jobs'),
-                  ),
+                AppPrimaryButton(
+                  label: 'Lihat Semua Pekerjaan',
+                  onPressed: () => context.go('/technician/jobs'),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppPrimaryButton(
-                    label: 'Riwayat Pekerjaan',
-                    onPressed: () {},
-                    isOutlined: true,
-                  ),
+                const SizedBox(height: 12),
+                AppPrimaryButton(
+                  label: 'Riwayat Pekerjaan',
+                  onPressed: () => context.go('/technician/history'),
+                  isOutlined: true,
                 ),
               ],
             ),
@@ -114,7 +116,7 @@ class TechnicianDashboardScreen extends ConsumerWidget {
             SectionHeader(title: 'Aktivitas Terbaru'),
             const SizedBox(height: 12),
             SizedBox(
-              height: 180,
+              height: 230,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -134,7 +136,7 @@ class TechnicianDashboardScreen extends ConsumerWidget {
                     title: 'Stok',
                     icon: Icons.inventory_2_rounded,
                     color: AppColors.accent,
-                    onTap: () {},
+                    onTap: () => showUnavailable(context),
                   ),
                 ],
               ),
@@ -144,60 +146,9 @@ class TechnicianDashboardScreen extends ConsumerWidget {
       ),
     );
 
-    if (isDesktop) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              backgroundColor: AppColors.surface,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_rounded),
-                  label: Text('Beranda'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.work_history_rounded),
-                  label: Text('Pekerjaan'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.receipt_long_rounded),
-                  label: Text('Riwayat'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  label: Text('Profil'),
-                ),
-              ],
-              selectedIndex: 0,
-            ),
-            Expanded(child: body),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       body: body,
-      bottomNavigationBar: NavigationBar(
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded),
-            label: 'Beranda',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.work_history_rounded),
-            label: 'Pekerjaan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: 'Riwayat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      bottomNavigationBar: MobileNavigation(role: 'technician'),
     );
   }
 }
@@ -224,34 +175,29 @@ class _ServiceJobCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    serviceOrder,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  serviceOrder,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    vehicleName,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  Text(
-                    plateNumber,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(time, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
+                ),
+                const SizedBox(height: 4),
+                Text(vehicleName, style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  plateNumber,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(time, style: Theme.of(context).textTheme.bodyMedium),
+              ],
             ),
-            const SizedBox(width: 16),
+            const SizedBox(height: 12),
             StatusChip(label: status, tone: tone),
           ],
         ),
@@ -259,4 +205,3 @@ class _ServiceJobCard extends StatelessWidget {
     );
   }
 }
-

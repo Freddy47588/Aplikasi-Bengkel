@@ -23,48 +23,55 @@ class LoginScreen extends ConsumerWidget {
             colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0EA5E9)],
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Card(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: SizedBox(
-                  height: isDesktop ? 620 : null,
-                  child: isDesktop
-                      ? Row(
-                          children: [
-                            Expanded(child: _BrandPanel()),
-                            Expanded(
-                              child: _LoginPanel(
-                                onLogin: (role) {
-                                  ref
-                                      .read(authSessionProvider.notifier)
-                                      .signIn(role);
-                                  context.go(switch (role) {
-                                    UserRole.customer => '/customer/home',
-                                    UserRole.technician => '/technician/home',
-                                    UserRole.admin => '/admin/home',
-                                  });
-                                },
-                              ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: SizedBox(
+                      height: isDesktop ? 620 : null,
+                      child: isDesktop
+                          ? Row(
+                              children: [
+                                Expanded(child: _BrandPanel()),
+                                Expanded(
+                                  child: _LoginPanel(
+                                    onLogin: (role) {
+                                      ref
+                                          .read(authSessionProvider.notifier)
+                                          .signIn(role);
+                                      context.go(switch (role) {
+                                        UserRole.customer => '/customer/home',
+                                        UserRole.technician =>
+                                          '/technician/home',
+                                        UserRole.admin => '/admin/home',
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            )
+                          : _LoginPanel(
+                              onLogin: (role) {
+                                ref
+                                    .read(authSessionProvider.notifier)
+                                    .signIn(role);
+                                context.go(switch (role) {
+                                  UserRole.customer => '/customer/home',
+                                  UserRole.technician => '/technician/home',
+                                  UserRole.admin => '/admin/home',
+                                });
+                              },
                             ),
-                          ],
-                        )
-                      : _LoginPanel(
-                          onLogin: (role) {
-                            ref.read(authSessionProvider.notifier).signIn(role);
-                            context.go(switch (role) {
-                              UserRole.customer => '/customer/home',
-                              UserRole.technician => '/technician/home',
-                              UserRole.admin => '/admin/home',
-                            });
-                          },
-                        ),
+                    ),
+                  ),
                 ),
               ),
             ),
