@@ -1,5 +1,12 @@
 # Phase status - BengkelKu
 
+Status terbaru: **Phase 03 — technician & Service Order management**.
+Base `main` fork setelah PR #3 merged (`3e5b1f9`). Branch
+`feat/technician-service-orders`. Lihat [laporan Phase 03](PHASE_03_REPORT.md)
+untuk scope, hasil pengujian, keamanan dan batas verifikasi. Phase 04 belum dimulai.
+
+## Arsip audit Phase 01
+
 > Dokumen ini menyimpan audit historis Phase 01. Finalisasi Phase 01 sudah merged
 > ke main fork melalui PR #2 pada `9413c42`. Status implementasi terbaru berada di
 > [laporan Phase 02](PHASE_02_REPORT.md); setup backend dan batas acceptance ada di

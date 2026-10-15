@@ -8,11 +8,12 @@ service cloud.firestore {
     }
     function customer() { return enabled() && profile().role == 'customer'; }
     function admin() { return enabled() && profile().role == 'admin'; }
+    function technician() { return enabled() && profile().role == 'technician'; }
     function bounded(max) { return request.query.limit != null && request.query.limit <= max; }
     function activeStatus(status) { return status in ['pending', 'confirmed']; }
 
     match /users/{uid} {
-      allow get: if signedIn() && uid == request.auth.uid;
+      allow get: if (signedIn() && uid == request.auth.uid) || (admin() && resource.data.role == 'technician');
       allow create: if signedIn() && uid == request.auth.uid
         && request.resource.data.keys().hasAll(['email', 'role', 'active', 'createdAt'])
         && request.resource.data.keys().hasOnly(['email', 'role', 'active', 'createdAt'])
@@ -88,7 +89,8 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
         && request.resource.data.updatedAt == request.time
         && ((admin() && resource.data.status == 'pending' && request.resource.data.status in ['confirmed', 'rejected'])
-          || (customer() && resource.data.customerId == request.auth.uid && activeStatus(resource.data.status) && request.resource.data.status == 'cancelled'))
+          || (customer() && resource.data.customerId == request.auth.uid && activeStatus(resource.data.status) && request.resource.data.status == 'cancelled'
+            && !existsAfter(/databases/$(database)/documents/serviceOrders/$(id))))
         && lockMatches(request.resource.data, activeStatus(request.resource.data.status));
       allow delete: if false;
     }
@@ -122,6 +124,140 @@ service cloud.firestore {
       allow update: if enabled() && valid(request.resource.data)
         && ((customer() && resource.data.active == false && request.resource.data.active == true && newBooking(request.resource.data))
           || (resource.data.active == true && released(request.resource.data)));
+    }
+    function terminal(s) { return s in ['completed', 'cancelled']; }
+    function orderPath(id) { return /databases/$(database)/documents/serviceOrders/$(id); }
+    function techPath(id) { return /databases/$(database)/documents/technicians/$(id); }
+    function readableOrder(d) {
+      return admin() || (customer() && d.customerId == request.auth.uid)
+        || (technician() && d.technicianId == request.auth.uid);
+    }
+    function trustedTech(id) {
+      let u = get(/databases/$(database)/documents/users/$(id)).data;
+      return u.role == 'technician' && u.active == true;
+    }
+    match /technicians/{uid} {
+      function valid(d) {
+        return d.keys().hasAll(['name', 'specialization', 'active', 'available', 'currentOrderId', 'createdAt', 'updatedAt', 'updatedBy'])
+          && d.keys().hasOnly(['name', 'specialization', 'active', 'available', 'currentOrderId', 'createdAt', 'updatedAt', 'updatedBy'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+          && d.specialization is string && d.specialization.size() > 0 && d.specialization.size() <= 120
+          && d.active is bool && d.available is bool && (d.currentOrderId == null || d.currentOrderId is string)
+          && d.createdAt is timestamp && d.updatedAt == request.time && d.updatedBy == request.auth.uid;
+      }
+      function lockChange() {
+        let before = resource.data.currentOrderId;
+        let after = request.resource.data.currentOrderId;
+        return admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['currentOrderId'])
+          && ((before == null && after is string && resource.data.active && resource.data.available && trustedTech(uid)
+              && getAfter(orderPath(after)).data.technicianId == uid
+              && getAfter(orderPath(after)).data.status == 'assigned'
+              && getAfter(orderPath(after)).data.updatedAt == request.time
+              && getAfter(orderPath(after)).data.assignedBy == request.auth.uid
+              && get(orderPath(after)).data.technicianId != uid)
+            || (before is string && after == null && get(orderPath(before)).data.technicianId == uid
+              && getAfter(orderPath(before)).data.updatedAt == request.time
+              && (terminal(getAfter(orderPath(before)).data.status) || getAfter(orderPath(before)).data.technicianId != uid)));
+      }
+      allow get: if admin() || (technician() && uid == request.auth.uid);
+      allow list: if admin() && bounded(20);
+      allow create: if admin() && valid(request.resource.data) && trustedTech(uid)
+        && request.resource.data.currentOrderId == null && request.resource.data.createdAt == request.time;
+      allow update: if lockChange() || (admin() && valid(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'specialization', 'active', 'available', 'updatedAt', 'updatedBy'])
+        && (!request.resource.data.active || trustedTech(uid))
+        && (request.resource.data.active || resource.data.currentOrderId == null));
+      allow delete: if false;
+    }
+    match /serviceOrders/{id} {
+      function valid(d) {
+        return d.keys().hasAll(['bookingId', 'customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'complaint', 'scheduledAt', 'status', 'technicianId', 'checklist', 'diagnosis', 'actions', 'notes', 'revision', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'assignedAt', 'assignedBy', 'startedAt', 'completedAt'])
+          && d.keys().hasOnly(['bookingId', 'customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'complaint', 'scheduledAt', 'status', 'technicianId', 'checklist', 'diagnosis', 'actions', 'notes', 'revision', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'assignedAt', 'assignedBy', 'startedAt', 'completedAt'])
+          && d.status in ['queued', 'assigned', 'inProgress', 'paused', 'awaitingApproval', 'completed', 'cancelled']
+          && (d.technicianId == null || d.technicianId is string)
+          && d.revision is int && d.revision >= 0
+          && d.checklist is map && d.checklist.keys().hasAll(['vehicleChecked', 'safetyChecked', 'workChecked'])
+          && d.checklist.keys().hasOnly(['vehicleChecked', 'safetyChecked', 'workChecked'])
+          && d.checklist.vehicleChecked is bool && d.checklist.safetyChecked is bool && d.checklist.workChecked is bool
+          && d.diagnosis is string && d.diagnosis.size() <= 2000 && d.actions is string && d.actions.size() <= 2000
+          && d.notes is string && d.notes.size() <= 4000
+          && d.updatedAt == request.time && d.updatedBy == request.auth.uid;
+      }
+      function audit(d, kind) {
+        let e = getAfter(/databases/$(database)/documents/serviceOrders/$(id)/events/$(string(d.revision))).data;
+        return e.revision == d.revision && e.actorId == request.auth.uid && e.at == request.time
+          && e.status == d.status && e.technicianId == d.technicianId && e.kind == kind;
+      }
+      function newOrder(d) {
+        let b = getAfter(/databases/$(database)/documents/bookings/$(id)).data;
+        return admin() && d.bookingId == id && b.status == 'confirmed'
+          && d.customerId == b.customerId && d.vehicleId == b.vehicleId && d.vehicleName == b.vehicleName
+          && d.vehiclePlate == b.vehiclePlate && d.serviceId == b.serviceId && d.serviceName == b.serviceName
+          && d.complaint == b.complaint && d.scheduledAt == b.scheduledAt
+          && d.status == 'queued' && d.technicianId == null && d.revision == 0
+          && d.checklist == {'vehicleChecked': false, 'safetyChecked': false, 'workChecked': false}
+          && d.diagnosis == '' && d.actions == '' && d.notes == ''
+          && d.createdAt == request.time && d.createdBy == request.auth.uid
+          && d.assignedAt == null && d.assignedBy == null && d.startedAt == null && d.completedAt == null
+          && audit(d, 'created');
+      }
+      function assignment(d, old) {
+        let t = get(techPath(d.technicianId)).data;
+        return admin() && old.status in ['queued', 'assigned', 'paused'] && d.status == 'assigned'
+          && d.technicianId != old.technicianId && trustedTech(d.technicianId)
+          && t.active == true && t.available == true && t.currentOrderId == null
+          && getAfter(techPath(d.technicianId)).data.currentOrderId == id
+          && (old.technicianId == null || getAfter(techPath(old.technicianId)).data.currentOrderId == null)
+          && d.assignedAt == request.time && d.assignedBy == request.auth.uid
+          && d.diff(old).affectedKeys().hasOnly(['technicianId', 'status', 'assignedAt', 'assignedBy', 'updatedAt', 'updatedBy', 'revision'])
+          && audit(d, 'assigned');
+      }
+      function adminTransition(d, old) {
+        return admin() && ((!terminal(old.status) && d.status == 'cancelled')
+            || (old.status == 'awaitingApproval' && d.status in ['completed', 'assigned']))
+          && d.diff(old).affectedKeys().hasOnly(['status', 'completedAt', 'updatedAt', 'updatedBy', 'revision'])
+          && (d.status == 'completed' ? d.completedAt == request.time : d.completedAt == old.completedAt)
+          && (old.technicianId == null || !terminal(d.status) || getAfter(techPath(old.technicianId)).data.currentOrderId == null)
+          && audit(d, 'statusChanged');
+      }
+      function techTransition(d, old) {
+        let starting = old.status in ['assigned', 'paused'] && d.status == 'inProgress';
+        let moving = starting || (old.status == 'inProgress' && d.status in ['paused', 'awaitingApproval']);
+        let saving = old.status in ['inProgress', 'paused'] && d.status == old.status;
+        return technician() && old.technicianId == request.auth.uid
+          && get(techPath(request.auth.uid)).data.active == true
+          && get(techPath(request.auth.uid)).data.currentOrderId == id
+          && (moving || saving)
+          && d.diff(old).affectedKeys().hasOnly(['status', 'checklist', 'diagnosis', 'actions', 'notes', 'startedAt', 'updatedAt', 'updatedBy', 'revision'])
+          && (starting && old.startedAt == null ? d.startedAt == request.time : d.startedAt == old.startedAt)
+          && (d.status != 'awaitingApproval' || (d.diagnosis.size() > 0 && d.actions.size() > 0
+            && d.checklist.vehicleChecked && d.checklist.safetyChecked && d.checklist.workChecked))
+          && audit(d, saving ? 'workUpdated' : 'statusChanged');
+      }
+      allow get: if admin() || readableOrder(resource.data)
+        || (customer() && !exists(orderPath(id)) && get(/databases/$(database)/documents/bookings/$(id)).data.customerId == request.auth.uid);
+      allow list: if bounded(20) && readableOrder(resource.data);
+      allow create: if valid(request.resource.data) && newOrder(request.resource.data);
+      allow update: if valid(request.resource.data) && !terminal(resource.data.status)
+        && request.resource.data.revision == resource.data.revision + 1
+        && (assignment(request.resource.data, resource.data) || adminTransition(request.resource.data, resource.data) || techTransition(request.resource.data, resource.data));
+      allow delete: if false;
+      match /events/{revision} {
+        allow get: if readableOrder(get(orderPath(id)).data);
+        allow list: if bounded(20) && readableOrder(get(orderPath(id)).data);
+        allow create: if enabled()
+          && request.resource.data.keys().hasAll(['revision', 'actorId', 'at', 'kind', 'status', 'technicianId'])
+          && request.resource.data.keys().hasOnly(['revision', 'actorId', 'at', 'kind', 'status', 'technicianId'])
+          && revision == string(request.resource.data.revision)
+          && request.resource.data.revision == getAfter(orderPath(id)).data.revision
+          && (!exists(orderPath(id)) || get(orderPath(id)).data.revision + 1 == request.resource.data.revision)
+          && request.resource.data.actorId == request.auth.uid && request.resource.data.at == request.time
+          && request.resource.data.status == getAfter(orderPath(id)).data.status
+          && request.resource.data.technicianId == getAfter(orderPath(id)).data.technicianId
+          && getAfter(orderPath(id)).data.updatedBy == request.auth.uid
+          && getAfter(orderPath(id)).data.updatedAt == request.time;
+        allow update, delete: if false;
+      }
     }
     match /{document=**} { allow read, write: if false; }
   }

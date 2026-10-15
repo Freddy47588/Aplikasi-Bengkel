@@ -1,15 +1,172 @@
 {
   "indexes": [
-    {"collectionGroup": "bookings", "queryScope": "COLLECTION", "fields": [
-      {"fieldPath": "customerId", "order": "ASCENDING"},
-      {"fieldPath": "createdAt", "order": "DESCENDING"}
-    ]},
-    {"collectionGroup": "vehicles", "queryScope": "COLLECTION", "fields": [
-      {"fieldPath": "ownerId", "order": "ASCENDING"},
-      {"fieldPath": "active", "order": "ASCENDING"}
-    ]}
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "vehicles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "technicianId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "technicians",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "technicians",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "specialization",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "technicians",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "specialization",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    }
   ],
   "fieldOverrides": [
-    {"collectionGroup": "bookings", "fieldPath": "complaint", "indexes": []}
+    {
+      "collectionGroup": "bookings",
+      "fieldPath": "complaint",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "fieldPath": "complaint",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "fieldPath": "diagnosis",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "fieldPath": "actions",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "fieldPath": "notes",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "serviceOrders",
+      "fieldPath": "checklist",
+      "indexes": []
+    }
   ]
 }

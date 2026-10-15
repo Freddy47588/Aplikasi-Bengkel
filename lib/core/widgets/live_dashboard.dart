@@ -77,6 +77,10 @@ class LiveDashboard extends ConsumerWidget {
                     child: const Text('Kelola Booking'),
                   ),
                 OutlinedButton(
+                  onPressed: () => context.go('/$role/orders'),
+                  child: const Text('Service Order dan progres servis'),
+                ),
+                OutlinedButton(
                   onPressed: () => context.go('/$role/history'),
                   child: const Text('Riwayat'),
                 ),
@@ -89,7 +93,7 @@ class LiveDashboard extends ConsumerWidget {
                 BookingListContent(customer: customer),
                 const SizedBox(height: 24),
                 const Text(
-                  'Service Order, pekerjaan teknisi, inventori, pembayaran dan laporan belum tersedia. Halaman teknisi masih demo.',
+                  'Inventori, riwayat servis, pembayaran dan laporan tersedia pada fase berikutnya.',
                 ),
               ],
             ),
