@@ -98,7 +98,7 @@ class LiveDashboard extends ConsumerWidget {
                 BookingListContent(customer: customer),
                 const SizedBox(height: 24),
                 const Text(
-                  'Riwayat servis, pembayaran dan laporan tersedia pada fase berikutnya.',
+                  'Riwayat servis tersedia dari Service Order selesai. Pencatatan pembayaran dan laporan belum tersedia.',
                 ),
               ],
             ),

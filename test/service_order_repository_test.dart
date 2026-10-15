@@ -41,6 +41,9 @@ void main() {
     ServiceOrderStatus next, {
     bool finished = false,
   }) async {
+    if (next == ServiceOrderStatus.completed && repo == admin) {
+      await admin.setLaborPrice(id, (await read(id)).revision, 50000);
+    }
     final o = await read(id);
     await repo.updateWork(
       id,

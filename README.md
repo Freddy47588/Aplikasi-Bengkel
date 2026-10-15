@@ -1,7 +1,7 @@
 # BengkelKu
 
 Aplikasi Flutter Android/iOS untuk akun pelanggan, kendaraan, booking dan pekerjaan bengkel.
-Phase 04 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
+Phase 05 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
 asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP.
 
 ## Fitur
@@ -21,11 +21,14 @@ asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP
 - Master sparepart admin dengan SKU unik, harga integer rupiah, kategori, satuan, supplier opsional dan arsip.
 - Ledger immutable stok masuk/koreksi/pemakaian/reversal, saldo atomik, idempotency dan stok minimum.
 - Permintaan teknisi → approval admin, snapshot sparepart/harga pada SO; customer membaca pemakaian miliknya.
+- Riwayat servis dari SO completed: filter kendaraan/jenis/periode WIB dan cursor pagination 20.
+- Detail snapshot jasa, sparepart/reversal, biaya, teknisi dan timeline booking -> SO realtime.
+- Admin mencatat biaya jasa sebelum selesai; SO dan pemakaian/reversal terkunci setelah terminal.
 - Riverpod, repository abstraction, GoRouter stabil dan Material 3 dipertahankan.
 
 ## Menjalankan
 
-Status dan batas verifikasi terbaru: [laporan Phase 04](docs/PHASE_04_REPORT.md).
+Status dan batas verifikasi terbaru: [laporan Phase 05](docs/PHASE_05_REPORT.md).
 
 ```sh
 flutter pub get
@@ -66,9 +69,14 @@ Riwayat Phase 01: [status fondasi](docs/PHASE_STATUS.md) dan
 - Kueri maksimal 50 kendaraan, 50 layanan dan 100 booking terbaru; belum pagination.
 - Archive kendaraan tidak menghapus snapshot booking. Keunikan plat belum dipaksakan.
 - Operator mengisi katalog di Console; UI CRUD katalog admin belum tersedia.
-- Service Order, pekerjaan teknisi, inventori, pembayaran dan laporan belum produksi.
+- Backend saat ini satu bengkel per Firebase project; belum mendukung tenant/bengkel ganda.
+- SO completed lama tanpa harga jasa menampilkan "tidak tercatat", tanpa mengarang total.
+- Pembayaran menampilkan "Belum dicatat"; pencatatan pembayaran/invoice/laporan tetap Phase 06.
+- Detail membaca seluruh snapshot sparepart dalam halaman 20; biaya baca sebanding jumlah baris.
+- Filter ID mendukung layanan/kendaraan historis; pintasan kendaraan mencakup maksimal 50 termasuk arsip.
+- Deploy rules/indexes dan acceptance produksi/perangkat asli belum dilakukan.
 - Tidak ada uji dua perangkat Android atau native iPhone pada host ini.
 - Auth/session cache native setelah process kill dan email produksi perlu smoke test perangkat.
 - Release Android tetap unsigned sampai keystore asli disiapkan; iOS perlu Team asli.
 
-Scope berhenti pada Phase 02. [Roadmap](docs/ROADMAP.md).
+Scope berhenti pada Phase 05; PR menunggu review dan tidak di-merge otomatis. [Roadmap](docs/ROADMAP.md).

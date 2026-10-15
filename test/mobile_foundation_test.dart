@@ -118,6 +118,12 @@ void main() {
       auth.signIn(UserRole.admin);
       router.go('/admin/bookings/$id');
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Konfirmasi'),
+        180,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Konfirmasi'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Ya, lanjutkan'));
@@ -129,6 +135,21 @@ void main() {
       router.go('/customer/bookings/$id');
       await tester.pumpAndSettle();
       expect(find.text('Dikonfirmasi'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Batalkan Booking'),
+        180,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Batalkan Booking'));
+      await tester.pumpAndSettle();
+      // Success snackbars from prior role actions can cover the lower button.
+      final messenger = ScaffoldMessenger.of(
+        tester.element(find.text('Batalkan Booking')),
+      );
+      messenger.clearSnackBars();
+      messenger.removeCurrentSnackBar();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Batalkan Booking'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Ya, lanjutkan'));
@@ -320,6 +341,12 @@ void main() {
     );
     final router = container.read(appRouterProvider);
     router.go('/admin/bookings/${booking.id}');
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Tolak'),
+      180,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tolak'));
     await tester.pumpAndSettle();

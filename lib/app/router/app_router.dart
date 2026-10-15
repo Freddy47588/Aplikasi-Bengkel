@@ -7,6 +7,7 @@ import '../../features/auth/data/auth_repository.dart';
 export '../../features/auth/data/auth_repository.dart';
 import '../../features/customer/presentation/vehicles_screen.dart';
 import '../../core/widgets/foundation_pages.dart';
+import '../../features/customer/presentation/service_history_screen.dart';
 import '../../features/admin/presentation/admin_bookings_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -62,13 +63,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/${role.name}/history',
-          builder: (_, _) => role == UserRole.customer
-              ? const BookingListPage(customer: true)
-              : const FoundationPage(
-                  title: 'Riwayat',
-                  description:
-                      'Riwayat servis masih demo; belum tersedia data riwayat produksi.',
-                ),
+          builder: (_, _) => const ServiceHistoryScreen(),
+          routes: [
+            GoRoute(
+              path: ':id',
+              builder: (_, state) =>
+                  ServiceHistoryDetailScreen(id: state.pathParameters['id']!),
+            ),
+          ],
         ),
       ],
       GoRoute(

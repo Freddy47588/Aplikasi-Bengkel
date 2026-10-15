@@ -172,7 +172,9 @@ service cloud.firestore {
     match /serviceOrders/{id} {
       function valid(d) {
         return d.keys().hasAll(['bookingId', 'customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'complaint', 'scheduledAt', 'status', 'technicianId', 'checklist', 'diagnosis', 'actions', 'notes', 'revision', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'assignedAt', 'assignedBy', 'startedAt', 'completedAt'])
-          && d.keys().hasOnly(['bookingId', 'customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'complaint', 'scheduledAt', 'status', 'technicianId', 'checklist', 'diagnosis', 'actions', 'notes', 'revision', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'assignedAt', 'assignedBy', 'startedAt', 'completedAt'])
+          && d.keys().hasOnly(['bookingId', 'customerId', 'vehicleId', 'vehicleName', 'vehiclePlate', 'serviceId', 'serviceName', 'complaint', 'scheduledAt', 'status', 'technicianId', 'checklist', 'diagnosis', 'actions', 'notes', 'revision', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'assignedAt', 'assignedBy', 'startedAt', 'completedAt', 'laborPrice', 'technicianName'])
+          && (d.get('laborPrice', null) == null || moneyValid(d.laborPrice))
+          && (d.get('technicianName', null) == null || (d.technicianName is string && d.technicianName.size() <= 80))
           && d.status in ['queued', 'assigned', 'inProgress', 'paused', 'awaitingApproval', 'completed', 'cancelled']
           && (d.technicianId == null || d.technicianId is string)
           && d.revision is int && d.revision >= 0
@@ -195,6 +197,7 @@ service cloud.firestore {
           && d.vehiclePlate == b.vehiclePlate && d.serviceId == b.serviceId && d.serviceName == b.serviceName
           && d.complaint == b.complaint && d.scheduledAt == b.scheduledAt
           && d.status == 'queued' && d.technicianId == null && d.revision == 0
+          && d.get('laborPrice', null) == null && d.get('technicianName', null) == null
           && d.checklist == {'vehicleChecked': false, 'safetyChecked': false, 'workChecked': false}
           && d.diagnosis == '' && d.actions == '' && d.notes == ''
           && d.createdAt == request.time && d.createdBy == request.auth.uid
@@ -209,16 +212,24 @@ service cloud.firestore {
           && getAfter(techPath(d.technicianId)).data.currentOrderId == id
           && (old.technicianId == null || getAfter(techPath(old.technicianId)).data.currentOrderId == null)
           && d.assignedAt == request.time && d.assignedBy == request.auth.uid
-          && d.diff(old).affectedKeys().hasOnly(['technicianId', 'status', 'assignedAt', 'assignedBy', 'updatedAt', 'updatedBy', 'revision'])
+          && d.technicianName == t.name
+          && d.diff(old).affectedKeys().hasOnly(['technicianId', 'technicianName', 'status', 'assignedAt', 'assignedBy', 'updatedAt', 'updatedBy', 'revision'])
           && audit(d, 'assigned');
       }
       function adminTransition(d, old) {
         return admin() && ((!terminal(old.status) && d.status == 'cancelled')
             || (old.status == 'awaitingApproval' && d.status in ['completed', 'assigned']))
-          && d.diff(old).affectedKeys().hasOnly(['status', 'completedAt', 'updatedAt', 'updatedBy', 'revision'])
-          && (d.status == 'completed' ? d.completedAt == request.time : d.completedAt == old.completedAt)
+          && d.diff(old).affectedKeys().hasOnly(['status', 'technicianName', 'completedAt', 'updatedAt', 'updatedBy', 'revision'])
+          && (d.status == 'completed' ? (d.completedAt == request.time && moneyValid(d.get('laborPrice', null))
+            && d.technicianName == old.get('technicianName', get(techPath(old.technicianId)).data.name))
+            : (d.completedAt == old.completedAt && d.get('technicianName', null) == old.get('technicianName', null)))
           && (old.technicianId == null || !terminal(d.status) || getAfter(techPath(old.technicianId)).data.currentOrderId == null)
           && audit(d, 'statusChanged');
+      }
+      function pricing(d, old) {
+        return admin() && moneyValid(d.get('laborPrice', null))
+          && d.diff(old).affectedKeys().hasOnly(['laborPrice', 'revision', 'updatedAt', 'updatedBy'])
+          && audit(d, 'pricingUpdated');
       }
       function techTransition(d, old) {
         let starting = old.status in ['assigned', 'paused'] && d.status == 'inProgress';
@@ -238,9 +249,13 @@ service cloud.firestore {
         || (customer() && !exists(orderPath(id)) && get(/databases/$(database)/documents/bookings/$(id)).data.customerId == request.auth.uid);
       allow list: if bounded(20) && readableOrder(resource.data);
       allow create: if valid(request.resource.data) && newOrder(request.resource.data);
-      allow update: if valid(request.resource.data) && !terminal(resource.data.status)
+      allow update: if !terminal(resource.data.status) && valid(request.resource.data)
         && request.resource.data.revision == resource.data.revision + 1
-        && (assignment(request.resource.data, resource.data) || adminTransition(request.resource.data, resource.data) || techTransition(request.resource.data, resource.data));
+        && (admin() ?
+          (request.resource.data.status == resource.data.status && request.resource.data.technicianId == resource.data.technicianId
+            ? pricing(request.resource.data, resource.data)
+            : (assignment(request.resource.data, resource.data) || adminTransition(request.resource.data, resource.data)))
+          : techTransition(request.resource.data, resource.data));
       allow delete: if false;
       match /events/{revision} {
         allow get: if readableOrder(get(orderPath(id)).data);
@@ -364,7 +379,7 @@ service cloud.firestore {
           && d.serviceOrderId == original.serviceOrderId && d.requestId == null
           && d.name == original.name && d.unit == original.unit
           && d.buyPrice == original.buyPrice && d.sellPrice == original.sellPrice
-          && (original.kind != 'usage' || usageLine(d));
+          && (original.kind != 'usage' || (!terminal(getAfter(orderPath(d.serviceOrderId)).data.status) && usageLine(d)));
       }
       allow get: if admin();
       allow list: if admin() && bounded(20);

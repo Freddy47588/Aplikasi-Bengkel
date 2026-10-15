@@ -211,3 +211,49 @@ Referensi resmi: [Auth Email/Password](https://firebase.google.com/docs/auth/flu
 [Auth Flutter](https://firebase.google.com/docs/auth/flutter/start),
 [transaksi Firestore](https://firebase.google.com/docs/firestore/manage-data/transactions),
 [rules dan getAfter](https://firebase.google.com/docs/firestore/security/rules-conditions).
+
+
+## Phase 05 - riwayat dan tracking
+
+Riwayat adalah query `serviceOrders` dengan `status == completed`, bukan koleksi
+input manual `serviceHistories`. Single-bengkel per Firebase project; admin aktif
+proyek hanya mengelola bengkel ini. Multi-bengkel memerlukan tenant ID + rules
+terpisah, belum diimplementasikan. Customer query wajib `customerId == uid`,
+teknisi wajib `technicianId == uid`; admin boleh semua SO bengkel proyek.
+
+SO menambahkan `laborPrice` (null sebelum admin mencatat integer rupiah 0-1 miliar)
+dan `technicianName` (snapshot nama saat assignment; fallback saat completion untuk
+SO lama). Perubahan biaya hanya admin, revision + event `pricingUpdated` atomik.
+Completion wajib harga jasa tercatat, server `completedAt`, event dan pelepasan
+lock teknisi dalam transaksi yang sama. SO terminal tidak bisa diedit/dihapus.
+Rules Phase 05 juga menolak pemakaian **dan reversal usage** setelah terminal,
+termasuk batch yang mencoba menyelesaikan SO sekaligus menambah usage/reversal.
+Reversal penerimaan/koreksi stok tanpa SO tetap memakai aturan ledger Phase 04.
+
+Harga sparepart dibaca dari `partUsages.sellPrice`, nama/satuan/qty snapshot;
+reversal mengurangi biaya dengan harga original. Tidak membaca harga master atau
+harga beli. Detail memuat seluruh halaman immutable (maksimal 20 per request)
+sebelum menampilkan total. Biaya jasa lama yang tidak ada tetap ditandai tidak
+tercatat; jangan mengisi balik harga master saat ini. Status pembayaran "Belum
+dicatat" sampai modul Phase 06, bukan klaim sudah/belum lunas.
+
+Query riwayat: status + scope role + vehicleId/serviceId opsional, rentang
+completedAt `[awal WIB, hari sesudah akhir WIB)`, completedAt descending dan
+ID ascending. Dua belas composite indexes mencakup tiga scope x empat kombinasi
+filter; rentang tanggal menggunakan order yang sama. List maksimal 20, cursor
+startAfterDocument. Halaman penuh bisa menawarkan halaman kosong berikutnya.
+Cache ditandai mungkin belum lengkap; pagination maju dan total penuh ditahan
+saat cache. Listener reconnect memperbarui daftar. Detail immutable dibaca on
+open/retry; tidak ada listener semua stok atau duplikasi snapshot history.
+
+Pemetaan: booking pending -> pending, confirmed tanpa SO / SO queued -> confirmed,
+SO assigned -> assigned, inProgress/paused/awaitingApproval -> inProgress,
+SO completed -> completed. Rejected/cancelled berhenti eksplisit. Booking tetap
+confirmed selama servis; status SO menjadi sumber progres setelah SO dibuat.
+Timeline menunjukkan tahap status kini, bukan log seluruh pause/resume/rework;
+log revisi tetap berada di subkoleksi events yang immutable.
+
+Deploy production belum dilakukan. Review dan deploy rules/indexes bersama sebelum
+memakai client Phase 05, tunggu indexes ready, lalu acceptance dua akun/perangkat.
+Tidak menggunakan Storage, Functions, billing upgrade, export atau upload dokumen.
+Lihat [laporan Phase 05](PHASE_05_REPORT.md). STOP PHASE 05.

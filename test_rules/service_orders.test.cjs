@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { initializeTestEnvironment, assertFails, assertSucceeds } = require('@firebase/rules-unit-testing');
 const { doc, setDoc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit,
-  runTransaction, writeBatch, serverTimestamp, Timestamp, onSnapshot } = require('firebase/firestore');
+  runTransaction, writeBatch, serverTimestamp, Timestamp, onSnapshot, startAfter } = require('firebase/firestore');
 let env;
 const db = (uid, claims = {}) => env.authenticatedContext(uid, { email_verified: true, ...claims }).firestore();
 const stamp = () => serverTimestamp();
@@ -25,17 +25,25 @@ async function create(client, id, overrides = {}) {
 async function assign(client, id, tech, options = {}) {
   return runTransaction(client, async tx => {
     const ref = doc(client, 'serviceOrders', id), d = (await tx.get(ref)).data();
-    await tx.get(doc(client, 'technicians', tech));
+    const techDoc = await tx.get(doc(client, 'technicians', tech));
     await tx.get(doc(client, 'users', tech));
     if (d.technicianId) await tx.get(doc(client, 'technicians', d.technicianId));
-    const changes = { technicianId: tech, status: 'assigned', assignedBy: 'admin', assignedAt: stamp(), updatedAt: stamp(), updatedBy: 'admin', revision: d.revision + 1, ...options.changes };
+    const changes = { technicianId: tech, technicianName: techDoc.data().name, status: 'assigned', assignedBy: 'admin', assignedAt: stamp(), updatedAt: stamp(), updatedBy: 'admin', revision: d.revision + 1, ...options.changes };
     tx.update(ref, changes);
     if (!options.noLock) tx.update(doc(client, 'technicians', tech), { currentOrderId: id });
     if (d.technicianId && d.technicianId !== tech && !options.noRelease) tx.update(doc(client, 'technicians', d.technicianId), { currentOrderId: null });
     event(tx, client, id, { ...d, ...changes }, 'assigned', 'admin');
   });
 }
+async function price(client, id, value = 50000, actor = 'admin') {
+  const ref = doc(client, 'serviceOrders', id), d = (await getDoc(ref)).data();
+  const changes = {laborPrice: value, revision: d.revision + 1, updatedAt: stamp(), updatedBy: actor};
+  const batch = writeBatch(client); batch.update(ref, changes);
+  event(batch, client, id, {...d, ...changes}, 'pricingUpdated', actor);
+  return batch.commit();
+}
 async function change(client, actor, id, status, extra = {}, options = {}) {
+  if (status === 'completed' && actor === 'admin') await price(client, id);
   return runTransaction(client, async tx => {
     const ref = doc(client, 'serviceOrders', id), d = (await tx.get(ref)).data();
     const changes = { status, updatedBy: actor, updatedAt: stamp(), revision: d.revision + 1, ...extra };
@@ -172,4 +180,58 @@ test('booking cancel and SO creation cannot both commit; existing SO prevents ca
   } else {
     await assertFails(create(a, 'one'));
   }
+});
+
+
+test('Phase 05 labor snapshots need admin, integer bounds, revision audit; terminal history immutable', async () => {
+  const a = db('admin'); await create(a, 'one');
+  await assertSucceeds(price(a, 'one', 0));
+  await assertFails(assign(a, 'one', 'ta', {changes: {technicianName: 'Palsu'}}));
+  await assign(a, 'one', 'ta');
+  for (const value of [-1, 1.5, 1000000001, '50000', null]) await assertFails(price(a, 'one', value));
+  await assertFails(price(db('ta'), 'one', 1, 'ta'));
+  await assertFails(price(db('customer'), 'one', 1, 'customer'));
+  await assertSucceeds(price(a, 'one', 75000));
+  await change(db('ta'), 'ta', 'one', 'inProgress');
+  await change(db('ta'), 'ta', 'one', 'awaitingApproval', {checklist: checks(true), diagnosis: 'Oli kotor', actions: 'Ganti oli'});
+  // Raw completion must fail if pricing was never recorded.
+  await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'serviceOrders', 'one'), {laborPrice: null}));
+  const ref = doc(a, 'serviceOrders', 'one'), d = (await getDoc(ref)).data();
+  const batch = writeBatch(a), changes = {status: 'completed', completedAt: stamp(), revision: d.revision+1, updatedAt: stamp(), updatedBy: 'admin'};
+  batch.update(ref, changes); batch.update(doc(a, 'technicians', 'ta'), {currentOrderId: null});
+  event(batch, a, 'one', {...d, ...changes}, 'statusChanged', 'admin');
+  await assertFails(batch.commit());
+  await change(a, 'admin', 'one', 'completed');
+  await assertFails(price(a, 'one', 1));
+  for (const field of ['laborPrice', 'vehiclePlate', 'diagnosis', 'technicianName', 'completedAt']) {
+    await assertFails(updateDoc(ref, {[field]: field === 'laborPrice' ? 1 : 'tamper'}));
+  }
+  await assertSucceeds(getDoc(doc(db('customer'), 'serviceOrders', 'one')));
+  await assertSucceeds(getDoc(doc(db('ta'), 'serviceOrders', 'one')));
+  await assertFails(getDoc(doc(db('other'), 'serviceOrders', 'one')));
+  await assertFails(getDoc(doc(db('tb'), 'serviceOrders', 'one')));
+});
+
+test('Phase 05 completed filters and tied-date pagination stay scoped to customer or assigned technician', async () => {
+  const at = Timestamp.fromMillis(1792026000000);
+  await env.withSecurityRulesDisabled(async ctx => {
+    for (let i=0; i<46; i++) await setDoc(doc(ctx.firestore(), 'serviceOrders', `history-${String(i).padStart(2,'0')}`), {
+      ...orderData('ignored', booking()), customerId: i===45 ? 'other' : 'customer',
+      technicianId: i===44 ? 'tb' : 'ta', status: i===43 ? 'inProgress' : 'completed',
+      vehicleId: i===42 ? 'v2' : 'v', serviceId: i===41 ? 'brake' : 'oil', completedAt: at,
+    });
+  });
+  for (const [uid, owner] of [['customer','customerId'], ['ta','technicianId'], ['admin',null]]) {
+    const constraints = [where('status','==','completed'), ...(owner ? [where(owner,'==',uid)] : []),
+      where('vehicleId','==','v'), where('serviceId','==','oil'), where('completedAt','>=',at),
+      where('completedAt','<',Timestamp.fromMillis(at.toMillis()+86400000)), orderBy('completedAt','desc'), orderBy('__name__'), limit(20)];
+    const first = await assertSucceeds(getDocs(query(collection(db(uid),'serviceOrders'), ...constraints)));
+    const second = await assertSucceeds(getDocs(query(collection(db(uid),'serviceOrders'), ...constraints, startAfter(first.docs.at(-1)))));
+    const third = await assertSucceeds(getDocs(query(collection(db(uid),'serviceOrders'), ...constraints, startAfter(second.docs.at(-1)))));
+    const ids = [...first.docs,...second.docs,...third.docs].map(d=>d.id);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.equal(ids.length, uid==='admin' ? 43 : 42);
+    assert.ok(!ids.includes('history-43'));
+  }
+  for (const uid of ['customer','ta']) await assertFails(getDocs(query(collection(db(uid),'serviceOrders'), where('status','==','completed'), limit(20))));
 });

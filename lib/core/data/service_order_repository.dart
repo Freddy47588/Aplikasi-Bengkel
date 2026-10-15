@@ -24,6 +24,7 @@ abstract class ServiceOrderRepository {
     bool available,
   );
   Future<void> create(String bookingId);
+  Future<void> setLaborPrice(String id, int revision, int rupiah);
   Future<void> assign(String id, String technicianId, int revision);
   Future<void> updateWork(
     String id,
@@ -206,6 +207,8 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
         'bookingId': bookingId,
         'status': 'queued',
         'technicianId': null,
+        'technicianName': null,
+        'laborPrice': null,
         'checklist': {for (final key in inspectionKeys) key: false},
         'diagnosis': '',
         'actions': '',
@@ -254,6 +257,7 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
       }
       final changes = <String, dynamic>{
         'technicianId': target,
+        'technicianName': tech['name'],
         'status': 'assigned',
         'assignedAt': now,
         'assignedBy': uid,
@@ -267,6 +271,31 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
         tx.update(technicians.doc(previous), {'currentOrderId': null});
       }
       event(tx, ref, {...d, ...changes}, 'assigned');
+    });
+  }
+
+  @override
+  Future<void> setLaborPrice(String id, int revision, int rupiah) async {
+    requireAdmin();
+    if (rupiah < 0 || rupiah > 1000000000) {
+      throw ArgumentError('Biaya jasa tidak valid.');
+    }
+    final ref = orders.doc(id);
+    await db.runTransaction((tx) async {
+      final doc = await tx.get(ref);
+      if (!doc.exists) throw StateError('Service Order tidak ditemukan.');
+      final order = ServiceOrder(id, doc.data()!);
+      if (order.status.terminal || order.revision != revision) {
+        throw StateError('Tugas berubah atau sudah selesai.');
+      }
+      final changes = <String, dynamic>{
+        'laborPrice': rupiah,
+        'revision': revision + 1,
+        'updatedAt': now,
+        'updatedBy': uid,
+      };
+      tx.update(ref, changes);
+      event(tx, ref, {...order.data, ...changes}, 'pricingUpdated');
     });
   }
 
@@ -318,8 +347,15 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
               checklist.values.any((v) => !v))) {
         throw StateError('Lengkapi checklist, diagnosis dan tindakan.');
       }
+      DocumentSnapshot<Map<String, dynamic>>? completingTech;
       if (order.technicianId != null && next.terminal) {
-        await tx.get(technicians.doc(order.technicianId));
+        completingTech = await tx.get(technicians.doc(order.technicianId));
+      }
+      if (next == ServiceOrderStatus.completed &&
+          order.data['laborPrice'] is! int) {
+        throw StateError(
+          'Catat biaya jasa (termasuk Rp 0) sebelum menyelesaikan.',
+        );
       }
       final changes = <String, dynamic>{
         'status': next.name,
@@ -335,7 +371,11 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
         if (next == ServiceOrderStatus.inProgress &&
             order.data['startedAt'] == null)
           'startedAt': now,
-        if (next == ServiceOrderStatus.completed) 'completedAt': now,
+        if (next == ServiceOrderStatus.completed) ...{
+          'completedAt': now,
+          'technicianName':
+              order.data['technicianName'] ?? completingTech?.data()?['name'],
+        },
       };
       if (admin && next == order.status) {
         throw StateError('Pilih perubahan status.');

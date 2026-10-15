@@ -63,15 +63,26 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Keluhan: Mesin bising'), findsOneWidget);
       final start = find.widgetWithText(OutlinedButton, 'Dikerjakan');
-      await tester.ensureVisible(start);
+      await tester.scrollUntilVisible(
+        start,
+        180,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.pumpAndSettle();
       await tester.tap(start);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lanjutkan'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Status: Dikerjakan'),
+        -180,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Status: Dikerjakan'), findsOneWidget);
-      await tester.ensureVisible(
+      await tester.scrollUntilVisible(
         find.widgetWithText(OutlinedButton, 'Checklist dan catatan kerja'),
+        180,
+        scrollable: find.byType(Scrollable).last,
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Checklist dan catatan kerja'));
@@ -92,6 +103,11 @@ void main() {
       testAuth(container).signIn(UserRole.customer);
       router.go('/customer/orders/one');
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Diagnosis: Pemeriksaan mesin'),
+        180,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Diagnosis: Pemeriksaan mesin'), findsOneWidget);
       expect(find.text('Checklist dan catatan kerja'), findsNothing);
       final tech = FirestoreServiceOrderRepository(
@@ -109,6 +125,11 @@ void main() {
         notes: 'Jeda',
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Status: Dijeda'),
+        -180,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Status: Dijeda'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
