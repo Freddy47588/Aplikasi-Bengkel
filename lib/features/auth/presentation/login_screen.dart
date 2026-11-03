@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
+import '../../../core/widgets/workshop_ui.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,7 @@ class _LoginState extends ConsumerState<LoginScreen> {
   final password = TextEditingController();
   bool register = false;
   bool busy = false;
+  bool obscure = true;
   String? message;
   @override
   void dispose() {
@@ -62,14 +64,17 @@ class _LoginState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('BengkelKu')),
-    body: SafeArea(
+    body: WorkshopBody(
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             shrinkWrap: true,
             padding: const EdgeInsets.all(24),
             children: [
+              const BrandLockup(),
+              const SizedBox(height: 24),
               Text(
                 register ? 'Daftar Pelanggan' : 'Masuk',
                 style: Theme.of(context).textTheme.headlineMedium,
@@ -85,7 +90,11 @@ class _LoginState extends ConsumerState<LoginScreen> {
                       enabled: !busy,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'Email'),
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.alternate_email),
+                      ),
                       validator: (v) =>
                           RegExp(
                             r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
@@ -97,14 +106,26 @@ class _LoginState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: password,
                       enabled: !busy,
-                      obscureText: true,
+                      obscureText: obscure,
                       autofillHints: [
                         register
                             ? AutofillHints.newPassword
                             : AutofillHints.password,
                       ],
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Kata sandi',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          tooltip: obscure
+                              ? 'Tampilkan kata sandi'
+                              : 'Sembunyikan kata sandi',
+                          onPressed: () => setState(() => obscure = !obscure),
+                          icon: Icon(
+                            obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
                       ),
                       validator: (v) => (v?.length ?? 0) < (register ? 8 : 1)
                           ? (register
@@ -114,7 +135,13 @@ class _LoginState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     if (message != null)
-                      Text(message!, key: const Key('auth-message')),
+                      Semantics(
+                        liveRegion: true,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(message!, key: const Key('auth-message')),
+                        ),
+                      ),
                     if (busy) const Center(child: CircularProgressIndicator()),
                     FilledButton(
                       onPressed: busy ? null : submit,
@@ -198,10 +225,18 @@ class _AccountState extends ConsumerState<AccountScreen>
     final repo = ref.read(authRepositoryProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Status Akun')),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(24),
           children: [
+            const WorkshopHero(
+              eyebrow: 'Keamanan akun',
+              title: 'Selangkah lagi',
+              description:
+                  'Periksa status akun dan verifikasi email untuk melanjutkan.',
+            ),
+            const SizedBox(height: 24),
             if (s.loading || busy)
               const Center(child: CircularProgressIndicator()),
             Text(s.email ?? 'Memuat sesi...'),

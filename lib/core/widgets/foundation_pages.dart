@@ -1,3 +1,4 @@
+import 'workshop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import 'empty_state.dart';
 import 'mobile_navigation.dart';
 import 'logout_button.dart';
 import 'service_timeline.dart';
+import 'status_chip.dart';
 
 String bookingSchedule(DateTime value) {
   final date = value.isUtc ? value.add(const Duration(hours: 7)) : value;
@@ -31,8 +33,9 @@ class FoundationPage extends ConsumerWidget {
       bottomNavigationBar: session.role == null
           ? null
           : MobileNavigation(role: session.role!.name),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             EmptyState(title: title, description: description),
@@ -54,8 +57,9 @@ class BookingListPage extends StatelessWidget {
     bottomNavigationBar: MobileNavigation(
       role: customer ? 'customer' : 'admin',
     ),
-    body: SafeArea(
+    body: WorkshopBody(
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
           OutlinedButton(
@@ -71,23 +75,19 @@ class BookingListPage extends StatelessWidget {
 }
 
 class BookingListContent extends ConsumerWidget {
-  const BookingListContent({super.key, required this.customer});
+  const BookingListContent({super.key, required this.customer, this.limit});
   final bool customer;
+  final int? limit;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider);
     return ref
         .watch(bookingsProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Column(
-            children: [
-              const Text('Gagal memuat booking.'),
-              TextButton(
-                onPressed: () => ref.invalidate(bookingsProvider),
-                child: const Text('Coba lagi'),
-              ),
-            ],
+          loading: () => const LoadingState(),
+          error: (error, stack) => LoadError(
+            onRetry: () => ref.invalidate(bookingsProvider),
+            message: 'Gagal memuat booking. Periksa koneksi dan coba lagi.',
           ),
           data: (items) {
             final bookings = items
@@ -103,20 +103,23 @@ class BookingListContent extends ConsumerWidget {
             return Column(
               children: [
                 const Text('Menampilkan hingga 100 booking terbaru.'),
-                ...bookings.map(
-                  (b) => Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      title: Text('${b.id} • ${b.vehicle.name}'),
-                      subtitle: Text(
-                        '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}\n${b.status.label}',
-                      ),
-                      onTap: () => context.go(
-                        '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
+                ...bookings
+                    .take(limit ?? bookings.length)
+                    .map(
+                      (b) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: const Icon(Icons.event_note_outlined),
+                          title: Text('${b.vehicle.name} • ${b.vehicle.plate}'),
+                          subtitle: Text(
+                            '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}\n${b.status.label}',
+                          ),
+                          onTap: () => context.go(
+                            '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
               ],
             );
           },
@@ -137,6 +140,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
     final approved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text('${status.label} booking?'),
         content: const Text('Pastikan perubahan status sudah sesuai.'),
         actions: [
@@ -194,17 +198,13 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
       bottomNavigationBar: MobileNavigation(
         role: session.role?.name ?? 'customer',
       ),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(bookingsProvider)
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => Center(
-                child: TextButton(
-                  onPressed: () => ref.invalidate(bookingsProvider),
-                  child: const Text('Gagal memuat. Coba lagi'),
-                ),
-              ),
+              loading: () => const LoadingState(),
+              error: (_, _) =>
+                  LoadError(onRetry: () => ref.invalidate(bookingsProvider)),
               data: (items) {
                 final matches = items.where(
                   (b) =>
@@ -223,21 +223,47 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                     : null;
                 final hasOrder = orderState?.asData?.value != null;
                 return ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text(
-                      b.id,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    ContentSection(
+                      title: b.vehicle.name,
+                      children: [
+                        Text(
+                          b.vehicle.plate,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(b.draft.service),
+                        const SizedBox(height: 8),
+                        Text(bookingSchedule(b.draft.scheduledAt)),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text('${b.vehicle.name} • ${b.vehicle.plate}'),
-                    Text('Pelanggan: ${b.customerId}'),
-                    Text(b.draft.service),
-                    Text(bookingSchedule(b.draft.scheduledAt)),
+                    ExpansionTile(
+                      title: const Text('Referensi booking'),
+                      children: [
+                        SelectableText('Nomor booking: ${b.id}'),
+                        if (!customer)
+                          SelectableText('ID pelanggan: ${b.customerId}'),
+                      ],
+                    ),
+                    ContentSection(
+                      title: 'Keluhan kendaraan',
+                      children: [Text(b.draft.complaint)],
+                    ),
                     const SizedBox(height: 16),
-                    Text('Keluhan: ${b.draft.complaint}'),
-                    const SizedBox(height: 16),
-                    Chip(label: Text(b.status.label)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: StatusChip(
+                        label: b.status.label,
+                        tone: b.status == BookingStatus.confirmed
+                            ? StatusChipTone.success
+                            : b.status == BookingStatus.pending
+                            ? StatusChipTone.warning
+                            : StatusChipTone.neutral,
+                      ),
+                    ),
                     ServiceTimeline(
                       booking: b.status,
                       order: orderState?.asData?.value,

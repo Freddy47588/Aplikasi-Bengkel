@@ -8,8 +8,12 @@ import '../../../core/data/service_repository.dart';
 import '../../../core/data/service_history_repository.dart';
 import '../../../core/data/service_order_repository.dart';
 import '../../../core/models/service_history.dart';
+import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/service_timeline.dart';
+import '../../../core/widgets/workshop_ui.dart';
+import '../../../core/widgets/history_payment_summary.dart';
 import '../../technician/presentation/service_orders_screen.dart';
 
 // Include archived vehicles: soft deletion must not hide their history.
@@ -36,21 +40,44 @@ class ServiceHistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
-  final vehicle = TextEditingController(), service = TextEditingController();
+  String vehicleLabel = '', serviceLabel = '';
   final cursors = <DocumentSnapshot<Map<String, dynamic>>?>[null];
   String vehicleId = '', serviceId = '';
   DateTimeRange? period;
-  @override
-  void dispose() {
-    vehicle.dispose();
-    service.dispose();
-    super.dispose();
-  }
-
   void resetPages() {
     cursors
       ..clear()
       ..add(null);
+  }
+
+  Widget vehiclePicker(
+    Map<String, String> vehicles, {
+    bool currentPage = false,
+  }) {
+    final choices = {'': 'Semua kendaraan', ...vehicles};
+    if (vehicleId.isNotEmpty && !choices.containsKey(vehicleId)) {
+      choices[vehicleId] = vehicleLabel;
+    }
+    return DropdownButtonFormField<String>(
+      key: ValueKey('vehicle-$vehicleId'),
+      initialValue: vehicleId,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Kendaraan',
+        helperText: currentPage
+            ? 'Pilihan dari kendaraan pada halaman ini.'
+            : 'Termasuk kendaraan yang sudah diarsipkan.',
+      ),
+      items: [
+        for (final entry in choices.entries)
+          DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+      ],
+      onChanged: (value) => setState(() {
+        vehicleId = value ?? '';
+        vehicleLabel = choices[vehicleId] ?? '';
+        resetPages();
+      }),
+    );
   }
 
   @override
@@ -71,74 +98,82 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Riwayat Servis')),
       bottomNavigationBar: MobileNavigation(role: role),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            WorkspaceLinks(role: role),
+            const SizedBox(height: 16),
             const Text(
               'Riwayat dari Service Order selesai. Tanggal menggunakan WIB.',
             ),
+            const SizedBox(height: 16),
             if (role == 'customer')
               ref
                   .watch(historyVehiclesProvider)
                   .when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (_, _) => TextButton(
-                      onPressed: () => ref.invalidate(historyVehiclesProvider),
-                      child: const Text('Gagal memuat kendaraan. Coba lagi'),
+                    loading: () => const LoadingState(),
+                    error: (_, _) => LoadError(
+                      onRetry: () => ref.invalidate(historyVehiclesProvider),
                     ),
-                    data: (vehicles) => Wrap(
-                      spacing: 8,
-                      children: [
-                        for (final entry in vehicles.entries)
-                          ActionChip(
-                            label: Text(entry.value),
-                            onPressed: () => setState(() {
-                              vehicle.text = entry.key;
-                              vehicleId = entry.key;
-                              resetPages();
-                            }),
-                          ),
-                      ],
-                    ),
-                  ),
-            TextField(
-              controller: vehicle,
-              decoration: const InputDecoration(
-                labelText: 'ID kendaraan',
-                helperText: 'Kosong = semua kendaraan; ID ada di detail.',
-              ),
-            ),
+                    data: (vehicles) => vehiclePicker(vehicles),
+                  )
+            else
+              vehiclePicker({
+                for (final o
+                    in ref.watch(provider).asData?.value.items ??
+                        <ServiceOrder>[])
+                  o.text('vehicleId'):
+                      '${o.text('vehicleName')} / ${o.text('vehiclePlate')}',
+              }, currentPage: true),
+            const SizedBox(height: 12),
             ref
                 .watch(servicesProvider)
                 .when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, _) => TextButton(
-                    onPressed: () => ref.invalidate(servicesProvider),
-                    child: const Text('Gagal memuat jenis servis. Coba lagi'),
+                  loading: () => const LoadingState(),
+                  error: (_, _) => LoadError(
+                    onRetry: () => ref.invalidate(servicesProvider),
                   ),
-                  data: (services) => Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final item in services)
-                        ActionChip(
-                          label: Text(item.name),
-                          onPressed: () => setState(() {
-                            service.text = item.id;
-                            serviceId = item.id;
-                            resetPages();
-                          }),
-                        ),
-                    ],
-                  ),
+                  data: (services) {
+                    final choices = <String, String>{
+                      '': 'Semua jenis servis',
+                      for (final order
+                          in ref.watch(provider).asData?.value.items ??
+                              <ServiceOrder>[])
+                        if (order.text('serviceId').isNotEmpty)
+                          order.text('serviceId'): order.text('serviceName'),
+                      for (final service in services) service.id: service.name,
+                    };
+                    if (serviceId.isNotEmpty &&
+                        !choices.containsKey(serviceId)) {
+                      choices[serviceId] = serviceLabel;
+                    }
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey('service-$serviceId'),
+                      initialValue: serviceId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Jenis servis',
+                        helperText:
+                            'Katalog aktif dan jenis servis pada halaman riwayat ini.',
+                      ),
+                      items: [
+                        for (final choice in choices.entries)
+                          DropdownMenuItem(
+                            value: choice.key,
+                            child: Text(choice.value),
+                          ),
+                      ],
+                      onChanged: (value) => setState(() {
+                        serviceId = value ?? '';
+                        serviceLabel = choices[serviceId] ?? '';
+                        resetPages();
+                      }),
+                    );
+                  },
                 ),
-            TextField(
-              controller: service,
-              decoration: const InputDecoration(
-                labelText: 'ID jenis servis',
-                helperText: 'Kosong = semua jenis; ID ada di detail.',
-              ),
-            ),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               children: [
@@ -169,16 +204,12 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
                 ),
                 FilledButton(
                   onPressed: () => setState(() {
-                    vehicleId = vehicle.text.trim();
-                    serviceId = service.text.trim();
                     resetPages();
                   }),
                   child: const Text('Terapkan filter'),
                 ),
                 TextButton(
                   onPressed: () => setState(() {
-                    vehicle.clear();
-                    service.clear();
                     vehicleId = '';
                     serviceId = '';
                     period = null;
@@ -191,18 +222,11 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
             ref
                 .watch(provider)
                 .when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => Column(
-                    children: [
-                      const Text(
+                  loading: () => const LoadingState(),
+                  error: (_, _) => LoadError(
+                    onRetry: () => ref.invalidate(provider),
+                    message:
                         'Riwayat gagal dimuat. Periksa koneksi dan akses akun.',
-                      ),
-                      TextButton(
-                        onPressed: () => ref.invalidate(provider),
-                        child: const Text('Coba lagi'),
-                      ),
-                    ],
                   ),
                   data: (page) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -212,10 +236,12 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
                           'Offline/cache: data mungkin belum lengkap. Sambungkan internet untuk memperbarui.',
                         ),
                       if (page.items.isEmpty)
-                        Text(
-                          page.fromCache
+                        EmptyState(
+                          title: 'Belum ada riwayat servis',
+                          description: page.fromCache
                               ? 'Belum ada riwayat dalam cache untuk filter ini.'
                               : 'Belum ada servis selesai untuk filter ini.',
+                          icon: Icons.history,
                         ),
                       for (final order in page.items)
                         Card(
@@ -264,11 +290,11 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: MobileNavigation(role: role),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(provider)
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) =>
                   RetryLoad(onRetry: () => ref.invalidate(provider)),
               data: (order) {
@@ -284,16 +310,36 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                 }
                 final labor = order.data['laborPrice'] as int?;
                 return ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text('Booking ID: ${order.text('bookingId')}'),
-                    Text('SO ID: ${order.id}'),
-                    Text(
-                      'Kendaraan: ${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
+                    ContentSection(
+                      title: 'Kendaraan & layanan',
+                      children: [
+                        Text(
+                          '${order.text('vehicleName')} / ${order.text('vehiclePlate')}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(order.text('serviceName')),
+                      ],
                     ),
-                    Text('ID kendaraan: ${order.text('vehicleId')}'),
-                    Text('Jasa: ${order.text('serviceName')}'),
-                    Text('ID jenis servis: ${order.text('serviceId')}'),
+                    ExpansionTile(
+                      title: const Text('Referensi dokumen'),
+                      children: [
+                        SelectableText(
+                          'Booking ID: ${order.text('bookingId')}',
+                        ),
+                        SelectableText('SO ID: ${order.id}'),
+                        SelectableText(
+                          'ID kendaraan: ${order.text('vehicleId')}',
+                        ),
+                        SelectableText(
+                          'ID jenis servis: ${order.text('serviceId')}',
+                        ),
+                      ],
+                    ),
                     Text('Keluhan: ${order.text('complaint')}'),
                     Text('Diagnosis: ${order.text('diagnosis')}'),
                     Text('Tindakan: ${order.text('actions')}'),
@@ -304,7 +350,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                     Text(
                       'Snapshot biaya jasa: ${labor == null ? 'Tidak tercatat pada data lama' : rupiah(labor)}',
                     ),
-                    const Text('Status pembayaran: Belum dicatat.'),
+                    HistoryPaymentSummary(orderId: order.id),
                     const SizedBox(height: 16),
                     ServiceTimeline(order: order),
                     const SizedBox(height: 16),

@@ -10,6 +10,11 @@ import '../../../core/data/report_repository.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/models/service_history.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/workshop_ui.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/dashboard_stat_card.dart';
+import '../../../app/theme/app_colors.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key, this.orderId = ''});
@@ -66,8 +71,10 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
     final page = ref.watch(invoicePageProvider(filter));
     return Scaffold(
       appBar: AppBar(title: const Text('Pembayaran & transaksi')),
-      body: SafeArea(
+      bottomNavigationBar: MobileNavigation(role: admin ? 'admin' : 'customer'),
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             Text(
@@ -100,12 +107,17 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                 initiallyExpanded: widget.orderId.isNotEmpty,
                 title: const Text('Terbitkan invoice SO selesai'),
                 children: [
+                  const SizedBox(height: 12),
                   TextField(
                     controller: order,
+                    readOnly: widget.orderId.isNotEmpty,
                     decoration: const InputDecoration(
-                      labelText: 'ID Service Order',
+                      labelText: 'Referensi Service Order',
+                      helperText:
+                          'Buka dari detail servis selesai untuk mengisi otomatis.',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: discount,
                     keyboardType: TextInputType.number,
@@ -113,6 +125,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                       labelText: 'Diskon rupiah (otorisasi admin)',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: fee,
                     keyboardType: TextInputType.number,
@@ -120,6 +133,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                       labelText: 'Biaya tambahan rupiah (otorisasi admin)',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: notes,
                     maxLength: 500,
@@ -171,9 +185,44 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                 'Laporan memakai periode yang dipilih. Omzet: total invoice lunas menurut tanggal pelunasan; bukan laba. Refund penuh dikeluarkan dari omzet. Stok menipis adalah kondisi saat ini.',
               ),
               if (report case final r?)
-                Text(
-                  'Booking: ${r.bookings}\nSO selesai: ${r.completed}\n'
-                  'Omzet lunas: ${rupiah(r.revenue)}\nPemakaian part net: ${r.partUnits} unit\nStok menipis: ${r.lowStock} SKU',
+                ContentSection(
+                  title: 'Laporan periode terpilih',
+                  children: [
+                    AdaptiveCards(
+                      children: [
+                        DashboardStatCard(
+                          label: 'Booking',
+                          value: '${r.bookings}',
+                          icon: Icons.event_note,
+                          color: AppColors.primary,
+                        ),
+                        DashboardStatCard(
+                          label: 'SO selesai',
+                          value: '${r.completed}',
+                          icon: Icons.task_alt,
+                          color: AppColors.success,
+                        ),
+                        DashboardStatCard(
+                          label: 'Omzet lunas',
+                          value: rupiah(r.revenue),
+                          icon: Icons.receipt_long,
+                          color: AppColors.warning,
+                        ),
+                        DashboardStatCard(
+                          label: 'Pemakaian part net (unit)',
+                          value: '${r.partUnits}',
+                          icon: Icons.build_outlined,
+                          color: AppColors.primary,
+                        ),
+                        DashboardStatCard(
+                          label: 'Stok menipis (SKU)',
+                          value: '${r.lowStock}',
+                          icon: Icons.inventory_2_outlined,
+                          color: AppColors.danger,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
             ],
             if (busy) const LinearProgressIndicator(),
@@ -183,8 +232,10 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             page.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text('Gagal memuat transaksi: $e'),
+              loading: () => const LoadingState(),
+              error: (e, _) => LoadError(
+                onRetry: () => ref.invalidate(invoicePageProvider(filter)),
+              ),
               data: (p) => Column(
                 children: [
                   if (p.fromCache)
@@ -192,12 +243,16 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                       'Data cache; sambungkan jaringan untuk status terbaru.',
                     ),
                   if (p.items.isEmpty)
-                    const Text('Belum ada invoice pada periode ini.'),
+                    const EmptyState(
+                      title: 'Belum ada invoice',
+                      description: 'Belum ada invoice pada periode ini.',
+                      icon: Icons.receipt_long_outlined,
+                    ),
                   for (final i in p.items)
                     ListTile(
                       title: Text(i.text('invoiceNo')),
                       subtitle: Text(
-                        '${i.text('status')} • ${rupiah(i.number('grandTotal'))}',
+                        '${paymentStatusLabel(i.text('status'))} • ${rupiah(i.number('grandTotal'))}',
                       ),
                       onTap: () => context.push(
                         '/${admin ? 'admin' : 'customer'}/invoices/${i.id}',
@@ -225,25 +280,8 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
   }
 }
 
-Future<bool> confirmAction(BuildContext context, String message) async =>
-    await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Konfirmasi tindakan'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Kembali'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Ya, sudah diperiksa'),
-          ),
-        ],
-      ),
-    ) ==
-    true;
+Future<bool> confirmAction(BuildContext context, String message) =>
+    confirmWorkshopAction(context, message);
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   const InvoiceDetailScreen({super.key, required this.id});
@@ -314,48 +352,102 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
     final admin = ref.watch(authSessionProvider).role == UserRole.admin;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail invoice')),
-      body: SafeArea(
+      bottomNavigationBar: MobileNavigation(role: admin ? 'admin' : 'customer'),
+      body: WorkshopBody(
         child: ref
             .watch(invoiceProvider(widget.id))
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Gagal memuat: $e'),
+              loading: () => const LoadingState(),
+              error: (e, _) => LoadError(
+                onRetry: () => ref.invalidate(invoiceProvider(widget.id)),
+              ),
               data: (i) => i == null
                   ? const Center(child: Text('Invoice belum terbit.'))
                   : ListView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.all(20),
                       children: [
-                        Text(
-                          i.text('invoiceNo'),
-                          style: Theme.of(context).textTheme.titleLarge,
+                        ContentSection(
+                          title: 'Invoice servis',
+                          children: [
+                            SelectableText(
+                              i.text('invoiceNo'),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${i.text('vehiclePlate')} • ${i.text('serviceName')}',
+                            ),
+                            const SizedBox(height: 12),
+                            PaymentBadge(status: i.text('status')),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Terbit: ${historyDate(i.date('createdAt'))}\nLunas: ${historyDate(i.date('paidAt'))}',
+                            ),
+                            Text(
+                              'Metode: ${i.text('method') == 'cash'
+                                  ? 'Tunai'
+                                  : i.text('method') == 'transfer'
+                                  ? 'Transfer manual'
+                                  : 'Belum dicatat'}',
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${i.text('vehiclePlate')} • ${i.text('serviceName')}',
+                        ContentSection(
+                          title: 'Rincian biaya',
+                          children: [
+                            Text('Jasa: ${rupiah(i.number('laborPrice'))}'),
+                            const SizedBox(height: 12),
+                            for (final p
+                                in (i.data['parts'] as List).cast<Map>())
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  '${p['name']} • ${p['kind']} • ${p['quantity']} x ${rupiah(p['sellPrice'] as int)}',
+                                ),
+                              ),
+                            const Divider(),
+                            for (final p in [
+                              ('Subtotal', 'subtotal'),
+                              ('Diskon', 'discount'),
+                              ('Biaya tambahan', 'fee'),
+                            ])
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  '${p.$1}: ${rupiah(i.number(p.$2))}',
+                                ),
+                              ),
+                          ],
                         ),
-                        Text(
-                          'Terbit: ${historyDate(i.date('createdAt'))}\nLunas: ${historyDate(i.date('paidAt'))}',
+                        ContentSection(
+                          title: 'Ringkasan pembayaran',
+                          children: [
+                            Text(
+                              'Total: ${rupiah(i.number('grandTotal'))}',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 12),
+                            for (final p in [
+                              ('Dibayar net', 'paidAmount'),
+                              ('Kembalian kumulatif', 'change'),
+                              ('Sisa', 'due'),
+                            ])
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  '${p.$1}: ${rupiah(i.number(p.$2))}',
+                                ),
+                              ),
+                            Text(
+                              'Petugas: ${i.text('recordedBy')}\nCatatan: ${i.text('notes')}',
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Status: ${i.text('status')} • ${i.text('method')}',
-                        ),
-                        Text('Jasa: ${rupiah(i.number('laborPrice'))}'),
-                        for (final p in (i.data['parts'] as List).cast<Map>())
-                          Text(
-                            '${p['name']} • ${p['kind']} • ${p['quantity']} x ${rupiah(p['sellPrice'] as int)}',
-                          ),
-                        for (final p in [
-                          ('Subtotal', 'subtotal'),
-                          ('Diskon', 'discount'),
-                          ('Biaya tambahan', 'fee'),
-                          ('Total', 'grandTotal'),
-                          ('Dibayar net', 'paidAmount'),
-                          ('Kembalian kumulatif', 'change'),
-                          ('Sisa', 'due'),
-                        ])
-                          Text('${p.$1}: ${rupiah(i.number(p.$2))}'),
-                        Text(
-                          'Petugas: ${i.text('recordedBy')}\nCatatan: ${i.text('notes')}',
-                        ),
+                        const SizedBox(height: 12),
                         Wrap(
                           spacing: 12,
                           children: [
@@ -392,12 +484,14 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 24),
                         if (admin &&
                             [
                               'unpaid',
                               'partial',
                               'paid',
                             ].contains(i.text('status'))) ...[
+                          const SizedBox(height: 12),
                           TextField(
                             controller: amount,
                             enabled: !busy,
@@ -423,6 +517,7 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
                                 ? null
                                 : (v) => setState(() => method = v!),
                           ),
+                          const SizedBox(height: 12),
                           TextField(
                             controller: notes,
                             enabled: !busy,
@@ -473,7 +568,7 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
                               )),
                             )
                             .when(
-                              loading: () => const LinearProgressIndicator(),
+                              loading: () => const LoadingState(),
                               error: (e, _) => Text('Gagal memuat audit: $e'),
                               data: (p) => Column(
                                 children: [

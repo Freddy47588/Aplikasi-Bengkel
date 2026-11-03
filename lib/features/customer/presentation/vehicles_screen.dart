@@ -1,8 +1,10 @@
+import '../../../core/widgets/workshop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/data/vehicle_repository.dart';
 import '../../../core/models/booking.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../auth/data/auth_repository.dart';
 
 class VehiclesScreen extends ConsumerWidget {
@@ -27,23 +29,24 @@ class VehiclesScreen extends ConsumerWidget {
       icon: const Icon(Icons.add),
       label: const Text('Tambah kendaraan'),
     ),
-    body: SafeArea(
+    body: WorkshopBody(
       child: ref
           .watch(vehiclesProvider)
           .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => Center(
-              child: TextButton(
-                onPressed: () => ref.invalidate(vehiclesProvider),
-                child: const Text('Gagal memuat kendaraan. Coba lagi'),
-              ),
+            loading: () => const LoadingState(),
+            error: (_, _) => LoadError(
+              onRetry: () => ref.invalidate(vehiclesProvider),
+              message: 'Gagal memuat kendaraan. Periksa koneksi dan coba lagi.',
             ),
             data: (vehicles) => ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
               children: [
                 if (vehicles.isEmpty)
-                  const Text(
-                    'Belum ada kendaraan. Tambahkan sebelum membuat booking.',
+                  const EmptyState(
+                    title: 'Belum ada kendaraan',
+                    description: 'Tambahkan kendaraan sebelum membuat booking.',
+                    icon: Icons.directions_car_outlined,
                   ),
                 const Text('Menampilkan hingga 50 kendaraan aktif.'),
                 for (final v in vehicles)
@@ -58,6 +61,7 @@ class VehiclesScreen extends ConsumerWidget {
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
+                              scrollable: true,
                               title: const Text('Hapus kendaraan?'),
                               content: Text(
                                 '${v.name} • ${v.plate}. Riwayat booking tetap tersimpan.',
@@ -155,8 +159,8 @@ class _VehicleFormState extends ConsumerState<_VehicleForm> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.vehicle == null ? 'Tambah kendaraan' : 'Edit kendaraan'),
     scrollable: true,
+    title: Text(widget.vehicle == null ? 'Tambah kendaraan' : 'Edit kendaraan'),
     content: Form(
       key: form,
       child: Column(

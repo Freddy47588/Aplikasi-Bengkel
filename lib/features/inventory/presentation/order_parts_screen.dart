@@ -1,3 +1,4 @@
+import '../../../core/widgets/workshop_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,11 +46,11 @@ class _OrderPartsState extends ConsumerState<OrderPartsScreen> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(serviceOrderProvider(widget.orderId))
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) => RetryLoad(
                 onRetry: () =>
                     ref.invalidate(serviceOrderProvider(widget.orderId)),
@@ -61,6 +62,8 @@ class _OrderPartsState extends ConsumerState<OrderPartsScreen> {
                   );
                 }
                 return ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
                     Text(
@@ -105,8 +108,7 @@ class _OrderPartsState extends ConsumerState<OrderPartsScreen> {
                     ref
                         .watch(provider)
                         .when(
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
+                          loading: () => const LoadingState(),
                           error: (_, _) => RetryLoad(
                             onRetry: () => ref.invalidate(provider),
                           ),
@@ -253,10 +255,11 @@ class _PartRequestState extends ConsumerState<PartRequestScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Permintaan sparepart')),
-    body: SafeArea(
+    body: WorkshopBody(
       child: Form(
         key: form,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             const Text(

@@ -1,11 +1,18 @@
 # Phase status - BengkelKu
 
-Status terbaru: **Phase 06 - pembayaran manual, invoice PDF dan laporan**.
-Base `main` fork setelah PR #6 merged (`44f7cce`). Branch
-`feat/payments-invoices-reports`. Lihat [laporan Phase 06](PHASE_06_REPORT.md)
-dan [schema pembayaran](PAYMENT_SCHEMA.md) untuk rules, biaya dan batas verifikasi.
+Status terbaru: **Phase 06.5 — UI/UX polish & branding universal biru**.
+Base `origin/main` setelah PR #7 merged (`12583b2`). Branch
+`refactor/ui-ux-polish`. Lihat [laporan Phase 06.5](PHASE_06_5_REPORT.md),
+[audit](UI_UX_AUDIT.md), [design system](DESIGN_SYSTEM.md), dan
+[branding](BRANDING_GUIDE.md). Phase 01–06 dan aturan backend dipertahankan.
 Implementasi disiapkan untuk review PR ke fork main; tanpa auto-merge.
-**STOP PHASE 06. Phase 07 belum dimulai.**
+**STOP PHASE 06.5. Phase 07 belum dimulai.**
+
+Verifikasi 2–3 November 2026: formatter/pub get/analyze lulus, 91 tes Flutter
+dan 35 tes rules lulus, APK debug final berhasil dibangun (49,7 detik setelah
+cache pulih). Branding APK dan 3 ABI diperiksa. Native iOS **NOT VERIFIED**
+pada Windows; UAT akun/perangkat asli dan print/share native masih diperlukan.
+Detail dan inventaris file ada pada laporan Phase 06.5.
 
 ## Arsip audit Phase 01
 

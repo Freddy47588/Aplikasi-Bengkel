@@ -1,3 +1,4 @@
+import '../../../core/widgets/workshop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -60,8 +61,8 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Konfirmasi Booking'),
         scrollable: true,
+        title: const Text('Konfirmasi Booking'),
         content: Text(
           '${ref.read(vehiclesProvider).requireValue.firstWhere((v) => v.id == vehicle).name}\n${draft.service}\n${bookingSchedule(draft.scheduledAt)}\n${draft.complaint}',
         ),
@@ -116,7 +117,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Booking Servis')),
       bottomNavigationBar: const MobileNavigation(role: 'customer'),
-      body: SafeArea(
+      body: WorkshopBody(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
@@ -125,7 +126,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 const Text(
-                  'Kendaraan demo • jadwal 09:00–16:00 • maksimal 90 hari',
+                  'Pilih kendaraan Anda • jadwal 09:00–16:00 WIB • maksimal 90 hari',
                 ),
                 const SizedBox(height: 16),
                 if (vehicles.isLoading || services.isLoading)

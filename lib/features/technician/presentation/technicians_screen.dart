@@ -1,3 +1,5 @@
+import '../../../core/widgets/workshop_ui.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,20 +89,33 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
       bottomNavigationBar: widget.select
           ? null
           : const MobileNavigation(role: 'admin'),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            if (!widget.select) ...[
+              const WorkspaceLinks(role: 'admin'),
+              const SizedBox(height: 24),
+              Text(
+                'Tim teknisi',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+            const SizedBox(height: 12),
             TextField(
               controller: search,
               decoration: const InputDecoration(
-                labelText: 'Awalan nama (peka huruf besar/kecil)',
+                labelText: 'Cari nama teknisi',
+                helperText: 'Ketik awal nama sesuai penulisan terdaftar.',
               ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: specialization,
               decoration: const InputDecoration(
-                labelText: 'Spesialisasi persis (kosong = semua)',
+                labelText: 'Spesialisasi',
+                helperText: 'Kosongkan untuk semua spesialisasi.',
               ),
             ),
             DropdownButtonFormField<bool?>(
@@ -127,15 +142,18 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
             ref
                 .watch(provider)
                 .when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const LoadingState(),
                   error: (_, _) =>
                       RetryLoad(onRetry: () => ref.invalidate(provider)),
                   data: (page) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (page.items.isEmpty)
-                        const Text('Tidak ada teknisi sesuai filter.'),
+                        const EmptyState(
+                          title: 'Teknisi belum ditemukan',
+                          description: 'Tidak ada teknisi sesuai filter.',
+                          icon: Icons.engineering_outlined,
+                        ),
                       for (final t in page.items)
                         Card(
                           child: ListTile(
@@ -203,8 +221,9 @@ class _TechnicianEditorState extends ConsumerState<TechnicianEditor> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Profil operasional teknisi')),
-    body: SafeArea(
+    body: WorkshopBody(
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
           const Text(

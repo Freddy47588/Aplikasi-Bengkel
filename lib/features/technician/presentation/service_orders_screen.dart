@@ -1,3 +1,4 @@
+import '../../../core/widgets/workshop_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import '../../../app/router/app_router.dart';
 import '../../../core/data/service_order_repository.dart';
 import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/service_timeline.dart';
 import '../../../core/models/service_history.dart';
 import 'technicians_screen.dart';
@@ -41,14 +43,16 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Service Order')),
       bottomNavigationBar: MobileNavigation(role: role),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(provider)
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) =>
                   RetryLoad(onRetry: () => ref.invalidate(provider)),
               data: (page) => ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(20),
                 children: [
                   if (role == 'admin')
@@ -57,7 +61,11 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                       child: const Text('Kelola teknisi'),
                     ),
                   if (page.items.isEmpty)
-                    const Text('Belum ada Service Order di halaman ini.'),
+                    const EmptyState(
+                      title: 'Belum ada pekerjaan',
+                      description: 'Belum ada Service Order di halaman ini.',
+                      icon: Icons.car_repair_outlined,
+                    ),
                   for (final order in page.items)
                     Card(
                       child: ListTile(
@@ -88,12 +96,7 @@ class RetryLoad extends StatelessWidget {
   const RetryLoad({super.key, required this.onRetry});
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => Center(
-    child: TextButton(
-      onPressed: onRetry,
-      child: const Text('Gagal memuat. Coba lagi'),
-    ),
-  );
+  Widget build(BuildContext context) => LoadError(onRetry: onRetry);
 }
 
 class PageButtons extends StatelessWidget {
@@ -165,11 +168,11 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
         ),
       ),
       bottomNavigationBar: MobileNavigation(role: role),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(provider)
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) =>
                   RetryLoad(onRetry: () => ref.invalidate(provider)),
               data: (order) {
@@ -192,6 +195,8 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                       ),
                 );
                 return ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
                     Text(
@@ -203,7 +208,19 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                     Text('Keluhan: ${order.text('complaint')}'),
                     Text('Status: ${order.status.label}'),
                     Text(
-                      'Teknisi: ${order.technicianId ?? 'Belum ditugaskan'}',
+                      'Teknisi: ${order.text('technicianName').isNotEmpty
+                          ? order.text('technicianName')
+                          : order.technicianId == null
+                          ? 'Belum ditugaskan'
+                          : 'Teknisi telah ditugaskan'}',
+                    ),
+                    ExpansionTile(
+                      title: const Text('Referensi penugasan'),
+                      children: [
+                        SelectableText('Service Order: ${order.id}'),
+                        if (order.technicianId != null)
+                          SelectableText('ID teknisi: ${order.technicianId}'),
+                      ],
                     ),
                     Text(
                       'Diperbarui: ${order.date('updatedAt')?.toLocal() ?? 'Menyinkronkan…'}',
@@ -265,9 +282,16 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                       Text(
                         '${entry.value ? '✓' : '○'} ${inspectionLabel(entry.key)}',
                       ),
-                    Text('Diagnosis: ${order.text('diagnosis')}'),
-                    Text('Tindakan: ${order.text('actions')}'),
-                    Text('Catatan: ${order.text('notes')}'),
+                    ContentSection(
+                      title: 'Pemeriksaan & tindakan',
+                      children: [
+                        Text('Diagnosis: ${order.text('diagnosis')}'),
+                        const SizedBox(height: 12),
+                        Text('Tindakan: ${order.text('actions')}'),
+                        const SizedBox(height: 12),
+                        Text('Catatan: ${order.text('notes')}'),
+                      ],
+                    ),
                     OutlinedButton(
                       onPressed: () => Navigator.push(
                         context,
@@ -339,6 +363,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                                   final yes = await showDialog<bool>(
                                     context: context,
                                     builder: (c) => AlertDialog(
+                                      scrollable: true,
                                       title: Text('${next.label}?'),
                                       actions: [
                                         TextButton(
@@ -404,8 +429,9 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Catatan kerja')),
-    body: SafeArea(
+    body: WorkshopBody(
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
           for (final key in inspectionKeys)
@@ -487,6 +513,7 @@ class _LaborPriceState extends State<LaborPriceDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: const Text('Snapshot biaya jasa'),
     content: SingleChildScrollView(
       child: Column(

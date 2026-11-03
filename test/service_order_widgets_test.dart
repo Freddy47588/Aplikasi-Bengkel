@@ -164,7 +164,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       if (mode == 'loading') {
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.byType(LinearProgressIndicator), findsOneWidget);
       }
       if (mode == 'empty') {
         expect(
@@ -173,8 +173,8 @@ void main() {
         );
       }
       if (mode == 'error') {
-        expect(find.text('Gagal memuat. Coba lagi'), findsOneWidget);
-        await tester.tap(find.text('Gagal memuat. Coba lagi'));
+        expect(find.text('Perlu dicoba lagi'), findsOneWidget);
+        await tester.tap(find.text('Coba lagi'));
         await tester.pump();
       }
       await tester.pumpWidget(const SizedBox());
