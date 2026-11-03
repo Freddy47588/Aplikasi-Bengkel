@@ -176,13 +176,16 @@ void main() {
     container.read(appRouterProvider).go('/admin/bookings');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
     stream.add([]);
     await tester.pumpAndSettle();
     expect(find.text('Belum ada booking'), findsOneWidget);
     stream.addError(StateError('Offline'));
     await tester.pumpAndSettle();
-    expect(find.text('Gagal memuat booking.'), findsOneWidget);
+    expect(
+      find.text('Gagal memuat booking. Periksa koneksi dan coba lagi.'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Coba lagi'));
     await tester.pump();
     stream.add([]);
@@ -298,7 +301,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        role == UserRole.customer ? 2 : 1,
+        1,
       );
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();

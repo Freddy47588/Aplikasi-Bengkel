@@ -26,8 +26,7 @@ class QuickActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
               children: [
                 Container(
                   width: 42,
@@ -38,14 +37,22 @@ class QuickActionCard extends StatelessWidget {
                   ),
                   child: Icon(icon, color: color),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.start,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
                   ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward,
+                  size: 18,
+                  color: AppColors.muted,
                 ),
               ],
             ),

@@ -20,8 +20,8 @@ class StatusChip extends StatelessWidget {
       StatusChipTone.success => AppColors.success,
       StatusChipTone.warning => AppColors.warning,
       StatusChipTone.danger => AppColors.danger,
-      StatusChipTone.info => AppColors.secondary,
-      StatusChipTone.neutral => AppColors.muted,
+      StatusChipTone.info => AppColors.info,
+      StatusChipTone.neutral => AppColors.onMuted,
     };
 
     return Container(

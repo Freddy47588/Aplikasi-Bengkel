@@ -11,6 +11,7 @@ import '../../features/customer/presentation/service_history_screen.dart';
 import '../../features/admin/presentation/admin_bookings_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/profile_screen.dart';
 import '../../features/customer/presentation/customer_booking_screen.dart';
 import '../../features/customer/presentation/customer_dashboard_screen.dart';
 import '../../features/technician/presentation/technician_dashboard_screen.dart';
@@ -70,11 +71,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/${role.name}/profile',
-          builder: (_, _) => FoundationPage(
-            title: 'Profil ${role.label}',
-            description:
-                'Akun ${role.label}. Identitas dan akses dikelola Firebase.',
-          ),
+          builder: (_, _) => const ProfileScreen(),
         ),
         GoRoute(
           path: '/${role.name}/history',

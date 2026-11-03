@@ -1,3 +1,5 @@
+import '../../../core/widgets/workshop_ui.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,8 +76,9 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
       bottomNavigationBar: widget.orderId == null
           ? const MobileNavigation(role: 'admin')
           : null,
-      body: SafeArea(
+      body: WorkshopBody(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             if (widget.orderId == null)
@@ -83,14 +86,22 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
                 onPressed: () => open(const StockLedgerScreen()),
                 child: const Text('Ledger stok'),
               ),
+            const SizedBox(height: 12),
             TextField(
               controller: search,
-              decoration: const InputDecoration(labelText: 'Cari awalan SKU'),
+              decoration: const InputDecoration(
+                labelText: 'Cari kode sparepart',
+                prefixIcon: Icon(Icons.search),
+                helperText: 'Ketik bagian awal kode, misalnya OLI.',
+              ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: category,
               decoration: const InputDecoration(
-                labelText: 'Kategori persis (kosong = semua)',
+                labelText: 'Kategori',
+                helperText:
+                    'Gunakan nama kategori pada kartu sparepart; kosongkan untuk semua.',
               ),
             ),
             DropdownButtonFormField<bool?>(
@@ -132,21 +143,24 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
             ref
                 .watch(provider)
                 .when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const LoadingState(),
                   error: (_, _) =>
                       RetryLoad(onRetry: () => ref.invalidate(provider)),
                   data: (page) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (page.items.isEmpty)
-                        const Text('Tidak ada sparepart sesuai filter.'),
+                        const EmptyState(
+                          title: 'Sparepart belum ditemukan',
+                          description: 'Tidak ada sparepart sesuai filter.',
+                          icon: Icons.inventory_2_outlined,
+                        ),
                       for (final p in page.items)
                         Card(
                           child: ListTile(
-                            title: Text('${p.id} • ${p.text('name')}'),
+                            title: Text(p.text('name')),
                             subtitle: Text(
-                              'Stok ${p.stock} ${p.text('unit')} • min. ${p.number('minimumStock')}\nRp ${p.number('sellPrice')}${p.lowStock ? ' • Stok rendah' : ''}',
+                              '${p.id} • ${p.text('category')}\nStok ${p.stock} ${p.text('unit')} • min. ${p.number('minimumStock')}\nRp ${p.number('sellPrice')}${p.lowStock ? ' • Stok rendah' : ''}',
                             ),
                             onTap: () => open(
                               SparepartDetailScreen(
@@ -213,10 +227,11 @@ class _SparepartEditorState extends ConsumerState<SparepartEditor> {
     appBar: AppBar(
       title: Text(widget.part == null ? 'Tambah sparepart' : 'Edit sparepart'),
     ),
-    body: SafeArea(
+    body: WorkshopBody(
       child: Form(
         key: form,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             for (final (key, label, max) in [
@@ -270,6 +285,20 @@ class _SparepartEditorState extends ConsumerState<SparepartEditor> {
                   ? null
                   : () async {
                       if (busy || !form.currentState!.validate()) return;
+                      if (widget.part?.active == true && !active) {
+                        setState(() => busy = true);
+                        final approved = await confirmWorkshopAction(
+                          context,
+                          'Arsipkan sparepart ini? Transaksi stok baru dinonaktifkan; ledger dan riwayat tetap tersimpan.',
+                          title: 'Arsipkan sparepart?',
+                          confirmLabel: 'Arsipkan',
+                        );
+                        if (!mounted) return;
+                        if (!approved) {
+                          setState(() => busy = false);
+                          return;
+                        }
+                      }
                       setState(() {
                         busy = true;
                         error = null;
@@ -325,17 +354,19 @@ class SparepartDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(sku)),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(sparepartProvider(sku))
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) => RetryLoad(
                 onRetry: () => ref.invalidate(sparepartProvider(sku)),
               ),
               data: (p) => p == null
                   ? const Center(child: Text('Sparepart tidak ditemukan.'))
                   : ListView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.all(20),
                       children: [
                         Text(
@@ -373,7 +404,7 @@ class SparepartDetailScreen extends ConsumerWidget {
                         ),
                         OutlinedButton(
                           onPressed: () => open(StockLedgerScreen(sku: sku)),
-                          child: const Text('Ledger SKU'),
+                          child: const Text('Riwayat pergerakan stok'),
                         ),
                       ],
                     ),
@@ -412,10 +443,11 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text('Transaksi ${widget.sku}')),
-    body: SafeArea(
+    body: WorkshopBody(
       child: Form(
         key: form,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
             DropdownButtonFormField<MovementKind>(
@@ -456,9 +488,7 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
               controller: qty,
               enabled: !busy && submitted == null,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Qty integer positif',
-              ),
+              decoration: const InputDecoration(labelText: 'Jumlah unit'),
               validator: (v) {
                 final n = int.tryParse(v ?? '');
                 return n == null || n <= 0 || n > maxQuantity
@@ -556,14 +586,16 @@ class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: WorkshopBody(
         child: ref
             .watch(provider)
             .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingState(),
               error: (_, _) =>
                   RetryLoad(onRetry: () => ref.invalidate(provider)),
               data: (page) => ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(20),
                 children: [
                   if (page.items.isEmpty)
@@ -651,8 +683,9 @@ class _ReasonState extends State<InventoryReasonScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(widget.title)),
-    body: SafeArea(
+    body: WorkshopBody(
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
           TextField(

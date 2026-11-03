@@ -116,26 +116,27 @@ class TestAuthController extends AuthSessionController {
 
 TestAuthController testAuth(ProviderContainer container) =>
     container.read(authSessionProvider.notifier) as TestAuthController;
-ProviderContainer testContainer({Stream<List<Booking>>? bookings}) =>
-    ProviderContainer(
-      overrides: [
-        firestoreProvider.overrideWithValue(FakeFirebaseFirestore()),
-        authSessionProvider.overrideWith(TestAuthController.new),
-        authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
-        bookingRepositoryProvider.overrideWith((ref) {
-          final repo = InMemoryBookingRepository();
-          ref.onDispose(repo.dispose);
-          return repo;
-        }),
-        vehiclesProvider.overrideWith((ref) => Stream.value(demoVehicles)),
-        servicesProvider.overrideWith(
-          (ref) => Stream.value(
-            serviceTypes.map((s) => WorkshopService(s, s)).toList(),
-          ),
-        ),
-        if (bookings != null) bookingsProvider.overrideWith((ref) => bookings),
-      ],
-    );
+ProviderContainer testContainer({
+  Stream<List<Booking>>? bookings,
+  FakeFirebaseFirestore? database,
+}) => ProviderContainer(
+  overrides: [
+    firestoreProvider.overrideWithValue(database ?? FakeFirebaseFirestore()),
+    authSessionProvider.overrideWith(TestAuthController.new),
+    authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+    bookingRepositoryProvider.overrideWith((ref) {
+      final repo = InMemoryBookingRepository();
+      ref.onDispose(repo.dispose);
+      return repo;
+    }),
+    vehiclesProvider.overrideWith((ref) => Stream.value(demoVehicles)),
+    servicesProvider.overrideWith(
+      (ref) =>
+          Stream.value(serviceTypes.map((s) => WorkshopService(s, s)).toList()),
+    ),
+    if (bookings != null) bookingsProvider.overrideWith((ref) => bookings),
+  ],
+);
 
 class FakeAuthRepository implements AuthRepository {
   final changes = StreamController<AuthSession>.broadcast(sync: true);

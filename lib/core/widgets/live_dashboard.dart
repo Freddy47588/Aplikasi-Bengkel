@@ -1,110 +1,390 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/theme/app_colors.dart';
 import '../../features/auth/data/auth_repository.dart';
+import '../../features/technician/presentation/service_orders_screen.dart';
 import '../data/booking_repository.dart';
+import '../data/inventory_repository.dart';
+import '../data/service_history_repository.dart';
 import '../data/vehicle_repository.dart';
-import '../models/booking.dart';
+import '../models/service_history.dart';
+import '../models/service_order.dart';
+import 'dashboard_stat_card.dart';
+import 'empty_state.dart';
 import 'foundation_pages.dart';
-import 'mobile_navigation.dart';
 import 'logout_button.dart';
+import 'mobile_navigation.dart';
+import 'quick_action_card.dart';
+import 'section_header.dart';
+import 'service_timeline.dart';
+import 'status_chip.dart';
+import 'workshop_ui.dart';
 
 class LiveDashboard extends ConsumerWidget {
-  const LiveDashboard({super.key, required this.customer});
-  final bool customer;
+  const LiveDashboard({
+    super.key,
+    required this.customer,
+    this.technician = false,
+  });
+  final bool customer, technician;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookings = ref.watch(bookingsProvider);
-    final role = customer ? 'customer' : 'admin';
+    final session = ref.watch(authSessionProvider);
+    final role = customer
+        ? 'customer'
+        : technician
+        ? 'technician'
+        : 'admin';
+    final orders = ref.watch(ordersPageProvider(null));
+    final identity = session.email?.split('@').first;
+    final actions = <(String, IconData, String)>[
+      if (customer) ...[
+        ('Booking Servis', Icons.add_road, '/customer/booking'),
+        ('Kendaraan Saya', Icons.directions_car_outlined, '/customer/vehicles'),
+        ('Booking Saya', Icons.event_note_outlined, '/customer/bookings'),
+      ] else if (technician) ...[
+        ('Pekerjaan Saya', Icons.build_outlined, '/technician/jobs'),
+      ] else ...[
+        ('Kelola Booking', Icons.event_available_outlined, '/admin/bookings'),
+        ('Inventory Sparepart', Icons.inventory_2_outlined, '/admin/inventory'),
+        ('Manajemen Teknisi', Icons.engineering_outlined, '/admin/technicians'),
+      ],
+      ('Progres Servis', Icons.car_repair_outlined, '/$role/orders'),
+      ('Riwayat Servis', Icons.history, '/$role/history'),
+      if (!technician)
+        (
+          'Invoice & Pembayaran',
+          Icons.receipt_long_outlined,
+          '/$role/invoices',
+        ),
+    ];
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer ? 'BengkelKu • Pelanggan' : 'Dashboard Bengkel'),
-        actions: [const LogoutButton(icon: true)],
+        title: const Text('BengkelKu'),
+        actions: const [LogoutButton(icon: true)],
       ),
       bottomNavigationBar: MobileNavigation(role: role),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
+            constraints: const BoxConstraints(maxWidth: 960),
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                Text(
-                  ref.watch(authSessionProvider).email ?? '',
-                  style: Theme.of(context).textTheme.titleMedium,
+                WorkshopHero(
+                  eyebrow: customer
+                      ? 'Garasi pelanggan'
+                      : technician
+                      ? 'Ruang teknisi'
+                      : 'Kendali bengkel',
+                  title: identity == null || identity.isEmpty
+                      ? (technician
+                            ? 'Siap untuk pekerjaan berikutnya?'
+                            : 'Selamat datang di BengkelKu')
+                      : 'Halo, $identity',
+                  description: customer
+                      ? 'Rawat kendaraan, atur jadwal, dan ikuti setiap progres servis.'
+                      : technician
+                      ? 'Fokus pada kendaraan yang ditugaskan, pemeriksaan, dan tindakan berikutnya.'
+                      : 'Pantau antrean, koordinasikan tim, dan jaga bengkel tetap bergerak.',
                 ),
                 const SizedBox(height: 16),
-                bookings.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, _) =>
-                      const Text('Statistik booking belum dapat dimuat.'),
-                  data: (items) => Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        'Dari ${items.length} booking terbaru (maks. 100)\n'
-                        'Menunggu: ${items.where((b) => b.status == BookingStatus.pending).length}\n'
-                        'Dikonfirmasi: ${items.where((b) => b.status == BookingStatus.confirmed).length}',
+                FilledButton.icon(
+                  onPressed: () => context.go(actions.first.$3),
+                  icon: Icon(actions.first.$2),
+                  label: Text(actions.first.$1),
+                ),
+                const SizedBox(height: 24),
+                const SectionHeader(title: 'Ringkasan aktivitas'),
+                const SizedBox(height: 12),
+                if (!technician)
+                  ref
+                      .watch(bookingsProvider)
+                      .when(
+                        loading: () => const LoadingState(),
+                        error: (_, _) => LoadError(
+                          onRetry: () => ref.invalidate(bookingsProvider),
+                        ),
+                        data: (items) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AdaptiveCards(
+                              children: [
+                                DashboardStatCard(
+                                  label: customer
+                                      ? 'Booking aktif'
+                                      : 'Menunggu konfirmasi',
+                                  value:
+                                      '${items.where((b) => customer ? b.status.isActive : b.status.name == 'pending').length}',
+                                  icon: Icons.event_available_outlined,
+                                  color: AppColors.warning,
+                                ),
+                                DashboardStatCard(
+                                  label: 'Booking dikonfirmasi',
+                                  value:
+                                      '${items.where((b) => b.status.name == 'confirmed').length}',
+                                  icon: Icons.fact_check_outlined,
+                                  color: AppColors.success,
+                                ),
+                              ],
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Ringkasan dari maksimal 100 booking terbaru.',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                orders.when(
+                  loading: () => const LoadingState(),
+                  error: (_, _) => LoadError(
+                    onRetry: () => ref.invalidate(ordersPageProvider(null)),
+                  ),
+                  data: (page) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AdaptiveCards(
+                        children: [
+                          DashboardStatCard(
+                            label: technician
+                                ? 'Tugas aktif pada halaman ini'
+                                : 'Servis aktif pada halaman ini',
+                            value:
+                                '${page.items.where((o) => !o.status.terminal).length}',
+                            icon: Icons.car_repair_outlined,
+                            color: AppColors.info,
+                          ),
+                          DashboardStatCard(
+                            label: 'Selesai pada halaman ini',
+                            value:
+                                '${page.items.where((o) => o.status == ServiceOrderStatus.completed).length}',
+                            icon: Icons.task_alt,
+                            color: AppColors.success,
+                          ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          'Maksimal 20 Service Order terbaru; bukan total seluruh bengkel.',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (customer)
+                if (!customer && !technician)
+                  ref
+                      .watch(
+                        inventoryPageProvider((
+                          cursor: null,
+                          search: '',
+                          category: '',
+                          active: true,
+                          lowOnly: true,
+                        )),
+                      )
+                      .when(
+                        loading: () => const LoadingState(),
+                        error: (_, _) => LoadError(
+                          onRetry: () => ref.invalidate(inventoryPageProvider),
+                        ),
+                        data: (page) => ContentSection(
+                          title: 'Perhatian stok',
+                          children: [
+                            Text(
+                              '${page.items.length}${page.hasMore ? '+' : ''} sparepart aktif perlu diperiksa pada hasil ini.',
+                            ),
+                            for (final part in page.items.take(3))
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(
+                                  Icons.inventory_2_outlined,
+                                  color: AppColors.warning,
+                                ),
+                                title: Text(part.text('name')),
+                                subtitle: Text(
+                                  'Stok ${part.stock} ${part.text('unit')} • minimum ${part.number('minimumStock')}',
+                                ),
+                                onTap: () => context.go('/admin/inventory'),
+                              ),
+                            const Text(
+                              'Hasil terbatas per halaman. Buka inventory untuk memeriksa seluruh stok rendah.',
+                            ),
+                          ],
+                        ),
+                      ),
+                const SizedBox(height: 16),
+                const SectionHeader(title: 'Akses cepat'),
+                const SizedBox(height: 12),
+                AdaptiveCards(
+                  children: [
+                    for (final action in actions.skip(1))
+                      QuickActionCard(
+                        title: action.$1,
+                        icon: action.$2,
+                        color: action == actions.first
+                            ? AppColors.warning
+                            : AppColors.primary,
+                        onTap: () => context.go(action.$3),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SectionHeader(
+                  title: technician
+                      ? 'Prioritas pekerjaan'
+                      : 'Progres kendaraan',
+                  actionLabel: 'Lihat semua',
+                  onPressed: () => context.go('/$role/orders'),
+                ),
+                orders.when(
+                  loading: () => const LoadingState(),
+                  error: (_, _) => LoadError(
+                    onRetry: () => ref.invalidate(ordersPageProvider(null)),
+                  ),
+                  data: (page) {
+                    final active = page.items
+                        .where((o) => !o.status.terminal)
+                        .take(3)
+                        .toList();
+                    if (active.isEmpty) {
+                      return const EmptyState(
+                        title: 'Tidak ada servis aktif pada halaman ini',
+                        description:
+                            'Buka daftar untuk melihat seluruh halaman pekerjaan.',
+                        icon: Icons.car_repair_outlined,
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (final order in active)
+                          ContentSection(
+                            title: order.text('vehicleName'),
+                            children: [
+                              Text(
+                                '${order.text('vehiclePlate')} • ${order.text('serviceName')}',
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: StatusChip(
+                                  label: order.status.label,
+                                  tone: StatusChipTone.info,
+                                ),
+                              ),
+                              if (customer) ServiceTimeline(order: order),
+                              TextButton.icon(
+                                onPressed: () =>
+                                    context.go('/$role/orders/${order.id}'),
+                                icon: const Icon(Icons.arrow_forward),
+                                label: Text(
+                                  technician
+                                      ? 'Buka tugas & tindakan berikutnya'
+                                      : 'Detail progres',
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                if (customer) ...[
+                  const SizedBox(height: 24),
+                  SectionHeader(
+                    title: 'Kendaraan terdaftar',
+                    actionLabel: 'Kelola',
+                    onPressed: () => context.go('/customer/vehicles'),
+                  ),
                   ref
                       .watch(vehiclesProvider)
                       .when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (_, _) =>
-                            const Text('Jumlah kendaraan belum dapat dimuat.'),
-                        data: (v) =>
-                            Text('${v.length} kendaraan aktif (maks. 50)'),
+                        loading: () => const LoadingState(),
+                        error: (_, _) => LoadError(
+                          onRetry: () => ref.invalidate(vehiclesProvider),
+                        ),
+                        data: (vehicles) => vehicles.isEmpty
+                            ? const EmptyState(
+                                title: 'Garasi Anda masih kosong',
+                                description:
+                                    'Tambahkan kendaraan untuk mulai booking servis.',
+                                icon: Icons.directions_car_outlined,
+                              )
+                            : ContentSection(
+                                title:
+                                    '${vehicles.length} kendaraan aktif • maks. 50',
+                                children: [
+                                  for (final v in vehicles.take(3))
+                                    ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      leading: const Icon(
+                                        Icons.directions_car_outlined,
+                                      ),
+                                      title: Text(v.name),
+                                      subtitle: Text(v.plate),
+                                      onTap: () =>
+                                          context.go('/customer/vehicles'),
+                                    ),
+                                ],
+                              ),
                       ),
-                const SizedBox(height: 16),
-                if (customer) ...[
-                  FilledButton.icon(
-                    onPressed: () => context.go('/customer/booking'),
-                    icon: const Icon(Icons.calendar_month),
-                    label: const Text('Booking Servis'),
+                ],
+                if (!technician) ...[
+                  const SizedBox(height: 24),
+                  SectionHeader(
+                    title: customer ? 'Booking terbaru' : 'Antrean booking',
+                    actionLabel: 'Lihat semua',
+                    onPressed: () => context.go('/$role/bookings'),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () => context.go('/customer/vehicles'),
-                    icon: const Icon(Icons.directions_car),
-                    label: const Text('Kendaraan Saya'),
-                  ),
-                ] else
-                  FilledButton(
-                    onPressed: () => context.go('/admin/bookings'),
-                    child: const Text('Kelola Booking'),
-                  ),
-                OutlinedButton(
-                  onPressed: () => context.go('/$role/orders'),
-                  child: const Text('Service Order dan progres servis'),
-                ),
-                if (!customer)
-                  OutlinedButton(
-                    onPressed: () => context.go('/admin/inventory'),
-                    child: const Text('Inventori dan stok minimum'),
-                  ),
-                OutlinedButton(
+                  BookingListContent(customer: customer, limit: 3),
+                ],
+                const SizedBox(height: 24),
+                SectionHeader(
+                  title: 'Riwayat servis terbaru',
+                  actionLabel: 'Lihat semua',
                   onPressed: () => context.go('/$role/history'),
-                  child: const Text('Riwayat'),
                 ),
+                ref
+                    .watch(historyPageProvider(const HistoryFilter()))
+                    .when(
+                      loading: () => const LoadingState(),
+                      error: (_, _) => LoadError(
+                        onRetry: () => ref.invalidate(historyPageProvider),
+                      ),
+                      data: (page) => ContentSection(
+                        title: 'Servis selesai',
+                        children: [
+                          if (page.fromCache)
+                            const Text(
+                              'Offline/cache: riwayat mungkin belum lengkap.',
+                            ),
+                          if (page.items.isEmpty)
+                            const Text(
+                              'Belum ada riwayat servis pada halaman ini.',
+                            ),
+                          for (final o in page.items.take(3))
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(
+                                Icons.task_alt,
+                                color: AppColors.success,
+                              ),
+                              title: Text(
+                                '${o.text('vehicleName')} • ${o.text('vehiclePlate')}',
+                              ),
+                              subtitle: Text(
+                                '${o.text('serviceName')}\n${historyDate(o.date('completedAt'))}',
+                              ),
+                              onTap: () => context.go('/$role/history/${o.id}'),
+                            ),
+                        ],
+                      ),
+                    ),
                 const SizedBox(height: 24),
-                Text(
-                  customer ? 'Booking Saya' : 'Booking Pelanggan',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 12),
-                BookingListContent(customer: customer),
-                const SizedBox(height: 24),
-                OutlinedButton(
-                  onPressed: () => context.go('/$role/invoices'),
-                  child: Text(
-                    customer
-                        ? 'Invoice Saya'
-                        : 'Pembayaran, transaksi & laporan',
-                  ),
-                ),
               ],
             ),
           ),

@@ -4,6 +4,7 @@ import 'package:bengkel_kendaraan/core/data/inventory_repository.dart';
 import 'package:bengkel_kendaraan/core/data/firebase_providers.dart';
 import 'package:bengkel_kendaraan/core/models/inventory.dart';
 import 'package:bengkel_kendaraan/app/app.dart';
+import 'package:bengkel_kendaraan/app/theme/app_theme.dart';
 import 'package:bengkel_kendaraan/app/router/app_router.dart';
 import 'package:bengkel_kendaraan/features/inventory/presentation/inventory_screen.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -18,6 +19,69 @@ class MockInventory extends Mock implements InventoryRepository {}
 
 void main() {
   setUpAll(() => registerFallbackValue(command('fallback')));
+  testWidgets(
+    'archive confirmation blocks duplicate dialogs and cancellation preserves active stock master',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 700);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final db = FakeFirebaseFirestore();
+      final repo = FirestoreInventoryRepository(db, 'admin', UserRole.admin);
+      await repo.save(draft());
+      final part = (await repo.get('OIL'))!;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [inventoryRepositoryProvider.overrideWithValue(repo)],
+          child: MaterialApp(
+            theme: buildAppTheme(),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SparepartEditor(part: part),
+                    ),
+                  ),
+                  child: const Text('Buka master'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Buka master'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byType(SwitchListTile),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Simpan master'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Simpan master'));
+      await tester.tap(find.text('Simpan master'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.text('Arsipkan sparepart?'), findsOneWidget);
+      expect((await repo.get('OIL'))!.active, true);
+      await tester.tap(find.text('Kembali'));
+      await tester.pumpAndSettle();
+      expect((await repo.get('OIL'))!.active, true);
+      await tester.tap(find.text('Simpan master'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Arsipkan'));
+      await tester.pumpAndSettle();
+      expect((await repo.get('OIL'))!.active, false);
+      expect(find.text('Buka master'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'double tap and retry after lost acknowledgement reuse same ID and decrement exactly once',
     (tester) async {
@@ -112,7 +176,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('OIL • Oli mesin'), findsOneWidget);
+      expect(find.text('Oli mesin'), findsOneWidget);
+      expect(find.textContaining('OIL •'), findsOneWidget);
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       expect(find.text('Tidak ada sparepart sesuai filter.'), findsOneWidget);

@@ -1,8 +1,18 @@
 # BengkelKu
 
 Aplikasi Flutter Android/iOS untuk akun pelanggan, kendaraan, booking dan pekerjaan bengkel.
-Phase 06 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
+Phase 06.5 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
 asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP.
+
+Identitas **Steel Navy & Royal Blue**: emblem hex rotor orisinal, launcher icon
+Android/iOS, splash native, dashboard tiga role, profil akun nyata dan komponen
+Material 3 responsif. Ringkasan dashboard menyatakan batas query; tidak ada
+statistik/omzet palsu. Filter riwayat memakai nama kendaraan/jenis servis dan
+status pembayaran mengikuti invoice realtime.
+
+Dokumentasi Phase 06.5: [laporan dan hasil tes](docs/PHASE_06_5_REPORT.md),
+[audit UI/UX](docs/UI_UX_AUDIT.md), [design system](docs/DESIGN_SYSTEM.md),
+dan [branding/generator aset](docs/BRANDING_GUIDE.md).
 
 ## Fitur
 
@@ -31,7 +41,7 @@ asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP
 
 ## Menjalankan
 
-Status dan batas verifikasi terbaru: [laporan Phase 06](docs/PHASE_06_REPORT.md).
+Status dan batas verifikasi terbaru: [laporan Phase 06.5](docs/PHASE_06_5_REPORT.md).
 Schema, transisi, biaya reads dan batas kepercayaan admin: [pembayaran](docs/PAYMENT_SCHEMA.md).
 
 ```sh
@@ -63,7 +73,7 @@ npm run test:rules
 ```
 
 SDK lokal: Flutter 3.44.2 / Dart 3.12.2. Test emulator memakai demo project lokal,
-bukan project produksi. Hasil dan keterbatasan: [laporan Phase 02](docs/PHASE_02_REPORT.md).
+bukan project produksi. Hasil dan keterbatasan: [laporan Phase 06.5](docs/PHASE_06_5_REPORT.md).
 Riwayat Phase 01: [status fondasi](docs/PHASE_STATUS.md) dan
 [laporan fondasi](docs/mobile-foundation-report.md).
 
@@ -75,12 +85,12 @@ Riwayat Phase 01: [status fondasi](docs/PHASE_STATUS.md) dan
 - Operator mengisi katalog di Console; UI CRUD katalog admin belum tersedia.
 - Backend saat ini satu bengkel per Firebase project; belum mendukung tenant/bengkel ganda.
 - SO completed lama tanpa harga jasa menampilkan "tidak tercatat", tanpa mengarang total.
-- Pembayaran menampilkan "Belum dicatat"; pencatatan pembayaran/invoice/laporan tetap Phase 06.
+- Riwayat customer/admin membaca status invoice realtime; metadata cache ditandai. Teknisi tidak membaca invoice.
 - Detail membaca seluruh snapshot sparepart dalam halaman 20; biaya baca sebanding jumlah baris.
-- Filter ID mendukung layanan/kendaraan historis; pintasan kendaraan mencakup maksimal 50 termasuk arsip.
+- Filter riwayat memakai nama/plat dan jenis servis. Pilihan customer maksimal 50 termasuk arsip; admin/teknisi dari halaman yang dimuat.
 - Deploy rules/indexes dan acceptance produksi/perangkat asli belum dilakukan.
 - Tidak ada uji dua perangkat Android atau native iPhone pada host ini.
 - Auth/session cache native setelah process kill dan email produksi perlu smoke test perangkat.
 - Release Android tetap unsigned sampai keystore asli disiapkan; iOS perlu Team asli.
 
-Scope berhenti pada Phase 05; PR menunggu review dan tidak di-merge otomatis. [Roadmap](docs/ROADMAP.md).
+Scope berhenti pada Phase 06.5; Phase 07 belum dimulai. PR untuk review tanpa auto-merge. [Roadmap](docs/ROADMAP.md).

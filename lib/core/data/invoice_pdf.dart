@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
 import '../models/invoice.dart';
 import '../models/service_history.dart';
 
@@ -12,10 +13,38 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
   final pdf = pw.Document(
     theme: pw.ThemeData.withFont(base: font, bold: font),
   );
+  final emblem = pw.MemoryImage(
+    (await rootBundle.load('assets/branding/emblem.png')).buffer.asUint8List(),
+  );
   pdf.addPage(
     pw.MultiPage(
       build: (_) => [
-        pw.Header(level: 0, text: 'BengkelKu - ${invoice.text('invoiceNo')}'),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(16),
+          color: PdfColor.fromHex('#1E3A5F'),
+          child: pw.Row(
+            children: [
+              pw.Image(emblem, width: 64, height: 64),
+              pw.SizedBox(width: 12),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'BengkelKu',
+                      style: pw.TextStyle(color: PdfColors.white, fontSize: 24),
+                    ),
+                    pw.Text(
+                      invoice.text('invoiceNo'),
+                      style: pw.TextStyle(color: PdfColor.fromHex('#F59E0B')),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 16),
         pw.Text('SO: ${invoice.id} | ${invoice.text('vehiclePlate')}'),
         pw.Text('Terbit: ${historyDate(invoice.date('createdAt'))}'),
         pw.Text(

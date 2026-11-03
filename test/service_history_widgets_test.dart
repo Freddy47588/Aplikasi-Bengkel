@@ -23,6 +23,23 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       final db = FakeFirebaseFirestore();
+      await db.doc('vehicles/v2').set({
+        'ownerId': 'customer-demo',
+        'name': 'Brio arsip',
+        'plate': 'B 2 AA',
+        'active': false,
+      });
+      await db.doc('services/oil').set({'name': 'Oli', 'active': false});
+      await db.doc('serviceOrders/brake').set({
+        'status': 'completed',
+        'customerId': 'customer-demo',
+        'vehicleId': 'v3',
+        'vehicleName': 'Avanza',
+        'vehiclePlate': 'B 3 CC',
+        'serviceId': 'brake',
+        'serviceName': 'Rem',
+        'completedAt': Timestamp.fromMillisecondsSinceEpoch(1792026000100),
+      });
       for (var i = 0; i < 23; i++) {
         await db.doc('serviceOrders/h$i').set({
           'status': 'completed',
@@ -72,6 +89,35 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Avanza • B 3 CC'),
+        220,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Avanza • B 3 CC'), findsOneWidget);
+      final servicePicker = find.widgetWithText(
+        DropdownButtonFormField<String>,
+        'Jenis servis',
+      );
+      await tester.scrollUntilVisible(
+        servicePicker,
+        -220,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(servicePicker);
+      await tester.pumpAndSettle();
+      // An inactive catalog service remains filterable through its snapshot.
+      await tester.tap(find.text('Oli').last);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Brio • B 1 AA').first,
+        220,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Avanza • B 3 CC'), findsNothing);
       Future<void> tapVisible(String label) async {
         await tester.scrollUntilVisible(
           find.text(label),
@@ -85,15 +131,24 @@ void main() {
 
       await tapVisible('Berikutnya');
       expect(find.text('Halaman 2'), findsOneWidget);
+      final vehiclePicker = find.widgetWithText(
+        DropdownButtonFormField<String>,
+        'Kendaraan',
+      );
       await tester.scrollUntilVisible(
-        find.byType(TextField).first,
+        vehiclePicker,
         -220,
         scrollable: find.byType(Scrollable).last,
       );
-      await tester.enterText(find.byType(TextField).first, 'v2');
+      await tester.pumpAndSettle();
+      await tester.tap(vehiclePicker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Brio arsip • B 2 AA').last);
+      await tester.pumpAndSettle();
       await tapVisible('Terapkan filter');
       expect(find.text('Halaman 1'), findsOneWidget);
       await tapVisible('Brio • B 1 AA');
+      await tapVisible('Referensi dokumen');
       expect(find.text('SO ID: h0'), findsOneWidget);
       expect(find.text('Teknisi: Ari'), findsOneWidget);
       await tester.scrollUntilVisible(
@@ -150,7 +205,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
         if (mode == 'loading') {
-          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          expect(find.byType(LinearProgressIndicator), findsOneWidget);
         }
         if (mode == 'empty') {
           expect(
