@@ -1,5 +1,10 @@
 # Phase status - BengkelKu
 
+Audit lanjutan pada `main` (base `f6658c7`): komposisi dan aset diperbaiki,
+10 referensi dibaca, 37 after diperiksa, 99 tes dan build APK lulus. Lihat
+[visual fidelity report](UI_VISUAL_FIDELITY_REPORT.md). Phase 07 tetap belum
+dimulai; UAT perangkat, iOS, dan print/share native masih perlu diverifikasi.
+
 Pembaruan 4 November 2026: penyelarasan mockup pada branch
 `refactor/ui-mockup-alignment`, base `dd833d8`. Lihat
 [laporan alignment](MOCKUP_ALIGNMENT_REPORT.md) untuk cakupan, aset generated,

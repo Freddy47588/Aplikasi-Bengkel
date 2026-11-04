@@ -1,5 +1,11 @@
 # BengkelKu — design system
 
+Audit lanjutan pada `main`: [visual fidelity report](UI_VISUAL_FIDELITY_REPORT.md).
+Kartu umum sekarang memakai border netral `#E2E8F0`; panel hero tetap memakai
+biru muda. Header daftar memakai ilustrasi terpusat 104dp tanpa judul ganda,
+heading bagian 20sp, wave terbatas pada splash/login/beranda pelanggan.
+Sepuluh referensi asli dan 37 after telah ditinjau pada laporan terbaru.
+
 Pembaruan mockup 4 November 2026: hero menggunakan `blueSurface #EFF6FF`
 dengan `blueBorder #BFDBFE`; border kontrol `#64748B`, teks body `#475569`,
 radius kartu 16dp. Logo gear/wrench, ilustrasi generated, dan wave 32dp

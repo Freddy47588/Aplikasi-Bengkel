@@ -1,5 +1,11 @@
 # Branding BengkelKu — universal blue identity
 
+> Logo aktif terbaru: gear biru sederhana dan wrench putih sepenuhnya di
+> dalamnya, dibuat ulang atas permintaan pengguna agar ikon APK lebih rapi.
+> Semua export Android/iOS, splash, app, dan PDF memakai master
+> `assets/branding/emblem-mockup.png`. Lihat [laporan terbaru](UI_VISUAL_FIDELITY_REPORT.md)
+> dan [simulasi mask launcher](screenshots/visual-fidelity/launcher-preview.png).
+
 > Pembaruan 4 November 2026: identitas aktif memakai logo gear/wrench generated
 > dari mockup sesuai instruksi pengguna. Lihat [aset mockup](MOCKUP_ASSETS.md)
 > dan [laporan alignment](MOCKUP_ALIGNMENT_REPORT.md). Bagian di bawah adalah

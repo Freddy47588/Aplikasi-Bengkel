@@ -1,5 +1,12 @@
 # Aset generated untuk mockup
 
+Pembaruan audit pada `main`: lihat [laporan visual fidelity](UI_VISUAL_FIDELITY_REPORT.md)
+untuk manifest terbaru. Bentuk aset existing dipertahankan kecuali ilustrasi
+kendaraan yang dibuat ulang; resolusi PNG diperkecil. Instruksi lanjutan
+meminta logo sederhana: master gear/wrench kini dibuat ulang dan semua native
+icon diekspor kembali. Total aset aktif kini 6.32MB.
+Daftar di bawah menyimpan riwayat generasi awal.
+
 Seluruh aset berikut dibuat dengan tool ImageGen pada sesi pekerjaan ini,
 bukan diambil dari situs stok. Output PNG transparan disimpan di repository.
 Logo mengikuti brief gear/wrench mockup pengguna; bukan logo geometri lama.

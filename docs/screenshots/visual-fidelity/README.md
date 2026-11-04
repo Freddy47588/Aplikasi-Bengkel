@@ -35,6 +35,11 @@ dikurangi, daftar teknisi/inventori muncul lebih cepat melalui filter yang
 bisa dibuka, dan kartu SO menampilkan teknisi. Wave dibatasi pada layar yang
 memerlukan dekorasi; navigasi dan kontrol operasional existing dipertahankan.
 
+Atas permintaan lanjutan, logo dibuat ulang menjadi gear sederhana dengan
+wrench di dalamnya. [Preview launcher](launcher-preview.png) adalah simulasi
+mask circle/rounded-square/squircle dan export legacy, bukan screenshot
+perangkat. Seluruh after dirender ulang memakai logo terbaru.
+
 Regenerasi after:
 
 ```sh

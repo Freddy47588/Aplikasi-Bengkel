@@ -4,7 +4,7 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $logo = [System.Drawing.Image]::FromFile((Join-Path $projectRoot 'assets/branding/emblem-mockup.png'))
 $background = [System.Drawing.ColorTranslator]::FromHtml('#F8FAFC')
 
-function Export-Logo([string]$RelativePath, [int]$Width, [int]$Height, [bool]$Opaque, [double]$Scale = 0.78) {
+function Export-Logo([string]$RelativePath, [int]$Width, [int]$Height, [bool]$Opaque, [double]$Scale = 1) {
   $target = Join-Path $projectRoot $RelativePath
   [System.IO.Directory]::CreateDirectory((Split-Path $target -Parent)) | Out-Null
   $bitmap = New-Object System.Drawing.Bitmap $Width,$Height
