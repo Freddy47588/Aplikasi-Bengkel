@@ -14,7 +14,9 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
     theme: pw.ThemeData.withFont(base: font, bold: font),
   );
   final emblem = pw.MemoryImage(
-    (await rootBundle.load('assets/branding/emblem.png')).buffer.asUint8List(),
+    (await rootBundle.load(
+      'assets/branding/emblem-mockup.png',
+    )).buffer.asUint8List(),
   );
   pdf.addPage(
     pw.MultiPage(

@@ -262,14 +262,20 @@ class _PartRequestState extends ConsumerState<PartRequestScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
-            const Text(
-              'Masukkan SKU dari label sparepart. Admin memeriksa ketersediaan dan menyetujui pemakaian.',
+            const PageIntro(
+              art: WorkshopArt.spareparts,
+              title: 'Ajukan kebutuhan sparepart',
+              description:
+                  'Masukkan kode dari label sparepart. Admin memeriksa ketersediaan dan menyetujui pemakaian.',
             ),
             TextFormField(
               controller: sku,
               enabled: !busy && id == null,
               maxLength: 40,
-              decoration: const InputDecoration(labelText: 'SKU'),
+              decoration: const InputDecoration(
+                labelText: 'SKU',
+                prefixIcon: Icon(Icons.inventory_2_outlined),
+              ),
               validator: (v) =>
                   validSku(canonicalSku(v ?? '')) ? null : 'SKU tidak valid.',
             ),
@@ -285,6 +291,7 @@ class _PartRequestState extends ConsumerState<PartRequestScreen> {
                     : null;
               },
             ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: reason,
               enabled: !busy && id == null,

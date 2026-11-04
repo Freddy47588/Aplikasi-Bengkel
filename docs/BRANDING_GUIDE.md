@@ -1,5 +1,11 @@
 # Branding BengkelKu — universal blue identity
 
+> Pembaruan 4 November 2026: identitas aktif memakai logo gear/wrench generated
+> dari mockup sesuai instruksi pengguna. Lihat [aset mockup](MOCKUP_ASSETS.md)
+> dan [laporan alignment](MOCKUP_ALIGNMENT_REPORT.md). Bagian di bawah adalah
+> arsip identitas geometri sebelumnya; generator lamanya tidak dipakai untuk
+> export identitas aktif.
+
 Emblem baru berupa housing heksagonal Royal Blue yang mengelilingi rotor
 enam gigi Off-white, dengan lubang poros heksagonal Steel Navy. Siluet geometris
 ini digambar dari koordinat sendiri; bukan recolor atau modifikasi mark B lama.

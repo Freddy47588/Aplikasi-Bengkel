@@ -125,6 +125,12 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
               padding: const EdgeInsets.all(20),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
+                const PageIntro(
+                  art: WorkshopArt.booking,
+                  title: 'Buat booking servis',
+                  description:
+                      'Pilih kendaraan, layanan, dan jadwal kunjungan Anda.',
+                ),
                 const Text(
                   'Pilih kendaraan Anda • jadwal 09:00–16:00 WIB • maksimal 90 hari',
                 ),
@@ -164,6 +170,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                         isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Kendaraan',
+                          prefixIcon: Icon(Icons.directions_car_outlined),
                         ),
                         items: availableVehicles
                             .map(
@@ -194,6 +201,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                         isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Jenis layanan',
+                          prefixIcon: Icon(Icons.build_outlined),
                         ),
                         items: availableServices
                             .map(
@@ -242,6 +250,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                         initialValue: hour,
                         decoration: const InputDecoration(
                           labelText: 'Jam servis',
+                          prefixIcon: Icon(Icons.schedule_outlined),
                         ),
                         items: serviceHours
                             .map(

@@ -42,6 +42,12 @@ class VehiclesScreen extends ConsumerWidget {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
               children: [
+                const PageIntro(
+                  art: WorkshopArt.vehicles,
+                  title: 'Daftar kendaraan Anda',
+                  description:
+                      'Kelola kendaraan untuk booking dan riwayat servis. Ketuk kendaraan untuk mengubah datanya.',
+                ),
                 if (vehicles.isEmpty)
                   const EmptyState(
                     title: 'Belum ada kendaraan',
@@ -51,11 +57,14 @@ class VehiclesScreen extends ConsumerWidget {
                 const Text('Menampilkan hingga 50 kendaraan aktif.'),
                 for (final v in vehicles)
                   Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
-                      title: Text(v.name),
-                      subtitle: Text(v.plate),
+                      leading: const Icon(Icons.directions_car_outlined),
+                      title: Text(v.plate),
+                      subtitle: Text(v.name),
                       onTap: () => edit(context, ref, v),
                       trailing: IconButton(
+                        tooltip: 'Hapus ${v.plate}',
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
@@ -170,7 +179,11 @@ class _VehicleFormState extends ConsumerState<_VehicleForm> {
             controller: name,
             enabled: !busy,
             maxLength: 80,
-            decoration: const InputDecoration(labelText: 'Nama kendaraan'),
+            decoration: const InputDecoration(
+              labelText: 'Nama kendaraan',
+              hintText: 'Contoh: Honda Vario 160',
+              prefixIcon: Icon(Icons.directions_car_outlined),
+            ),
             validator: (v) =>
                 (v?.trim().isEmpty ?? true) ? 'Isi nama kendaraan.' : null,
           ),
@@ -182,6 +195,7 @@ class _VehicleFormState extends ConsumerState<_VehicleForm> {
             decoration: const InputDecoration(
               labelText: 'Plat nomor',
               hintText: 'B 1234 XYZ',
+              prefixIcon: Icon(Icons.pin_outlined),
             ),
             validator: (v) {
               try {

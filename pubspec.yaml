@@ -67,6 +67,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/branding/emblem.png
+    - assets/branding/emblem-mockup.png
+    - assets/illustrations/
     - assets/fonts/NotoSans-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:

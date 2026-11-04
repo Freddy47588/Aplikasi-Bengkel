@@ -14,20 +14,34 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ),
-        if (actionLabel != null)
-          TextButton(onPressed: onPressed, child: Text(actionLabel!)),
-      ],
+    final heading = Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (actionLabel != null &&
+            (constraints.maxWidth < 360 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.3)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              heading,
+              TextButton(onPressed: onPressed, child: Text(actionLabel!)),
+            ],
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: heading),
+            if (actionLabel != null)
+              TextButton(onPressed: onPressed, child: Text(actionLabel!)),
+          ],
+        );
+      },
     );
   }
 }

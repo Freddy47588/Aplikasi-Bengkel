@@ -61,8 +61,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Keluhan: Mesin bising'), findsOneWidget);
-      final start = find.widgetWithText(OutlinedButton, 'Dikerjakan');
+      expect(find.text('Mesin bising'), findsOneWidget);
+      final start = find.widgetWithText(OutlinedButton, 'Mulai pengerjaan');
       await tester.scrollUntilVisible(
         start,
         180,
@@ -74,11 +74,11 @@ void main() {
       await tester.tap(find.text('Lanjutkan'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('Status: Dikerjakan'),
+        find.text('Dikerjakan'),
         -180,
         scrollable: find.byType(Scrollable).last,
       );
-      expect(find.text('Status: Dikerjakan'), findsOneWidget);
+      expect(find.text('Dikerjakan'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.widgetWithText(OutlinedButton, 'Checklist dan catatan kerja'),
         180,
@@ -87,13 +87,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Checklist dan catatan kerja'));
       await tester.pumpAndSettle();
+      await reveal(tester, find.byType(CheckboxListTile).first);
       await tester.tap(find.byType(CheckboxListTile).first);
+      await reveal(tester, find.byType(TextField).first);
       await tester.enterText(find.byType(TextField).first, 'Pemeriksaan mesin');
-      await tester.scrollUntilVisible(
-        find.text('Simpan'),
-        180,
-        scrollable: find.byType(Scrollable).last,
-      );
+      await reveal(tester, find.text('Simpan'));
       await tester.tap(find.text('Simpan'));
       await tester.pumpAndSettle();
       expect(
@@ -126,11 +124,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('Status: Dijeda'),
+        find.text('Dijeda'),
         -180,
         scrollable: find.byType(Scrollable).last,
       );
-      expect(find.text('Status: Dijeda'), findsOneWidget);
+      expect(find.text('Dijeda'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

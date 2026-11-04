@@ -63,7 +63,7 @@ class _LoginState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('BengkelKu')),
+    appBar: AppBar(),
     body: WorkshopBody(
       child: Center(
         child: ConstrainedBox(
@@ -76,8 +76,16 @@ class _LoginState extends ConsumerState<LoginScreen> {
               const BrandLockup(),
               const SizedBox(height: 24),
               Text(
-                register ? 'Daftar Pelanggan' : 'Masuk',
-                style: Theme.of(context).textTheme.headlineMedium,
+                register ? 'Buat Akun Baru' : 'Masuk ke Akun Anda',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                register
+                    ? 'Daftar untuk mengelola kendaraan dan booking servis.'
+                    : 'Silakan masuk untuk melanjutkan.',
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               Form(
@@ -133,6 +141,14 @@ class _LoginState extends ConsumerState<LoginScreen> {
                                 : 'Isi kata sandi.')
                           : null,
                     ),
+                    if (!register)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: busy ? null : () => submit(reset: true),
+                          child: const Text('Lupa kata sandi'),
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     if (message != null)
                       Semantics(
@@ -142,12 +158,18 @@ class _LoginState extends ConsumerState<LoginScreen> {
                           child: Text(message!, key: const Key('auth-message')),
                         ),
                       ),
+                    if (message?.startsWith('Jika email terdaftar') == true)
+                      const WorkshopIllustration(
+                        WorkshopArt.password,
+                        height: 96,
+                      ),
                     if (busy) const Center(child: CircularProgressIndicator()),
                     FilledButton(
                       onPressed: busy ? null : submit,
                       child: Text(register ? 'Daftar' : 'Masuk dengan Email'),
                     ),
-                    TextButton(
+                    const SizedBox(height: 12),
+                    OutlinedButton(
                       onPressed: busy
                           ? null
                           : () => setState(() {
@@ -159,10 +181,6 @@ class _LoginState extends ConsumerState<LoginScreen> {
                             ? 'Sudah punya akun? Masuk'
                             : 'Daftar akun pelanggan',
                       ),
-                    ),
-                    TextButton(
-                      onPressed: busy ? null : () => submit(reset: true),
-                      child: const Text('Lupa kata sandi'),
                     ),
                   ],
                 ),
@@ -223,6 +241,7 @@ class _AccountState extends ConsumerState<AccountScreen>
   Widget build(BuildContext context) {
     final s = ref.watch(authSessionProvider);
     final repo = ref.read(authRepositoryProvider);
+    if (s.loading) return const SessionSplash();
     return Scaffold(
       appBar: AppBar(title: const Text('Status Akun')),
       body: WorkshopBody(
@@ -230,11 +249,14 @@ class _AccountState extends ConsumerState<AccountScreen>
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(24),
           children: [
-            const WorkshopHero(
+            WorkshopHero(
+              art: WorkshopArt.verification,
               eyebrow: 'Keamanan akun',
-              title: 'Selangkah lagi',
+              title: s.role != null && !s.verified && s.active
+                  ? 'Verifikasi Email'
+                  : 'Status akun Anda',
               description:
-                  'Periksa status akun dan verifikasi email untuk melanjutkan.',
+                  'Periksa status akun untuk melanjutkan ke BengkelKu.',
             ),
             const SizedBox(height: 24),
             if (s.loading || busy)
@@ -257,6 +279,7 @@ class _AccountState extends ConsumerState<AccountScreen>
                         ),
                   child: const Text('Kirim ulang verifikasi'),
                 ),
+                const SizedBox(height: 12),
               ],
               if (s.role == null)
                 OutlinedButton(

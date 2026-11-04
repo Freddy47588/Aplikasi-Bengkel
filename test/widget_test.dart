@@ -11,7 +11,7 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
-      expect(find.text('Masuk'), findsOneWidget);
+      expect(find.text('Masuk ke Akun Anda'), findsOneWidget);
       expect(find.byType(TextFormField), findsNWidgets(2));
       expect(find.text('Daftar akun pelanggan'), findsOneWidget);
       expect(find.text('Masuk sebagai Teknisi'), findsNothing);

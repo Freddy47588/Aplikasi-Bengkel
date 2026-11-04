@@ -16,5 +16,8 @@ class AppColors {
   static const Color muted = Color(0xFF64748B);
   static const Color onMuted = Color(0xFF475569);
   static const Color border = Color(0xFFE2E8F0);
+  static const Color controlBorder = Color(0xFF64748B);
+  static const Color blueSurface = Color(0xFFEFF6FF);
+  static const Color blueBorder = Color(0xFFBFDBFE);
   static const Color card = Colors.white;
 }
