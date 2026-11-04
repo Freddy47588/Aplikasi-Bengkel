@@ -39,9 +39,10 @@ class LiveDashboard extends ConsumerWidget {
         : 'admin';
     final orders = ref.watch(ordersPageProvider(null));
     final identity = session.email?.split('@').first;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final actions = <(String, IconData, String)>[
       if (customer) ...[
-        ('Booking Servis', Icons.add_road, '/customer/booking'),
+        ('Booking Servis', Icons.event_available_outlined, '/customer/booking'),
         ('Kendaraan Saya', Icons.directions_car_outlined, '/customer/vehicles'),
         ('Booking Saya', Icons.event_note_outlined, '/customer/bookings'),
       ] else if (technician) ...[
@@ -60,6 +61,181 @@ class LiveDashboard extends ConsumerWidget {
           '/$role/invoices',
         ),
     ];
+    final bookingSummary = !technician
+        ? ref
+              .watch(bookingsProvider)
+              .when(
+                loading: () => const LoadingState(),
+                error: (_, _) =>
+                    LoadError(onRetry: () => ref.invalidate(bookingsProvider)),
+                data: (items) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AdaptiveCards(
+                      minWidth: largeText ? 240 : 128,
+                      children: [
+                        DashboardStatCard(
+                          compact: true,
+                          label: customer
+                              ? 'Booking aktif'
+                              : 'Menunggu konfirmasi',
+                          value:
+                              '${items.where((b) => customer ? b.status.isActive : b.status.name == 'pending').length}',
+                          icon: Icons.event_available_outlined,
+                          color: AppColors.warning,
+                        ),
+                        DashboardStatCard(
+                          compact: true,
+                          label: 'Booking dikonfirmasi',
+                          value:
+                              '${items.where((b) => b.status.name == 'confirmed').length}',
+                          icon: Icons.fact_check_outlined,
+                          color: AppColors.success,
+                        ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Ringkasan dari maksimal 100 booking terbaru.',
+                      ),
+                    ),
+                  ],
+                ),
+              )
+        : const SizedBox.shrink();
+    final orderSummary = orders.when(
+      loading: () => const LoadingState(),
+      error: (_, _) =>
+          LoadError(onRetry: () => ref.invalidate(ordersPageProvider(null))),
+      data: (page) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AdaptiveCards(
+            minWidth: largeText ? 240 : 128,
+            children: [
+              DashboardStatCard(
+                compact: true,
+                label: technician
+                    ? 'Tugas aktif pada halaman ini'
+                    : 'Servis aktif pada halaman ini',
+                value: '${page.items.where((o) => !o.status.terminal).length}',
+                icon: Icons.car_repair_outlined,
+                color: AppColors.info,
+              ),
+              DashboardStatCard(
+                compact: true,
+                label: 'Selesai pada halaman ini',
+                value:
+                    '${page.items.where((o) => o.status == ServiceOrderStatus.completed).length}',
+                icon: Icons.task_alt,
+                color: AppColors.success,
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Maksimal 20 Service Order terbaru; bukan total seluruh bengkel.',
+            ),
+          ),
+        ],
+      ),
+    );
+    final progress = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          title: technician ? 'Pekerjaan aktif' : 'Progres kendaraan',
+          actionLabel: 'Lihat semua',
+          onPressed: () => context.go('/$role/orders'),
+        ),
+        const SizedBox(height: 12),
+        orders.when(
+          loading: () => const LoadingState(),
+          error: (_, _) => LoadError(
+            onRetry: () => ref.invalidate(ordersPageProvider(null)),
+          ),
+          data: (page) {
+            final active = page.items
+                .where((o) => !o.status.terminal)
+                .take(3)
+                .toList();
+            if (active.isEmpty) {
+              return const EmptyState(
+                title: 'Tidak ada servis aktif pada halaman ini',
+                description:
+                    'Buka daftar untuk melihat seluruh halaman pekerjaan.',
+                icon: Icons.car_repair_outlined,
+              );
+            }
+            return Column(
+              children: [
+                for (final order in active)
+                  ContentSection(
+                    title: order.text('vehicleName'),
+                    children: [
+                      Text(
+                        '${order.text('vehiclePlate')} • ${order.text('serviceName')}',
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: StatusChip(
+                          label: order.status.label,
+                          tone: orderStatusTone(order.status),
+                        ),
+                      ),
+                      if (customer) ServiceTimeline(order: order),
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.go('/$role/orders/${order.id}'),
+                        icon: const Icon(Icons.chevron_right),
+                        label: Text(
+                          technician
+                              ? 'Buka tugas & tindakan berikutnya'
+                              : 'Detail progres',
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+    final quickActions = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(title: 'Akses cepat'),
+        const SizedBox(height: 12),
+        AdaptiveCards(
+          minWidth: largeText ? 240 : 140,
+          children: [
+            for (final action in actions.skip(1))
+              QuickActionCard(
+                title: action.$1,
+                icon: action.$2,
+                color: AppColors.secondary,
+                onTap: () => context.go(action.$3),
+              ),
+          ],
+        ),
+      ],
+    );
+    final bookings = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          title: customer ? 'Booking terbaru' : 'Antrean booking',
+          actionLabel: 'Lihat semua',
+          onPressed: () => context.go('/$role/bookings'),
+        ),
+        const SizedBox(height: 12),
+        BookingListContent(customer: customer, limit: 3),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('BengkelKu'),
@@ -67,10 +243,12 @@ class LiveDashboard extends ConsumerWidget {
       ),
       bottomNavigationBar: MobileNavigation(role: role),
       body: WorkshopBody(
+        showWave: customer,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             WorkshopHero(
+              compact: !customer,
               art: customer
                   ? WorkshopArt.vehicles
                   : technician
@@ -99,97 +277,33 @@ class LiveDashboard extends ConsumerWidget {
               label: Text(actions.first.$1),
             ),
             const SizedBox(height: 24),
-            const SectionHeader(title: 'Ringkasan aktivitas'),
-            const SizedBox(height: 12),
-            if (!technician)
-              ref
-                  .watch(bookingsProvider)
-                  .when(
-                    loading: () => const LoadingState(),
-                    error: (_, _) => LoadError(
-                      onRetry: () => ref.invalidate(bookingsProvider),
-                    ),
-                    data: (items) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AdaptiveCards(
-                          minWidth:
-                              MediaQuery.textScalerOf(context).scale(1) > 1.3
-                              ? 240
-                              : 128,
-                          children: [
-                            DashboardStatCard(
-                              compact: true,
-                              label: customer
-                                  ? 'Booking aktif'
-                                  : 'Menunggu konfirmasi',
-                              value:
-                                  '${items.where((b) => customer ? b.status.isActive : b.status.name == 'pending').length}',
-                              icon: Icons.event_available_outlined,
-                              color: AppColors.warning,
-                            ),
-                            DashboardStatCard(
-                              compact: true,
-                              label: 'Booking dikonfirmasi',
-                              value:
-                                  '${items.where((b) => b.status.name == 'confirmed').length}',
-                              icon: Icons.fact_check_outlined,
-                              color: AppColors.success,
-                            ),
-                          ],
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            'Ringkasan dari maksimal 100 booking terbaru.',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-            orders.when(
-              loading: () => const LoadingState(),
-              error: (_, _) => LoadError(
-                onRetry: () => ref.invalidate(ordersPageProvider(null)),
-              ),
-              data: (page) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AdaptiveCards(
-                    minWidth: MediaQuery.textScalerOf(context).scale(1) > 1.3
-                        ? 240
-                        : 128,
-                    children: [
-                      DashboardStatCard(
-                        compact: true,
-                        label: technician
-                            ? 'Tugas aktif pada halaman ini'
-                            : 'Servis aktif pada halaman ini',
-                        value:
-                            '${page.items.where((o) => !o.status.terminal).length}',
-                        icon: Icons.car_repair_outlined,
-                        color: AppColors.info,
-                      ),
-                      DashboardStatCard(
-                        compact: true,
-                        label: 'Selesai pada halaman ini',
-                        value:
-                            '${page.items.where((o) => o.status == ServiceOrderStatus.completed).length}',
-                        icon: Icons.task_alt,
-                        color: AppColors.success,
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'Maksimal 20 Service Order terbaru; bukan total seluruh bengkel.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!customer && !technician)
+            if (technician) ...[
+              progress,
+              const SizedBox(height: 24),
+              const SectionHeader(title: 'Ringkasan aktivitas'),
+              const SizedBox(height: 12),
+              orderSummary,
+              const SizedBox(height: 24),
+              quickActions,
+            ] else ...[
+              const SectionHeader(title: 'Ringkasan aktivitas'),
+              const SizedBox(height: 12),
+              bookingSummary,
+              if (!customer) ...[
+                const SizedBox(height: 24),
+                bookings,
+                const SizedBox(height: 24),
+                orderSummary,
+              ] else ...[
+                const SizedBox(height: 16),
+                quickActions,
+              ],
+              const SizedBox(height: 24),
+              progress,
+              if (customer) ...[const SizedBox(height: 24), orderSummary],
+            ],
+            if (!customer && !technician) ...[
+              const SizedBox(height: 24),
               ref
                   .watch(
                     inventoryPageProvider((
@@ -220,7 +334,7 @@ class LiveDashboard extends ConsumerWidget {
                             ),
                             title: Text(part.text('name')),
                             subtitle: Text(
-                              'Stok ${part.stock} ${part.text('unit')} • minimum ${part.number('minimumStock')}',
+                              'Stok ${part.stock} ${part.text('unit')} • batas ${part.number('minimumStock')}',
                             ),
                             onTap: () => context.go('/admin/inventory'),
                           ),
@@ -230,81 +344,9 @@ class LiveDashboard extends ConsumerWidget {
                       ],
                     ),
                   ),
-            const SizedBox(height: 16),
-            const SectionHeader(title: 'Akses cepat'),
-            const SizedBox(height: 12),
-            AdaptiveCards(
-              minWidth: MediaQuery.textScalerOf(context).scale(1) > 1.3
-                  ? 240
-                  : 140,
-              children: [
-                for (final action in actions.skip(1))
-                  QuickActionCard(
-                    title: action.$1,
-                    icon: action.$2,
-                    color: AppColors.secondary,
-                    onTap: () => context.go(action.$3),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: technician ? 'Prioritas pekerjaan' : 'Progres kendaraan',
-              actionLabel: 'Lihat semua',
-              onPressed: () => context.go('/$role/orders'),
-            ),
-            orders.when(
-              loading: () => const LoadingState(),
-              error: (_, _) => LoadError(
-                onRetry: () => ref.invalidate(ordersPageProvider(null)),
-              ),
-              data: (page) {
-                final active = page.items
-                    .where((o) => !o.status.terminal)
-                    .take(3)
-                    .toList();
-                if (active.isEmpty) {
-                  return const EmptyState(
-                    title: 'Tidak ada servis aktif pada halaman ini',
-                    description:
-                        'Buka daftar untuk melihat seluruh halaman pekerjaan.',
-                    icon: Icons.car_repair_outlined,
-                  );
-                }
-                return Column(
-                  children: [
-                    for (final order in active)
-                      ContentSection(
-                        title: order.text('vehicleName'),
-                        children: [
-                          Text(
-                            '${order.text('vehiclePlate')} • ${order.text('serviceName')}',
-                          ),
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: StatusChip(
-                              label: order.status.label,
-                              tone: StatusChipTone.info,
-                            ),
-                          ),
-                          if (customer) ServiceTimeline(order: order),
-                          TextButton.icon(
-                            onPressed: () =>
-                                context.go('/$role/orders/${order.id}'),
-                            icon: const Icon(Icons.arrow_forward),
-                            label: Text(
-                              technician
-                                  ? 'Buka tugas & tindakan berikutnya'
-                                  : 'Detail progres',
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                );
-              },
-            ),
+              const SizedBox(height: 24),
+              quickActions,
+            ],
             if (customer) ...[
               const SizedBox(height: 24),
               SectionHeader(
@@ -343,15 +385,8 @@ class LiveDashboard extends ConsumerWidget {
                             ],
                           ),
                   ),
-            ],
-            if (!technician) ...[
               const SizedBox(height: 24),
-              SectionHeader(
-                title: customer ? 'Booking terbaru' : 'Antrean booking',
-                actionLabel: 'Lihat semua',
-                onPressed: () => context.go('/$role/bookings'),
-              ),
-              BookingListContent(customer: customer, limit: 3),
+              bookings,
             ],
             const SizedBox(height: 24),
             SectionHeader(

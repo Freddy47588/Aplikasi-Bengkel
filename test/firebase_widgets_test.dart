@@ -96,6 +96,9 @@ void main() {
       await reveal(tester, find.text('Lupa kata sandi'));
       await tester.tap(find.text('Lupa kata sandi'));
       await tester.pumpAndSettle();
+      await reveal(tester, find.text('Kirim Tautan'));
+      await tester.tap(find.text('Kirim Tautan'));
+      await tester.pumpAndSettle();
       expect(fake.calls.last, 'reset:a@example.test');
       expect(find.textContaining('Jika email terdaftar'), findsOneWidget);
     },

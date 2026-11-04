@@ -16,14 +16,15 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final heading = Text(
       title,
-      style: Theme.of(
-        context,
-      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+      ),
     );
     return LayoutBuilder(
       builder: (context, constraints) {
         if (actionLabel != null &&
-            (constraints.maxWidth < 360 ||
+            (constraints.maxWidth < 300 ||
                 MediaQuery.textScalerOf(context).scale(1) > 1.3)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,

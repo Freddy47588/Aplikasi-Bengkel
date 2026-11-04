@@ -96,13 +96,12 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             if (!widget.select) ...[
-              const WorkshopIllustration(WorkshopArt.technician),
-              const SizedBox(height: 16),
-              const WorkspaceLinks(role: 'admin'),
-              const SizedBox(height: 24),
-              Text(
-                'Tim teknisi',
-                style: Theme.of(context).textTheme.titleLarge,
+              const PageIntro(
+                showTitle: false,
+                art: WorkshopArt.technician,
+                title: 'Tim teknisi',
+                description:
+                    'Kelola data teknisi dan periksa ketersediaan untuk penugasan servis.',
               ),
             ],
             const SizedBox(height: 12),
@@ -115,28 +114,37 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: specialization,
-              decoration: const InputDecoration(
-                labelText: 'Spesialisasi',
-                helperText: 'Kosongkan untuk semua spesialisasi.',
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<bool?>(
-              isExpanded: true,
-              itemHeight: null,
-              initialValue: active,
-              decoration: const InputDecoration(labelText: 'Status teknisi'),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Semua')),
-                DropdownMenuItem(value: true, child: Text('Aktif')),
-                DropdownMenuItem(value: false, child: Text('Nonaktif')),
+            ExpansionTile(
+              title: const Text('Filter teknisi'),
+              tilePadding: EdgeInsets.zero,
+              leading: const Icon(Icons.tune),
+              children: [
+                TextField(
+                  controller: specialization,
+                  decoration: const InputDecoration(
+                    labelText: 'Spesialisasi',
+                    helperText: 'Kosongkan untuk semua spesialisasi.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<bool?>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  initialValue: active,
+                  decoration: const InputDecoration(
+                    labelText: 'Status teknisi',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Semua')),
+                    DropdownMenuItem(value: true, child: Text('Aktif')),
+                    DropdownMenuItem(value: false, child: Text('Nonaktif')),
+                  ],
+                  onChanged: (v) => setState(() {
+                    active = v;
+                    resetPage();
+                  }),
+                ),
               ],
-              onChanged: (v) => setState(() {
-                active = v;
-                resetPage();
-              }),
             ),
             TextButton(
               onPressed: () => setState(() {
@@ -197,6 +205,10 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
                     ],
                   ),
                 ),
+            if (!widget.select) ...[
+              const SizedBox(height: 24),
+              const WorkspaceLinks(role: 'admin'),
+            ],
           ],
         ),
       ),

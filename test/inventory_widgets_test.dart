@@ -179,6 +179,9 @@ void main() {
       await reveal(tester, find.text('Oli mesin'));
       expect(find.text('Oli mesin'), findsOneWidget);
       expect(find.textContaining('OIL •'), findsOneWidget);
+      await reveal(tester, find.text('Filter inventori'));
+      await tester.tap(find.text('Filter inventori'));
+      await tester.pumpAndSettle();
       await reveal(tester, find.byType(SwitchListTile));
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();

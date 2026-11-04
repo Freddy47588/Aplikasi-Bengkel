@@ -110,7 +110,12 @@ Future<void> captureFixture(
         key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final raster = await boundary.toImage(pixelRatio: 2);
     final bytes = await raster.toByteData(format: ui.ImageByteFormat.png);
-    final dir = Directory('build/ui-ux-evidence')..createSync(recursive: true);
+    final dir = Directory(
+      const String.fromEnvironment(
+        'CAPTURE_DIR',
+        defaultValue: 'build/ui-ux-evidence',
+      ),
+    )..createSync(recursive: true);
     File(
       '${dir.path}/fixture-$name.png',
     ).writeAsBytesSync(bytes!.buffer.asUint8List());
@@ -346,6 +351,10 @@ void main() {
       await tester.tap(find.text('Lupa kata sandi'));
       await tester.pumpAndSettle();
       await captureFixture(tester, key, 'alignment-password-reset');
+      await reveal(tester, find.text('Kirim Tautan'));
+      await tester.tap(find.text('Kirim Tautan'));
+      await tester.pumpAndSettle();
+      await captureFixture(tester, key, 'alignment-password-reset-sent');
       testAuth(container).setSession(const AuthSession(loading: true));
       await tester.pump();
       await captureFixture(tester, key, 'alignment-splash', settle: false);

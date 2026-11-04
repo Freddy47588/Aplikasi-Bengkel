@@ -78,6 +78,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             const PageIntro(
+              showTitle: false,
               art: WorkshopArt.checklist,
               title: 'Invoice servis',
               description:

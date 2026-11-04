@@ -126,6 +126,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 const PageIntro(
+                  showTitle: false,
                   art: WorkshopArt.booking,
                   title: 'Buat booking servis',
                   description:
@@ -159,114 +160,128 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      DropdownButtonFormField<String>(
-                        key: ValueKey(
-                          'vehicles:${availableVehicles.map((v) => v.id).join(',')}',
-                        ),
-                        initialValue:
-                            availableVehicles.any((v) => v.id == vehicle)
-                            ? vehicle
-                            : null,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Kendaraan',
-                          prefixIcon: Icon(Icons.directions_car_outlined),
-                        ),
-                        items: availableVehicles
-                            .map(
-                              (v) => DropdownMenuItem(
-                                value: v.id,
-                                child: Text(
-                                  '${v.name} • ${v.plate}',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: busy
-                            ? null
-                            : (value) => setState(() => vehicle = value),
-                        validator: (value) =>
-                            value == null ? 'Pilih kendaraan.' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        key: ValueKey(
-                          'services:${availableServices.map((s) => s.id).join(',')}',
-                        ),
-                        initialValue:
-                            availableServices.any((s) => s.id == service)
-                            ? service
-                            : null,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Jenis layanan',
-                          prefixIcon: Icon(Icons.build_outlined),
-                        ),
-                        items: availableServices
-                            .map(
-                              (s) => DropdownMenuItem(
-                                value: s.id,
-                                child: Text(s.name),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: busy
-                            ? null
-                            : (value) => setState(() => service = value),
-                        validator: (value) =>
-                            value == null ? 'Pilih layanan.' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.calendar_month),
-                        label: Text(
-                          date == null
-                              ? 'Pilih tanggal servis'
-                              : '${date!.day}/${date!.month}/${date!.year}',
-                        ),
-                        onPressed: busy
-                            ? null
-                            : () async {
-                                final now = DateTime.now();
-                                final selected = await showDatePicker(
-                                  context: context,
-                                  initialDate:
-                                      date ?? now.add(const Duration(days: 1)),
-                                  firstDate: DateTime(
-                                    now.year,
-                                    now.month,
-                                    now.day,
+                      ContentSection(
+                        title: 'Kendaraan & layanan',
+                        children: [
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(
+                              'vehicles:${availableVehicles.map((v) => v.id).join(',')}',
+                            ),
+                            initialValue:
+                                availableVehicles.any((v) => v.id == vehicle)
+                                ? vehicle
+                                : null,
+                            isExpanded: true,
+                            itemHeight: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Kendaraan',
+                              prefixIcon: Icon(Icons.directions_car_outlined),
+                            ),
+                            items: availableVehicles
+                                .map(
+                                  (v) => DropdownMenuItem(
+                                    value: v.id,
+                                    child: Text('${v.name} • ${v.plate}'),
                                   ),
-                                  lastDate: now.add(const Duration(days: 90)),
-                                );
-                                if (selected != null && mounted) {
-                                  setState(() => date = selected);
-                                }
-                              },
+                                )
+                                .toList(),
+                            onChanged: busy
+                                ? null
+                                : (value) => setState(() => vehicle = value),
+                            validator: (value) =>
+                                value == null ? 'Pilih kendaraan.' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(
+                              'services:${availableServices.map((s) => s.id).join(',')}',
+                            ),
+                            initialValue:
+                                availableServices.any((s) => s.id == service)
+                                ? service
+                                : null,
+                            isExpanded: true,
+                            itemHeight: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Jenis layanan',
+                              prefixIcon: Icon(Icons.build_outlined),
+                            ),
+                            items: availableServices
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s.id,
+                                    child: Text(s.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: busy
+                                ? null
+                                : (value) => setState(() => service = value),
+                            validator: (value) =>
+                                value == null ? 'Pilih layanan.' : null,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        initialValue: hour,
-                        decoration: const InputDecoration(
-                          labelText: 'Jam servis',
-                          prefixIcon: Icon(Icons.schedule_outlined),
-                        ),
-                        items: serviceHours
-                            .map(
-                              (h) => DropdownMenuItem(
-                                value: h,
-                                child: Text(
-                                  '${h.toString().padLeft(2, '0')}:00',
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: busy
-                            ? null
-                            : (value) => setState(() => hour = value),
-                        validator: (value) =>
-                            value == null ? 'Pilih jam servis.' : null,
+                      ContentSection(
+                        title: 'Jadwal kunjungan',
+                        children: [
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.calendar_month),
+                            label: Text(
+                              date == null
+                                  ? 'Pilih tanggal servis'
+                                  : '${date!.day}/${date!.month}/${date!.year}',
+                            ),
+                            onPressed: busy
+                                ? null
+                                : () async {
+                                    final now = DateTime.now();
+                                    final selected = await showDatePicker(
+                                      context: context,
+                                      initialDate:
+                                          date ??
+                                          now.add(const Duration(days: 1)),
+                                      firstDate: DateTime(
+                                        now.year,
+                                        now.month,
+                                        now.day,
+                                      ),
+                                      lastDate: now.add(
+                                        const Duration(days: 90),
+                                      ),
+                                    );
+                                    if (selected != null && mounted) {
+                                      setState(() => date = selected);
+                                    }
+                                  },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<int>(
+                            isExpanded: true,
+                            itemHeight: null,
+                            initialValue: hour,
+                            decoration: const InputDecoration(
+                              labelText: 'Jam servis',
+                              prefixIcon: Icon(Icons.schedule_outlined),
+                            ),
+                            items: serviceHours
+                                .map(
+                                  (h) => DropdownMenuItem(
+                                    value: h,
+                                    child: Text(
+                                      '${h.toString().padLeft(2, '0')}:00',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: busy
+                                ? null
+                                : (value) => setState(() => hour = value),
+                            validator: (value) =>
+                                value == null ? 'Pilih jam servis.' : null,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

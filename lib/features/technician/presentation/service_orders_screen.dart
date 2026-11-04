@@ -57,6 +57,7 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                 padding: const EdgeInsets.all(20),
                 children: [
                   PageIntro(
+                    showTitle: false,
                     art: WorkshopArt.checklist,
                     title: role == 'technician'
                         ? 'Daftar tugas Anda'
@@ -80,7 +81,8 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                       icon: Icons.car_repair_outlined,
                       title:
                           '${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
-                      description: order.text('serviceName'),
+                      description:
+                          '${order.text('serviceName')}\nTeknisi: ${order.text('technicianName').isEmpty ? 'Belum tercatat' : order.text('technicianName')}',
                       status: StatusChip(
                         label: order.status.label,
                         tone: orderStatusTone(order.status),

@@ -105,7 +105,7 @@ ThemeData buildAppTheme() {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        side: const BorderSide(color: AppColors.blueBorder),
+        side: const BorderSide(color: AppColors.border),
       ),
     ),
     dividerColor: AppColors.border,

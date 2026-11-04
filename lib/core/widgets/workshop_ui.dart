@@ -33,8 +33,9 @@ Future<bool> confirmWorkshopAction(
     true;
 
 class WorkshopBody extends StatelessWidget {
-  const WorkshopBody({super.key, required this.child});
+  const WorkshopBody({super.key, required this.child, this.showWave = false});
   final Widget child;
+  final bool showWave;
   @override
   Widget build(BuildContext context) => SafeArea(
     child: Center(
@@ -49,7 +50,7 @@ class WorkshopBody extends StatelessWidget {
                 child: child,
               ),
             ),
-            if (MediaQuery.viewInsetsOf(context).bottom == 0)
+            if (showWave && MediaQuery.viewInsetsOf(context).bottom == 0)
               const WorkshopWave(),
           ],
         ),
@@ -218,22 +219,35 @@ class PageIntro extends StatelessWidget {
     required this.title,
     required this.description,
     this.art,
+    this.showTitle = true,
   });
   final String title, description;
   final WorkshopArt? art;
+  final bool showTitle;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: AppSpace.xl),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (art != null) ...[
-          WorkshopIllustration(art!),
+        if (art != null &&
+            MediaQuery.textScalerOf(context).scale(1) <= 1.3) ...[
+          WorkshopIllustration(art!, height: 104),
           const SizedBox(height: AppSpace.md),
         ],
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppSpace.sm),
-        Text(description),
+        if (showTitle) ...[
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpace.sm),
+        ],
+        Text(
+          description,
+          textAlign: showTitle ? TextAlign.start : TextAlign.center,
+        ),
       ],
     ),
   );
@@ -244,6 +258,7 @@ class SessionSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     body: WorkshopBody(
+      showWave: true,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpace.xl),
@@ -268,9 +283,11 @@ class WorkshopHero extends StatelessWidget {
     required this.title,
     required this.description,
     this.art,
+    this.compact = false,
   });
   final String eyebrow, title, description;
   final WorkshopArt? art;
+  final bool compact;
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(AppSpace.xl),
@@ -298,19 +315,43 @@ class WorkshopHero extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w800,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (compact &&
+                art != null &&
+                MediaQuery.textScalerOf(context).scale(1) <= 1.3) ...[
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 88,
+                child: WorkshopIllustration(art!, height: 96),
+              ),
+            ],
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          description,
-          style: const TextStyle(color: AppColors.primary, height: 1.5),
-        ),
-        if (art != null) ...[
+        if (!compact && art != null) ...[
           const SizedBox(height: AppSpace.sm),
           WorkshopIllustration(art!, height: 112),
         ],

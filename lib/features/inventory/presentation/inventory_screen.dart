@@ -84,6 +84,7 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             const PageIntro(
+              showTitle: false,
               art: WorkshopArt.spareparts,
               title: 'Ketersediaan sparepart',
               description:
@@ -104,42 +105,49 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: category,
-              decoration: const InputDecoration(
-                labelText: 'Kategori',
-                helperText:
-                    'Gunakan nama kategori pada kartu sparepart; kosongkan untuk semua.',
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<bool?>(
-              isExpanded: true,
-              itemHeight: null,
-              initialValue: active,
-              decoration: const InputDecoration(labelText: 'Status'),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Semua')),
-                DropdownMenuItem(value: true, child: Text('Aktif')),
-                DropdownMenuItem(value: false, child: Text('Nonaktif')),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Filter inventori'),
+              leading: const Icon(Icons.tune),
+              children: [
+                TextField(
+                  controller: category,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    helperText:
+                        'Gunakan nama kategori pada kartu sparepart; kosongkan untuk semua.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<bool?>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  initialValue: active,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Semua')),
+                    DropdownMenuItem(value: true, child: Text('Aktif')),
+                    DropdownMenuItem(value: false, child: Text('Nonaktif')),
+                  ],
+                  onChanged: (v) => setState(() {
+                    active = v;
+                    cursors
+                      ..clear()
+                      ..add(null);
+                  }),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Stok minimum / habis'),
+                  value: low,
+                  onChanged: (v) => setState(() {
+                    low = v;
+                    cursors
+                      ..clear()
+                      ..add(null);
+                  }),
+                ),
               ],
-              onChanged: (v) => setState(() {
-                active = v;
-                cursors
-                  ..clear()
-                  ..add(null);
-              }),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Stok minimum / habis'),
-              value: low,
-              onChanged: (v) => setState(() {
-                low = v;
-                cursors
-                  ..clear()
-                  ..add(null);
-              }),
             ),
             TextButton(
               onPressed: () => setState(() {
@@ -519,7 +527,21 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
                       k != MovementKind.reversal &&
                       (widget.orderId == null || k == MovementKind.usage),
                 ))
-                  DropdownMenuItem(value: k, child: Text(k.label)),
+                  DropdownMenuItem(
+                    value: k,
+                    child: Row(
+                      children: [
+                        Icon(switch (k) {
+                          MovementKind.receipt => Icons.move_to_inbox_outlined,
+                          MovementKind.usage => Icons.outbox_outlined,
+                          MovementKind.adjustment => Icons.tune,
+                          MovementKind.reversal => Icons.undo,
+                        }),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(k.label)),
+                      ],
+                    ),
+                  ),
               ],
               onChanged: busy || submitted != null
                   ? null

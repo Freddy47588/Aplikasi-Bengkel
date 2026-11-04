@@ -14,6 +14,7 @@ class _LoginState extends ConsumerState<LoginScreen> {
   final email = TextEditingController();
   final password = TextEditingController();
   bool register = false;
+  bool resetMode = false;
   bool busy = false;
   bool obscure = true;
   String? message;
@@ -65,24 +66,34 @@ class _LoginState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(),
     body: WorkshopBody(
+      showWave: true,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: ListView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             shrinkWrap: true,
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
-              const BrandLockup(),
-              const SizedBox(height: 24),
+              if (resetMode)
+                const WorkshopIllustration(WorkshopArt.password, height: 128)
+              else
+                const BrandLockup(),
+              const SizedBox(height: 16),
               Text(
-                register ? 'Buat Akun Baru' : 'Masuk ke Akun Anda',
+                resetMode
+                    ? 'Lupa Kata Sandi?'
+                    : register
+                    ? 'Buat Akun Baru'
+                    : 'Masuk ke Akun Anda',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                register
+                resetMode
+                    ? 'Masukkan email akun Anda untuk menerima tautan pengaturan ulang kata sandi.'
+                    : register
                     ? 'Daftar untuk mengelola kendaraan dan booking servis.'
                     : 'Silakan masuk untuk melanjutkan.',
                 textAlign: TextAlign.center,
@@ -111,41 +122,47 @@ class _LoginState extends ConsumerState<LoginScreen> {
                           : 'Email tidak valid.',
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: password,
-                      enabled: !busy,
-                      obscureText: obscure,
-                      autofillHints: [
-                        register
-                            ? AutofillHints.newPassword
-                            : AutofillHints.password,
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Kata sandi',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: obscure
-                              ? 'Tampilkan kata sandi'
-                              : 'Sembunyikan kata sandi',
-                          onPressed: () => setState(() => obscure = !obscure),
-                          icon: Icon(
-                            obscure
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                    if (!resetMode)
+                      TextFormField(
+                        controller: password,
+                        enabled: !busy,
+                        obscureText: obscure,
+                        autofillHints: [
+                          register
+                              ? AutofillHints.newPassword
+                              : AutofillHints.password,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Kata sandi',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: obscure
+                                ? 'Tampilkan kata sandi'
+                                : 'Sembunyikan kata sandi',
+                            onPressed: () => setState(() => obscure = !obscure),
+                            icon: Icon(
+                              obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
                           ),
                         ),
+                        validator: (v) => (v?.length ?? 0) < (register ? 8 : 1)
+                            ? (register
+                                  ? 'Minimal 8 karakter.'
+                                  : 'Isi kata sandi.')
+                            : null,
                       ),
-                      validator: (v) => (v?.length ?? 0) < (register ? 8 : 1)
-                          ? (register
-                                ? 'Minimal 8 karakter.'
-                                : 'Isi kata sandi.')
-                          : null,
-                    ),
-                    if (!register)
+                    if (!register && !resetMode)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: busy ? null : () => submit(reset: true),
+                          onPressed: busy
+                              ? null
+                              : () => setState(() {
+                                  resetMode = true;
+                                  message = null;
+                                }),
                           child: const Text('Lupa kata sandi'),
                         ),
                       ),
@@ -158,26 +175,33 @@ class _LoginState extends ConsumerState<LoginScreen> {
                           child: Text(message!, key: const Key('auth-message')),
                         ),
                       ),
-                    if (message?.startsWith('Jika email terdaftar') == true)
-                      const WorkshopIllustration(
-                        WorkshopArt.password,
-                        height: 96,
-                      ),
                     if (busy) const Center(child: CircularProgressIndicator()),
                     FilledButton(
-                      onPressed: busy ? null : submit,
-                      child: Text(register ? 'Daftar' : 'Masuk dengan Email'),
+                      onPressed: busy ? null : () => submit(reset: resetMode),
+                      child: Text(
+                        resetMode
+                            ? 'Kirim Tautan'
+                            : register
+                            ? 'Daftar'
+                            : 'Masuk dengan Email',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: busy
                           ? null
                           : () => setState(() {
-                              register = !register;
+                              if (resetMode) {
+                                resetMode = false;
+                              } else {
+                                register = !register;
+                              }
                               message = null;
                             }),
                       child: Text(
-                        register
+                        resetMode
+                            ? 'Kembali ke Login'
+                            : register
                             ? 'Sudah punya akun? Masuk'
                             : 'Daftar akun pelanggan',
                       ),

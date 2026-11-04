@@ -63,6 +63,7 @@ class BookingListPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           PageIntro(
+            showTitle: false,
             art: WorkshopArt.booking,
             title: 'Daftar booking',
             description: customer
@@ -122,6 +123,8 @@ class BookingListContent extends ConsumerWidget {
                           label: b.status.label,
                           tone: b.status == BookingStatus.pending
                               ? StatusChipTone.warning
+                              : b.status == BookingStatus.rejected
+                              ? StatusChipTone.danger
                               : b.status == BookingStatus.confirmed
                               ? StatusChipTone.success
                               : StatusChipTone.neutral,
