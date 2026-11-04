@@ -62,6 +62,13 @@ class BookingListPage extends StatelessWidget {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
+          PageIntro(
+            art: WorkshopArt.booking,
+            title: 'Daftar booking',
+            description: customer
+                ? 'Lihat jadwal dan status booking servis kendaraan Anda.'
+                : 'Tinjau jadwal pelanggan dan konfirmasi booking servis.',
+          ),
           OutlinedButton(
             onPressed: () =>
                 context.go('/${customer ? 'customer' : 'admin'}/orders'),
@@ -106,17 +113,21 @@ class BookingListContent extends ConsumerWidget {
                 ...bookings
                     .take(limit ?? bookings.length)
                     .map(
-                      (b) => Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: const Icon(Icons.event_note_outlined),
-                          title: Text('${b.vehicle.name} • ${b.vehicle.plate}'),
-                          subtitle: Text(
-                            '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}\n${b.status.label}',
-                          ),
-                          onTap: () => context.go(
-                            '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
-                          ),
+                      (b) => WorkshopRecordCard(
+                        icon: Icons.event_note_outlined,
+                        title: '${b.vehicle.name} • ${b.vehicle.plate}',
+                        description:
+                            '${b.draft.service}\n${bookingSchedule(b.draft.scheduledAt)}',
+                        status: StatusChip(
+                          label: b.status.label,
+                          tone: b.status == BookingStatus.pending
+                              ? StatusChipTone.warning
+                              : b.status == BookingStatus.confirmed
+                              ? StatusChipTone.success
+                              : StatusChipTone.neutral,
+                        ),
+                        onTap: () => context.go(
+                          '/${customer ? 'customer' : 'admin'}/bookings/${b.id}',
                         ),
                       ),
                     ),
@@ -191,6 +202,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
       appBar: AppBar(
         title: const Text('Detail Booking'),
         leading: IconButton(
+          tooltip: 'Kembali',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
@@ -268,6 +280,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                       booking: b.status,
                       order: orderState?.asData?.value,
                     ),
+                    const SizedBox(height: 16),
                     if (b.status == BookingStatus.confirmed &&
                         !customer &&
                         !hasOrder)
@@ -335,6 +348,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                             : () => change(BookingStatus.confirmed),
                         child: const Text('Konfirmasi'),
                       ),
+                      const SizedBox(height: 8),
                       OutlinedButton(
                         onPressed: busy
                             ? null

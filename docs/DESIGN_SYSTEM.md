@@ -1,5 +1,11 @@
 # BengkelKu — design system
 
+Pembaruan mockup 4 November 2026: hero menggunakan `blueSurface #EFF6FF`
+dengan `blueBorder #BFDBFE`; border kontrol `#64748B`, teks body `#475569`,
+radius kartu 16dp. Logo gear/wrench, ilustrasi generated, dan wave 32dp
+mengikuti [laporan alignment](MOCKUP_ALIGNMENT_REPORT.md). Detail di bawah
+yang menyebut hero navy/emblem geometri merupakan keputusan versi sebelumnya.
+
 Phase 06.5, 2 November 2026 (Asia/Jakarta). Tema Material 3 terang, identitas
 Steel Navy & Royal Blue. Tidak ada dark mode parsial.
 

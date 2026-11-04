@@ -244,17 +244,13 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
                           icon: Icons.history,
                         ),
                       for (final order in page.items)
-                        Card(
-                          child: ListTile(
-                            title: Text(
+                        WorkshopRecordCard(
+                          icon: Icons.history,
+                          title:
                               '${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
-                            ),
-                            subtitle: Text(
+                          description:
                               '${order.text('serviceName')}\nSelesai: ${historyDate(order.date('completedAt'))}',
-                            ),
-                            onTap: () =>
-                                context.go('/$role/history/${order.id}'),
-                          ),
+                          onTap: () => context.go('/$role/history/${order.id}'),
                         ),
                       PageButtons(
                         page: cursors.length,
@@ -314,6 +310,8 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
+                    const WorkshopIllustration(WorkshopArt.completion),
+                    const SizedBox(height: 16),
                     ContentSection(
                       title: 'Kendaraan & layanan',
                       children: [
@@ -340,9 +338,16 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    Text('Keluhan: ${order.text('complaint')}'),
-                    Text('Diagnosis: ${order.text('diagnosis')}'),
-                    Text('Tindakan: ${order.text('actions')}'),
+                    ContentSection(
+                      title: 'Hasil pemeriksaan & tindakan',
+                      children: [
+                        Text('Keluhan: ${order.text('complaint')}'),
+                        const SizedBox(height: 12),
+                        Text('Diagnosis: ${order.text('diagnosis')}'),
+                        const SizedBox(height: 12),
+                        Text('Tindakan: ${order.text('actions')}'),
+                      ],
+                    ),
                     Text(
                       'Teknisi: ${order.text('technicianName').isEmpty ? order.technicianId ?? 'Tidak tercatat' : order.text('technicianName')}',
                     ),

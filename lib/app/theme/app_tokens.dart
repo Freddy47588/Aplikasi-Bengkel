@@ -5,5 +5,5 @@ abstract final class AppSpace {
 }
 
 abstract final class AppRadius {
-  static const double control = 12, card = 20, hero = 24;
+  static const double control = 12, card = 16, hero = 24;
 }

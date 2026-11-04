@@ -9,6 +9,7 @@ import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/service_timeline.dart';
+import '../../../core/widgets/status_chip.dart';
 import '../../../core/models/service_history.dart';
 import 'technicians_screen.dart';
 import '../../inventory/presentation/order_parts_screen.dart';
@@ -55,6 +56,14 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(20),
                 children: [
+                  PageIntro(
+                    art: WorkshopArt.checklist,
+                    title: role == 'technician'
+                        ? 'Daftar tugas Anda'
+                        : 'Daftar service order',
+                    description:
+                        'Pantau status pekerjaan dan buka rincian servis kendaraan.',
+                  ),
                   if (role == 'admin')
                     OutlinedButton(
                       onPressed: () => context.go('/admin/technicians'),
@@ -67,16 +76,16 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                       icon: Icons.car_repair_outlined,
                     ),
                   for (final order in page.items)
-                    Card(
-                      child: ListTile(
-                        title: Text(
+                    WorkshopRecordCard(
+                      icon: Icons.car_repair_outlined,
+                      title:
                           '${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
-                        ),
-                        subtitle: Text(
-                          '${order.status.label}\n${order.text('serviceName')}',
-                        ),
-                        onTap: () => context.go('/$role/orders/${order.id}'),
+                      description: order.text('serviceName'),
+                      status: StatusChip(
+                        label: order.status.label,
+                        tone: orderStatusTone(order.status),
                       ),
+                      onTap: () => context.go('/$role/orders/${order.id}'),
                     ),
                   PageButtons(
                     page: cursors.length,
@@ -162,6 +171,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
       appBar: AppBar(
         title: const Text('Detail Service Order'),
         leading: IconButton(
+          tooltip: 'Kembali ke daftar pekerjaan',
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
               context.go('/$role/${role == 'technician' ? 'jobs' : 'orders'}'),
@@ -199,20 +209,31 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text(
-                      order.text('vehicleName'),
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    WorkshopRecordCard(
+                      title: order.text('vehiclePlate'),
+                      description:
+                          '${order.text('vehicleName')}\n${order.text('serviceName')}',
+                      icon: Icons.car_repair_outlined,
+                      status: StatusChip(
+                        label: order.status.label,
+                        tone: orderStatusTone(order.status),
+                      ),
                     ),
-                    Text(order.text('vehiclePlate')),
-                    Text('Layanan: ${order.text('serviceName')}'),
-                    Text('Keluhan: ${order.text('complaint')}'),
-                    Text('Status: ${order.status.label}'),
-                    Text(
-                      'Teknisi: ${order.text('technicianName').isNotEmpty
-                          ? order.text('technicianName')
-                          : order.technicianId == null
-                          ? 'Belum ditugaskan'
-                          : 'Teknisi telah ditugaskan'}',
+                    ContentSection(
+                      title: 'Keluhan kendaraan',
+                      children: [Text(order.text('complaint'))],
+                    ),
+                    ContentSection(
+                      title: 'Penugasan teknisi',
+                      children: [
+                        Text(
+                          'Teknisi: ${order.text('technicianName').isNotEmpty
+                              ? order.text('technicianName')
+                              : order.technicianId == null
+                              ? 'Belum ditugaskan'
+                              : 'Teknisi telah ditugaskan'}',
+                        ),
+                      ],
                     ),
                     ExpansionTile(
                       title: const Text('Referensi penugasan'),
@@ -222,9 +243,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                           SelectableText('ID teknisi: ${order.technicianId}'),
                       ],
                     ),
-                    Text(
-                      'Diperbarui: ${order.date('updatedAt')?.toLocal() ?? 'Menyinkronkan…'}',
-                    ),
+                    Text('Diperbarui: ${historyDate(order.date('updatedAt'))}'),
                     const SizedBox(height: 16),
                     ServiceTimeline(order: order),
                     Text(
@@ -278,10 +297,26 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                               },
                         child: const Text('Catat biaya jasa'),
                       ),
-                    for (final entry in order.checklist.entries)
-                      Text(
-                        '${entry.value ? '✓' : '○'} ${inspectionLabel(entry.key)}',
-                      ),
+                    ContentSection(
+                      title: 'Checklist pekerjaan',
+                      children: [
+                        for (final entry in order.checklist.entries)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(
+                              entry.value
+                                  ? Icons.check_circle_outline
+                                  : Icons.radio_button_unchecked,
+                            ),
+                            title: Text(inspectionLabel(entry.key)),
+                            subtitle: Text(
+                              entry.value
+                                  ? 'Sudah diperiksa'
+                                  : 'Belum diperiksa',
+                            ),
+                          ),
+                      ],
+                    ),
                     ContentSection(
                       title: 'Pemeriksaan & tindakan',
                       children: [
@@ -364,7 +399,9 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                                     context: context,
                                     builder: (c) => AlertDialog(
                                       scrollable: true,
-                                      title: Text('${next.label}?'),
+                                      title: Text(
+                                        '${workActionLabel(next, order.status)}?',
+                                      ),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
@@ -383,7 +420,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                                     await transition(next);
                                   }
                                 },
-                          child: Text(next.label),
+                          child: Text(workActionLabel(next, order.status)),
                         ),
                   ],
                 );
@@ -399,6 +436,31 @@ String inspectionLabel(String key) => switch (key) {
   'safetyChecked' => 'Keselamatan diperiksa',
   _ => 'Hasil pekerjaan diperiksa',
 };
+
+StatusChipTone orderStatusTone(ServiceOrderStatus status) => switch (status) {
+  ServiceOrderStatus.completed => StatusChipTone.success,
+  ServiceOrderStatus.cancelled => StatusChipTone.neutral,
+  ServiceOrderStatus.queued ||
+  ServiceOrderStatus.paused ||
+  ServiceOrderStatus.awaitingApproval => StatusChipTone.warning,
+  _ => StatusChipTone.info,
+};
+
+String workActionLabel(ServiceOrderStatus next, ServiceOrderStatus current) =>
+    switch (next) {
+      ServiceOrderStatus.inProgress =>
+        current == ServiceOrderStatus.paused
+            ? 'Lanjutkan pengerjaan'
+            : current == ServiceOrderStatus.awaitingApproval
+            ? 'Kembalikan untuk perbaikan'
+            : 'Mulai pengerjaan',
+      ServiceOrderStatus.paused => 'Jeda pengerjaan',
+      ServiceOrderStatus.awaitingApproval => 'Ajukan selesai',
+      ServiceOrderStatus.completed => 'Setujui penyelesaian',
+      ServiceOrderStatus.cancelled => 'Batalkan pekerjaan',
+      ServiceOrderStatus.assigned => 'Kembalikan untuk perbaikan',
+      _ => next.label,
+    };
 
 class WorkEditor extends ConsumerStatefulWidget {
   const WorkEditor({super.key, required this.order});
@@ -434,13 +496,27 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
+          const WorkshopIllustration(WorkshopArt.checklist),
+          const SizedBox(height: 16),
+          WorkshopRecordCard(
+            title: widget.order.text('vehiclePlate'),
+            description:
+                '${widget.order.text('vehicleName')}\n${widget.order.text('serviceName')}',
+            icon: Icons.car_repair_outlined,
+          ),
           for (final key in inspectionKeys)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(inspectionLabel(key)),
-              value: checks[key],
-              onChanged: busy ? null : (v) => setState(() => checks[key] = v!),
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: CheckboxListTile(
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(inspectionLabel(key)),
+                value: checks[key],
+                onChanged: busy
+                    ? null
+                    : (v) => setState(() => checks[key] = v!),
+              ),
             ),
+          const SizedBox(height: 16),
           for (final (controller, label, max) in [
             (diagnosis, 'Diagnosis', 2000),
             (actions, 'Tindakan', 2000),

@@ -176,14 +176,17 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await reveal(tester, find.text('Oli mesin'));
       expect(find.text('Oli mesin'), findsOneWidget);
       expect(find.textContaining('OIL •'), findsOneWidget);
+      await reveal(tester, find.byType(SwitchListTile));
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       expect(find.text('Tidak ada sparepart sesuai filter.'), findsOneWidget);
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, 'other');
+      await reveal(tester, find.text('Terapkan pencarian'));
       await tester.tap(find.text('Terapkan pencarian'));
       await tester.pumpAndSettle();
       expect(find.text('Tidak ada sparepart sesuai filter.'), findsOneWidget);

@@ -7,6 +7,7 @@ import '../../../app/router/app_router.dart';
 import '../../../core/data/service_order_repository.dart';
 import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/status_chip.dart';
 import 'service_orders_screen.dart';
 
 typedef TechnicianFilter = ({
@@ -95,6 +96,8 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             if (!widget.select) ...[
+              const WorkshopIllustration(WorkshopArt.technician),
+              const SizedBox(height: 16),
               const WorkspaceLinks(role: 'admin'),
               const SizedBox(height: 24),
               Text(
@@ -107,6 +110,7 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
               controller: search,
               decoration: const InputDecoration(
                 labelText: 'Cari nama teknisi',
+                prefixIcon: Icon(Icons.search),
                 helperText: 'Ketik awal nama sesuai penulisan terdaftar.',
               ),
             ),
@@ -118,7 +122,10 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
                 helperText: 'Kosongkan untuk semua spesialisasi.',
               ),
             ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<bool?>(
+              isExpanded: true,
+              itemHeight: null,
               initialValue: active,
               decoration: const InputDecoration(labelText: 'Status teknisi'),
               items: const [
@@ -155,27 +162,31 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
                           icon: Icons.engineering_outlined,
                         ),
                       for (final t in page.items)
-                        Card(
-                          child: ListTile(
-                            title: Text(t.name),
-                            subtitle: Text(
-                              '${t.specialization}\n${t.active ? 'Aktif' : 'Nonaktif'} • ${t.assignable ? 'Tersedia' : 'Tidak tersedia'}',
-                            ),
-                            enabled: !widget.select || t.assignable,
-                            onTap: () {
-                              if (widget.select) {
-                                Navigator.pop(context, t.id);
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        TechnicianEditor(technician: t),
-                                  ),
-                                );
-                              }
-                            },
+                        WorkshopRecordCard(
+                          icon: Icons.engineering_outlined,
+                          title: t.name,
+                          description:
+                              '${t.specialization}\n${t.assignable ? 'Tersedia' : 'Tidak tersedia'}',
+                          status: StatusChip(
+                            label: t.active ? 'Aktif' : 'Nonaktif',
+                            tone: t.active
+                                ? StatusChipTone.success
+                                : StatusChipTone.neutral,
                           ),
+                          enabled: !widget.select || t.assignable,
+                          onTap: () {
+                            if (widget.select) {
+                              Navigator.pop(context, t.id);
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      TechnicianEditor(technician: t),
+                                ),
+                              );
+                            }
+                          },
                         ),
                       PageButtons(
                         page: cursors.length,
@@ -229,11 +240,13 @@ class _TechnicianEditorState extends ConsumerState<TechnicianEditor> {
           const Text(
             'Akun dengan role technician harus disiapkan operator tepercaya terlebih dahulu.',
           ),
+          const SizedBox(height: 16),
           TextField(
             controller: uid,
             enabled: !busy && widget.technician == null,
             decoration: const InputDecoration(labelText: 'UID akun teknisi'),
           ),
+          const SizedBox(height: 16),
           TextField(
             controller: name,
             enabled: !busy,

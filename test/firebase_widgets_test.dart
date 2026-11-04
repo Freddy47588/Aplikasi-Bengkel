@@ -56,6 +56,7 @@ void main() {
           child: const MaterialApp(home: LoginScreen()),
         ),
       );
+      await reveal(tester, find.text('Masuk dengan Email'));
       await tester.tap(find.text('Masuk dengan Email'));
       await tester.pumpAndSettle();
       expect(fake.calls, isEmpty);
@@ -64,9 +65,11 @@ void main() {
         'a@example.test',
       );
       await tester.enterText(find.byType(TextFormField).last, 'password123');
+      await reveal(tester, find.text('Daftar akun pelanggan'));
       await tester.tap(find.text('Daftar akun pelanggan'));
       await tester.pumpAndSettle();
       fake.pending = Completer<void>();
+      await reveal(tester, find.text('Daftar'));
       await tester.tap(find.text('Daftar'));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -77,10 +80,12 @@ void main() {
       );
       fake.pending!.complete();
       await tester.pumpAndSettle();
+      await reveal(tester, find.text('Sudah punya akun? Masuk'));
       await tester.tap(find.text('Sudah punya akun? Masuk'));
       await tester.pumpAndSettle();
       fake.pending = null;
       fake.failure = FirebaseAuthException(code: 'user-disabled');
+      await reveal(tester, find.text('Masuk dengan Email'));
       await tester.tap(find.text('Masuk dengan Email'));
       await tester.pumpAndSettle();
       expect(
@@ -88,6 +93,7 @@ void main() {
         findsOneWidget,
       );
       fake.failure = null;
+      await reveal(tester, find.text('Lupa kata sandi'));
       await tester.tap(find.text('Lupa kata sandi'));
       await tester.pumpAndSettle();
       expect(fake.calls.last, 'reset:a@example.test');

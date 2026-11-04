@@ -1,5 +1,11 @@
 # Phase status - BengkelKu
 
+Pembaruan 4 November 2026: penyelarasan mockup pada branch
+`refactor/ui-mockup-alignment`, base `dd833d8`. Lihat
+[laporan alignment](MOCKUP_ALIGNMENT_REPORT.md) untuk cakupan, aset generated,
+gate terbaru, dan batas UAT. **Tetap Phase 06.5; Phase 07 belum dimulai.**
+Status di bawah merupakan catatan pekerjaan sebelumnya.
+
 Status terbaru: **Phase 06.5 — UI/UX polish & branding universal biru**.
 Base `origin/main` setelah PR #7 merged (`12583b2`). Branch
 `refactor/ui-ux-polish`. Lihat [laporan Phase 06.5](PHASE_06_5_REPORT.md),

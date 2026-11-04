@@ -21,6 +21,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'test_support.dart';
+import 'package:bengkel_kendaraan/core/models/service_order.dart';
+import 'package:bengkel_kendaraan/core/widgets/service_timeline.dart';
+import 'package:bengkel_kendaraan/features/technician/presentation/service_orders_screen.dart';
+import 'package:bengkel_kendaraan/features/technician/presentation/technicians_screen.dart';
+import 'package:bengkel_kendaraan/features/inventory/presentation/inventory_screen.dart';
+import 'package:bengkel_kendaraan/features/inventory/presentation/order_parts_screen.dart';
 
 void viewport(WidgetTester tester, double width) {
   tester.view.physicalSize = Size(width, 740);
@@ -77,18 +83,28 @@ Future<FakeFirebaseFirestore> fixtureDatabase() async {
 Future<void> captureFixture(
   WidgetTester tester,
   GlobalKey key,
-  String name,
-) async {
+  String name, {
+  bool settle = true,
+}) async {
   if (!const bool.fromEnvironment('CAPTURE_UI')) return;
   await tester.runAsync(
     () => precacheImage(
-      const AssetImage('assets/branding/emblem.png'),
+      const AssetImage('assets/branding/emblem-mockup.png'),
       key.currentContext!,
     ),
   );
+  await tester.runAsync(() async {
+    for (final img in tester.widgetList<Image>(find.byType(Image))) {
+      await precacheImage(img.image, key.currentContext!);
+    }
+  });
   final scrollable = find.byType(Scrollable).first;
   tester.state<ScrollableState>(scrollable).position.jumpTo(0);
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   await tester.runAsync(() async {
     final boundary =
         key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -104,6 +120,310 @@ Future<void> captureFixture(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+    'session splash has no actions or forced logout and follows authenticated role',
+    (tester) async {
+      final container = testContainer();
+      addTearDown(container.dispose);
+      testAuth(container).setSession(const AuthSession(loading: true));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const BengkelKuApp(),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(SessionSplash), findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.text('Keluar'), findsNothing);
+      expect(
+        (container.read(authRepositoryProvider) as FakeAuthRepository).calls,
+        isEmpty,
+      );
+      testAuth(container).signIn(UserRole.technician);
+      await tester.pumpAndSettle();
+      expect(
+        container
+            .read(appRouterProvider)
+            .routeInformationProvider
+            .value
+            .uri
+            .path,
+        '/technician/home',
+      );
+      expect(find.byType(SessionSplash), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'mockup alignment: all role screens reflow at 320dp and 200% text',
+    (tester) async {
+      final previousError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        FlutterError.dumpErrorToConsole(details, forceReport: true);
+        previousError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = previousError);
+      viewport(tester, 320);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      final db = await fixtureDatabase();
+      final container = testContainer(database: db);
+      addTearDown(container.dispose);
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const BengkelKuApp(),
+        ),
+      );
+      for (final role in UserRole.values) {
+        testAuth(container).signIn(role);
+        for (final path in [
+          'home',
+          'profile',
+          'orders',
+          'orders/assigned',
+          'history',
+          if (role == UserRole.customer) ...['vehicles', 'booking', 'bookings'],
+          if (role == UserRole.admin) ...[
+            'technicians',
+            'inventory',
+            'invoices',
+          ],
+        ]) {
+          router.go('/${role.name}/$path');
+          await tester.pumpAndSettle();
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '${role.name}/$path top',
+          );
+          if (find.byType(ListView).evaluate().isNotEmpty) {
+            for (var n = 0; n < 18; n++) {
+              await tester.drag(
+                find.byType(ListView).first,
+                const Offset(0, -400),
+              );
+              await tester.pumpAndSettle();
+              expect(
+                tester.takeException(),
+                isNull,
+                reason: '${role.name}/$path scroll $n',
+              );
+            }
+          }
+        }
+      }
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'mockup alignment: current and stopped work have distinct progress and actions',
+    (tester) async {
+      for (final state in ServiceOrderStatus.values) {
+        final order = ServiceOrder('test', {
+          'status': state.name,
+          'technicianId': 't',
+          'startedAt': Timestamp.fromDate(DateTime.utc(2026, 11, 4)),
+        });
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAppTheme(),
+            home: Scaffold(body: ServiceTimeline(order: order)),
+          ),
+        );
+        if (state == ServiceOrderStatus.cancelled) {
+          expect(find.byIcon(Icons.cancel_outlined), findsOneWidget);
+          expect(find.textContaining('Proses berhenti'), findsOneWidget);
+        } else if (state != ServiceOrderStatus.completed) {
+          expect(find.byIcon(Icons.radio_button_checked), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+      }
+      expect(
+        workActionLabel(
+          ServiceOrderStatus.inProgress,
+          ServiceOrderStatus.paused,
+        ),
+        'Lanjutkan pengerjaan',
+      );
+      expect(
+        workActionLabel(
+          ServiceOrderStatus.assigned,
+          ServiceOrderStatus.awaitingApproval,
+        ),
+        'Kembalikan untuk perbaikan',
+      );
+      expect(
+        workActionLabel(
+          ServiceOrderStatus.awaitingApproval,
+          ServiceOrderStatus.inProgress,
+        ),
+        'Ajukan selesai',
+      );
+    },
+  );
+
+  testWidgets(
+    'mockup alignment: capture actual Flutter screens with test fixtures',
+    (tester) async {
+      if (!const bool.fromEnvironment('CAPTURE_UI')) return;
+      viewport(tester, 390);
+      tester.platformDispatcher.textScaleFactorTestValue = 1;
+      final db = await fixtureDatabase();
+      final container = testContainer(
+        database: db,
+        bookings: Stream.value([
+          Booking(
+            id: 'visual-booking',
+            customerId: 'customer-demo',
+            draft: BookingDraft(
+              vehicleId: 'brio',
+              service: 'Ganti Oli',
+              scheduledAt: DateTime.utc(2026, 11, 5, 2),
+              complaint: 'Suara mesin saat berkendara',
+            ),
+          ),
+        ]),
+      );
+      addTearDown(container.dispose);
+      final router = container.read(appRouterProvider);
+      final key = GlobalKey();
+      final orderData = (await db.doc('serviceOrders/assigned').get()).data()!;
+      await db.doc('serviceOrders/completed').set({
+        ...orderData,
+        'status': 'completed',
+        'completedAt': Timestamp.now(),
+        'laborPrice': 150000,
+        'diagnosis': 'Oli mesin perlu diganti.',
+        'actions': 'Penggantian oli mesin.',
+      });
+      await db.doc('invoices/completed').set({
+        'customerId': 'customer-demo',
+        'invoiceNo': 'INV-TEST-001',
+        'status': 'partial',
+        'vehiclePlate': 'B 1234 XYZ',
+        'serviceName': 'Ganti Oli',
+        'createdAt': Timestamp.now(),
+        'laborPrice': 150000,
+        'parts': [],
+        'subtotal': 150000,
+        'discount': 0,
+        'fee': 0,
+        'grandTotal': 150000,
+        'paidAmount': 100000,
+        'change': 0,
+        'due': 50000,
+      });
+      await db.doc('technicians/technician-demo').set({
+        'name': 'Ari',
+        'specialization': 'Mesin',
+        'active': true,
+        'available': true,
+      });
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: RepaintBoundary(key: key, child: const BengkelKuApp()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await captureFixture(tester, key, 'alignment-login');
+      await reveal(tester, find.text('Daftar akun pelanggan'));
+      await tester.tap(find.text('Daftar akun pelanggan'));
+      await tester.pumpAndSettle();
+      await captureFixture(tester, key, 'alignment-register');
+      await reveal(tester, find.text('Sudah punya akun? Masuk'));
+      await tester.tap(find.text('Sudah punya akun? Masuk'));
+      await tester.pumpAndSettle();
+      await reveal(tester, find.byType(TextFormField).first);
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'customer@example.test',
+      );
+      await reveal(tester, find.text('Lupa kata sandi'));
+      await tester.tap(find.text('Lupa kata sandi'));
+      await tester.pumpAndSettle();
+      await captureFixture(tester, key, 'alignment-password-reset');
+      testAuth(container).setSession(const AuthSession(loading: true));
+      await tester.pump();
+      await captureFixture(tester, key, 'alignment-splash', settle: false);
+      testAuth(container).setSession(
+        const AuthSession(
+          uid: 'customer-demo',
+          email: 'pelanggan@example.test',
+          role: UserRole.customer,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await captureFixture(tester, key, 'alignment-verification');
+      for (final role in UserRole.values) {
+        testAuth(container).setSession(
+          AuthSession(
+            uid: '${role.name}-demo',
+            role: role,
+            verified: true,
+            email: '${role.name}@example.test',
+          ),
+        );
+        for (final path in [
+          'home',
+          'profile',
+          'orders',
+          'orders/assigned',
+          'history/completed',
+          if (role == UserRole.customer) ...['vehicles', 'booking'],
+          if (role != UserRole.technician) ...[
+            'bookings',
+            'bookings/visual-booking',
+          ],
+          if (role == UserRole.admin) ...[
+            'technicians',
+            'inventory',
+            'invoices',
+            'invoices/completed',
+          ],
+        ]) {
+          router.go('/${role.name}/$path');
+          await tester.pumpAndSettle();
+          await captureFixture(
+            tester,
+            key,
+            'alignment-${role.name}-${path.replaceAll('/', '-')}',
+          );
+          expect(tester.takeException(), isNull);
+        }
+      }
+      for (final entry in <String, Widget>{
+        'checklist': WorkEditor(order: ServiceOrder('assigned', orderData)),
+        'request-part': const PartRequestScreen(orderId: 'assigned'),
+        'part-detail': const SparepartDetailScreen(sku: 'OIL'),
+        'part-editor': const SparepartEditor(),
+        'stock-operation': const StockOperationScreen(sku: 'OIL'),
+        'technician-editor': const TechnicianEditor(),
+      }.entries) {
+        testAuth(container).signIn(UserRole.admin);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: RepaintBoundary(
+              key: key,
+              child: MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: buildAppTheme(),
+                home: entry.value,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await captureFixture(tester, key, 'alignment-${entry.key}');
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('universal blue identity and state feedback fit 320dp at 1.3x', (
     tester,
   ) async {
@@ -128,13 +448,17 @@ void main() {
     );
     await tester.pump();
     expect(find.text('BengkelKu'), findsOneWidget);
-    expect(find.text('Perawatan kendaraan Anda'), findsOneWidget);
+    expect(find.text('Aplikasi Manajemen Bengkel'), findsOneWidget);
     expect(
       find.textContaining(RegExp('freddy|zaki|edition', caseSensitive: false)),
       findsNothing,
     );
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    await tester.ensureVisible(find.text('Coba lagi'));
+    await Scrollable.ensureVisible(
+      tester.element(find.text('Coba lagi')),
+      alignment: 0.5,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.text('Coba lagi'));
     expect(retried, isTrue);
     final scheme = Theme.of(
@@ -341,9 +665,10 @@ void main() {
         );
         await tester.pumpAndSettle();
         if (width == 390) await captureFixture(tester, boundary, 'login-390');
-        await tester.ensureVisible(find.text('Masuk dengan Email'));
+        await reveal(tester, find.text('Masuk dengan Email'));
         await tester.tap(find.text('Masuk dengan Email'));
         await tester.pumpAndSettle();
+        await reveal(tester, find.text('Email tidak valid.'));
         expect(find.text('Email tidak valid.'), findsOneWidget);
         await tester.ensureVisible(find.byTooltip('Tampilkan kata sandi'));
         await tester.tap(find.byTooltip('Tampilkan kata sandi'));

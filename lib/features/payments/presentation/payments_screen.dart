@@ -77,8 +77,14 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            const PageIntro(
+              art: WorkshopArt.checklist,
+              title: 'Invoice servis',
+              description:
+                  'Lihat tagihan dan status pembayaran pada periode yang dipilih.',
+            ),
             Text(
-              'Periode terbit: ${historyDate(from)} — ${historyDate(until)} (akhir eksklusif)',
+              'Periode terbit: ${historyDate(from)} sampai ${historyDate(until)} (akhir eksklusif)',
             ),
             OutlinedButton(
               onPressed: busy
@@ -188,6 +194,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                 ContentSection(
                   title: 'Laporan periode terpilih',
                   children: [
+                    const WorkshopIllustration(WorkshopArt.report),
                     AdaptiveCards(
                       children: [
                         DashboardStatCard(
@@ -249,11 +256,12 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                       icon: Icons.receipt_long_outlined,
                     ),
                   for (final i in p.items)
-                    ListTile(
-                      title: Text(i.text('invoiceNo')),
-                      subtitle: Text(
-                        '${paymentStatusLabel(i.text('status'))} • ${rupiah(i.number('grandTotal'))}',
-                      ),
+                    WorkshopRecordCard(
+                      icon: Icons.receipt_long_outlined,
+                      title: i.text('invoiceNo'),
+                      description:
+                          '${i.text('vehiclePlate')} • ${i.text('serviceName')}\n${rupiah(i.number('grandTotal'))}',
+                      status: PaymentBadge(status: i.text('status')),
                       onTap: () => context.push(
                         '/${admin ? 'admin' : 'customer'}/invoices/${i.id}',
                       ),
@@ -500,9 +508,13 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
                               labelText: 'Uang diterima (integer rupiah)',
                             ),
                           ),
-                          DropdownButton<String>(
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
                             isExpanded: true,
-                            value: method,
+                            initialValue: method,
+                            decoration: const InputDecoration(
+                              labelText: 'Metode pembayaran',
+                            ),
                             items: const [
                               DropdownMenuItem(
                                 value: 'cash',

@@ -8,6 +8,8 @@ import '../../../features/auth/data/auth_repository.dart';
 import '../../../core/data/inventory_repository.dart';
 import '../../../core/models/inventory.dart';
 import '../../../core/widgets/mobile_navigation.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../../../core/models/service_history.dart';
 import '../../technician/presentation/service_orders_screen.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -81,6 +83,12 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            const PageIntro(
+              art: WorkshopArt.spareparts,
+              title: 'Ketersediaan sparepart',
+              description:
+                  'Periksa stok dan batas minimum sebelum mencatat pemakaian servis.',
+            ),
             if (widget.orderId == null)
               OutlinedButton(
                 onPressed: () => open(const StockLedgerScreen()),
@@ -104,7 +112,10 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
                     'Gunakan nama kategori pada kartu sparepart; kosongkan untuk semua.',
               ),
             ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<bool?>(
+              isExpanded: true,
+              itemHeight: null,
               initialValue: active,
               decoration: const InputDecoration(labelText: 'Status'),
               items: const [
@@ -156,17 +167,31 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
                           icon: Icons.inventory_2_outlined,
                         ),
                       for (final p in page.items)
-                        Card(
-                          child: ListTile(
-                            title: Text(p.text('name')),
-                            subtitle: Text(
-                              '${p.id} • ${p.text('category')}\nStok ${p.stock} ${p.text('unit')} • min. ${p.number('minimumStock')}\nRp ${p.number('sellPrice')}${p.lowStock ? ' • Stok rendah' : ''}',
-                            ),
-                            onTap: () => open(
-                              SparepartDetailScreen(
-                                sku: p.id,
-                                orderId: widget.orderId,
-                              ),
+                        WorkshopRecordCard(
+                          icon: Icons.inventory_2_outlined,
+                          title: p.text('name'),
+                          description:
+                              '${p.id} • ${p.text('category')}\nStok ${p.stock} ${p.text('unit')} • min. ${p.number('minimumStock')}\n${rupiah(p.number('sellPrice'))}',
+                          status: StatusChip(
+                            label: !p.active
+                                ? 'Nonaktif'
+                                : p.stock == 0
+                                ? 'Habis'
+                                : p.lowStock
+                                ? 'Stok rendah'
+                                : 'Aman',
+                            tone: !p.active
+                                ? StatusChipTone.neutral
+                                : p.stock == 0
+                                ? StatusChipTone.danger
+                                : p.lowStock
+                                ? StatusChipTone.warning
+                                : StatusChipTone.success,
+                          ),
+                          onTap: () => open(
+                            SparepartDetailScreen(
+                              sku: p.id,
+                              orderId: widget.orderId,
                             ),
                           ),
                         ),
@@ -369,24 +394,56 @@ class SparepartDetailScreen extends ConsumerWidget {
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.all(20),
                       children: [
-                        Text(
-                          p.text('name'),
-                          style: Theme.of(context).textTheme.headlineSmall,
+                        WorkshopIllustration(
+                          p.text('name').toLowerCase().contains('oli')
+                              ? WorkshopArt.oil
+                              : WorkshopArt.spareparts,
                         ),
-                        Text('${p.text('category')} • ${p.text('unit')}'),
-                        Text(
-                          'Stok: ${p.stock} • minimum ${p.number('minimumStock')}',
+                        const SizedBox(height: 16),
+                        WorkshopRecordCard(
+                          title: p.text('name'),
+                          description: '${p.id}\n${p.text('category')}',
+                          icon: Icons.inventory_2_outlined,
+                          status: StatusChip(
+                            label: p.active ? 'Aktif' : 'Nonaktif',
+                            tone: p.active
+                                ? StatusChipTone.success
+                                : StatusChipTone.neutral,
+                          ),
                         ),
-                        Text(
-                          'Beli Rp ${p.number('buyPrice')} • jual Rp ${p.number('sellPrice')}',
+                        ContentSection(
+                          title: 'Ketersediaan stok',
+                          children: [
+                            Text(
+                              '${p.stock} ${p.text('unit')}',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Stok minimum: ${p.number('minimumStock')} ${p.text('unit')}',
+                            ),
+                            if (p.lowStock) const Text('Stok minimum / habis'),
+                          ],
                         ),
-                        Text('Supplier: ${p.text('supplier')}'),
-                        Text(p.active ? 'Aktif' : 'Nonaktif'),
-                        if (p.lowStock) const Text('Stok minimum / habis'),
+                        ContentSection(
+                          title: 'Harga & supplier',
+                          children: [
+                            Text('Harga beli: ${rupiah(p.number('buyPrice'))}'),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Harga jual: ${rupiah(p.number('sellPrice'))}',
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Supplier: ${p.text('supplier').isEmpty ? 'Belum dicatat' : p.text('supplier')}',
+                            ),
+                          ],
+                        ),
                         OutlinedButton(
                           onPressed: () => open(SparepartEditor(part: p)),
                           child: const Text('Edit / arsipkan master'),
                         ),
+                        const SizedBox(height: 8),
                         FilledButton(
                           onPressed: p.active
                               ? () => open(
@@ -402,6 +459,7 @@ class SparepartDetailScreen extends ConsumerWidget {
                                 : 'Catat pemakaian SO',
                           ),
                         ),
+                        const SizedBox(height: 8),
                         OutlinedButton(
                           onPressed: () => open(StockLedgerScreen(sku: sku)),
                           child: const Text('Riwayat pergerakan stok'),
@@ -451,6 +509,9 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             DropdownButtonFormField<MovementKind>(
+              isExpanded: true,
+              itemHeight: null,
+              decoration: const InputDecoration(labelText: 'Jenis transaksi'),
               initialValue: kind,
               items: [
                 for (final k in MovementKind.values.where(
@@ -484,6 +545,7 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
                     ? 'ID Service Order wajib.'
                     : null,
               ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: qty,
               enabled: !busy && submitted == null,
@@ -496,6 +558,7 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
                     : null;
               },
             ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: reason,
               enabled: !busy && submitted == null,
@@ -598,17 +661,28 @@ class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(20),
                 children: [
+                  const WorkshopIllustration(WorkshopArt.ledger),
+                  const SizedBox(height: 16),
                   if (page.items.isEmpty)
                     const Text('Belum ada movement di halaman ini.'),
                   for (final m in page.items)
                     Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            StatusChip(
+                              label: m.kind.label,
+                              tone: m.delta < 0
+                                  ? StatusChipTone.warning
+                                  : StatusChipTone.success,
+                            ),
+                            const SizedBox(height: 8),
                             Text(
-                              '${m.sku} • ${m.kind.label} • ${m.delta > 0 ? '+' : ''}${m.delta}',
+                              '${m.sku} • ${m.delta > 0 ? '+' : ''}${m.delta}',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
                             Text(
                               '${m.data['balanceBefore']} → ${m.data['balanceAfter']}',
@@ -616,7 +690,7 @@ class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
                             Text('Alasan: ${m.data['reason']}'),
                             Text('Actor: ${m.data['actorId']}'),
                             Text(
-                              'Waktu: ${(m.data['createdAt'] as Timestamp?)?.toDate().toLocal()}',
+                              'Waktu: ${historyDate((m.data['createdAt'] as Timestamp?)?.toDate())}',
                             ),
                             if (m.data['serviceOrderId'] != null)
                               Text('SO: ${m.data['serviceOrderId']}'),

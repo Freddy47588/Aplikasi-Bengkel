@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_tokens.dart';
 import 'status_chip.dart';
+import 'workshop_art.dart';
+export 'workshop_art.dart';
 
 Future<bool> confirmWorkshopAction(
   BuildContext context,
@@ -38,10 +40,18 @@ class WorkshopBody extends StatelessWidget {
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppSpace.pageWidth),
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: child,
+        child: Column(
+          children: [
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: child,
+              ),
+            ),
+            if (MediaQuery.viewInsetsOf(context).bottom == 0)
+              const WorkshopWave(),
+          ],
         ),
       ),
     ),
@@ -100,44 +110,153 @@ class BrandEmblem extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) => Image.asset(
-    'assets/branding/emblem.png',
+    'assets/branding/emblem-mockup.png',
     width: size,
     height: size,
-    semanticLabel: 'Emblem mekanis BengkelKu',
+    cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
+    semanticLabel: 'Logo roda gigi dan kunci pas BengkelKu',
   );
 }
 
 class BrandLockup extends StatelessWidget {
   const BrandLockup({super.key});
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: AppColors.primary,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-    ),
-    child: Row(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpace.lg),
+    child: Column(
       children: [
-        const BrandEmblem(size: 64),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const BrandEmblem(size: 72),
+        const SizedBox(height: AppSpace.sm),
+        Text.rich(
+          const TextSpan(
             children: [
-              Text(
-                'BengkelKu',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: Colors.white),
-              ),
-              const Text(
-                'Perawatan kendaraan Anda',
-                style: TextStyle(color: AppColors.accent, fontSize: 12),
+              TextSpan(text: 'Bengkel'),
+              TextSpan(
+                text: 'Ku',
+                style: TextStyle(color: AppColors.secondary),
               ),
             ],
           ),
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const SizedBox(height: AppSpace.xs),
+        const Text(
+          'Aplikasi Manajemen Bengkel',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.primary),
         ),
       ],
+    ),
+  );
+}
+
+/// Status stays below the title so long identifiers and enlarged text wrap.
+class WorkshopRecordCard extends StatelessWidget {
+  const WorkshopRecordCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.icon,
+    this.status,
+    this.onTap,
+    this.enabled = true,
+  });
+  final String title, description;
+  final IconData icon;
+  final Widget? status;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: AppSpace.md),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: enabled ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpace.sm),
+              decoration: BoxDecoration(
+                color: AppColors.blueSurface,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+              ),
+              child: Icon(icon, color: AppColors.secondary),
+            ),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: AppSpace.xs),
+                  Text(description),
+                  if (status != null) ...[
+                    const SizedBox(height: AppSpace.sm),
+                    status!,
+                  ],
+                ],
+              ),
+            ),
+            if (onTap != null && enabled) ...[
+              const SizedBox(width: AppSpace.xs),
+              const Icon(Icons.chevron_right, color: AppColors.primary),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class PageIntro extends StatelessWidget {
+  const PageIntro({
+    super.key,
+    required this.title,
+    required this.description,
+    this.art,
+  });
+  final String title, description;
+  final WorkshopArt? art;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpace.xl),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (art != null) ...[
+          WorkshopIllustration(art!),
+          const SizedBox(height: AppSpace.md),
+        ],
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpace.sm),
+        Text(description),
+      ],
+    ),
+  );
+}
+
+class SessionSplash extends StatelessWidget {
+  const SessionSplash({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: WorkshopBody(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpace.xl),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BrandLockup(),
+              WorkshopIllustration(WorkshopArt.vehicles, height: 180),
+              LoadingState(),
+            ],
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -148,14 +267,17 @@ class WorkshopHero extends StatelessWidget {
     required this.eyebrow,
     required this.title,
     required this.description,
+    this.art,
   });
   final String eyebrow, title, description;
+  final WorkshopArt? art;
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(AppSpace.xl),
     decoration: BoxDecoration(
-      color: AppColors.primary,
+      color: AppColors.blueSurface,
       borderRadius: BorderRadius.circular(AppRadius.hero),
+      border: Border.all(color: AppColors.blueBorder),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,11 +288,10 @@ class WorkshopHero extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                eyebrow.toUpperCase(),
+                eyebrow,
                 style: const TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
+                  color: AppColors.onMuted,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -180,15 +301,19 @@ class WorkshopHero extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: Colors.white,
+            color: AppColors.primary,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           description,
-          style: const TextStyle(color: Color(0xFFE2E8F0), height: 1.5),
+          style: const TextStyle(color: AppColors.primary, height: 1.5),
         ),
+        if (art != null) ...[
+          const SizedBox(height: AppSpace.sm),
+          WorkshopIllustration(art!, height: 112),
+        ],
       ],
     ),
   );
@@ -281,6 +406,8 @@ class PaymentBadge extends StatelessWidget {
       label: paymentStatusLabel(status),
       tone: status == 'paid'
           ? StatusChipTone.success
+          : status == 'partial'
+          ? StatusChipTone.info
           : ['void', 'refunded'].contains(status)
           ? StatusChipTone.neutral
           : StatusChipTone.warning,

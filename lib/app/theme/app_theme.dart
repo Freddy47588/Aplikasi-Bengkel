@@ -38,11 +38,11 @@ ThemeData buildAppTheme() {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: const BorderSide(color: AppColors.controlBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: const BorderSide(color: AppColors.secondary, width: 2),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -58,7 +58,7 @@ ThemeData buildAppTheme() {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        side: const BorderSide(color: AppColors.border),
+        side: const BorderSide(color: AppColors.controlBorder),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.control),
         ),
@@ -86,13 +86,14 @@ ThemeData buildAppTheme() {
     ),
     listTileTheme: const ListTileThemeData(
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      iconColor: AppColors.secondary,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background,
       foregroundColor: AppColors.primary,
       elevation: 0,
       scrolledUnderElevation: 0,
-      centerTitle: false,
+      centerTitle: true,
       titleTextStyle: base.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w700,
         color: AppColors.primary,
@@ -104,7 +105,7 @@ ThemeData buildAppTheme() {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        side: const BorderSide(color: AppColors.border),
+        side: const BorderSide(color: AppColors.blueBorder),
       ),
     ),
     dividerColor: AppColors.border,
@@ -128,7 +129,7 @@ ThemeData buildAppTheme() {
         fontWeight: FontWeight.w600,
       ),
       bodyLarge: base.textTheme.bodyLarge?.copyWith(color: AppColors.primary),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+      bodyMedium: base.textTheme.bodyMedium?.copyWith(color: AppColors.onMuted),
     ),
   );
 }

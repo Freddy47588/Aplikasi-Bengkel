@@ -52,7 +52,7 @@ void main() {
         );
         testAuth(container).signOut();
         await tester.pumpAndSettle();
-        expect(find.text('Masuk'), findsOneWidget);
+        expect(find.text('Masuk ke Akun Anda'), findsOneWidget);
       }
       await tester.pumpWidget(const SizedBox());
     },
@@ -179,13 +179,19 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     stream.add([]);
     await tester.pumpAndSettle();
+    await reveal(tester, find.text('Belum ada booking'));
     expect(find.text('Belum ada booking'), findsOneWidget);
     stream.addError(StateError('Offline'));
     await tester.pumpAndSettle();
+    await reveal(
+      tester,
+      find.text('Gagal memuat booking. Periksa koneksi dan coba lagi.'),
+    );
     expect(
       find.text('Gagal memuat booking. Periksa koneksi dan coba lagi.'),
       findsOneWidget,
     );
+    await reveal(tester, find.text('Coba lagi'));
     await tester.tap(find.text('Coba lagi'));
     await tester.pump();
     stream.add([]);
@@ -217,7 +223,7 @@ void main() {
       await tester.pumpAndSettle();
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byType(TextFormField));
+      await reveal(tester, find.byType(TextFormField));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Rem berbunyi');
       await tester.ensureVisible(find.text('Konfirmasi Booking'));

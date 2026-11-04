@@ -28,7 +28,7 @@ void main() {
     container.read(appRouterProvider).go('/customer/booking');
     await tester.pumpAndSettle();
     Future<void> tapVisible(Finder finder) async {
-      await tester.ensureVisible(finder);
+      await reveal(tester, finder);
       await tester.pumpAndSettle();
       await tester.tap(finder);
       await tester.pumpAndSettle();

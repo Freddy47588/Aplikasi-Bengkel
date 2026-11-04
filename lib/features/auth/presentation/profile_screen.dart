@@ -31,8 +31,8 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
               children: [
                 WorkshopHero(
                   eyebrow: 'Akun ${session.role!.label}',
-                  title: session.email ?? 'Akun BengkelKu',
-                  description: 'Identitas akun dan hak akses bengkel Anda.',
+                  title: 'Profil Saya',
+                  description: session.email ?? 'Akun BengkelKu',
                 ),
                 ContentSection(
                   title: 'Informasi akun',
@@ -90,6 +90,7 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
                 ContentSection(
                   title: 'Keamanan akun',
                   children: [
+                    const WorkshopIllustration(WorkshopArt.lock, height: 96),
                     const Text(
                       'Perubahan peran atau status aktif dikelola pengelola bengkel.',
                     ),

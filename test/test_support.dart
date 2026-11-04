@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bengkel_kendaraan/core/data/firebase_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +21,23 @@ const serviceTypes = [
   'Tune Up',
   'Pemeriksaan Rem',
 ];
+
+Future<void> reveal(WidgetTester tester, Finder finder) async {
+  bool exists() {
+    try {
+      return finder.evaluate().isNotEmpty;
+    } on StateError {
+      return false;
+    }
+  }
+
+  for (var n = 0; n < 80 && !exists(); n++) {
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+    await tester.pumpAndSettle();
+  }
+  await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
+  await tester.pumpAndSettle();
+}
 
 class InMemoryBookingRepository implements BookingRepository {
   InMemoryBookingRepository({DateTime Function()? clock})

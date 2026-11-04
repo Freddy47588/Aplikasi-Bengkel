@@ -150,6 +150,7 @@ void main() {
       await tapVisible('Brio • B 1 AA');
       await tapVisible('Referensi dokumen');
       expect(find.text('SO ID: h0'), findsOneWidget);
+      await reveal(tester, find.text('Teknisi: Ari'));
       expect(find.text('Teknisi: Ari'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Total biaya: Rp 130.000'),
