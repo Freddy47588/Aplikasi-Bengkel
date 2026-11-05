@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "projectId": "demo-bengkelku",
+  "runtimeManifest": "_testManifests/phase07",
+  "credentialFile": ".firebase/phase07-credentials.json",
+  "accounts": [
+    { "uid": "p07-admin", "email": "admin.demo@bengkelku.test", "role": "admin" },
+    { "uid": "p07-customer", "email": "customer.demo@bengkelku.test", "role": "customer" },
+    { "uid": "p07-customer2", "email": "customer2.demo@bengkelku.test", "role": "customer" },
+    { "uid": "p07-technician", "email": "technician.demo@bengkelku.test", "role": "technician" }
+  ],
+  "counts": {
+    "users": 4,
+    "technicians": 1,
+    "vehicles": 6,
+    "services": 5,
+    "spareparts": 12,
+    "stockMovements": 17,
+    "bookings": 8,
+    "bookingSlots": 8,
+    "serviceOrders": 5,
+    "partRequests": 5,
+    "partUsages": 5,
+    "events": 27,
+    "invoices": 4,
+    "payments": 8
+  },
+  "bookingStates": { "confirmed": 5, "pending": 1, "cancelled": 1, "rejected": 1 },
+  "orderStates": { "completed": 4, "inProgress": 1 },
+  "invoiceStates": { "unpaid": 1, "partial": 1, "paid": 1, "refunded": 1 },
+  "paidRevenueRupiah": 127000,
+  "scheduleStrategy": "Eight distinct 09:00 WIB slots, starting the next UTC day; accelerated emulator-only workflow"
+}

@@ -1,5 +1,12 @@
 # Phase status - BengkelKu
 
+Pembaruan 5 November 2026: Phase 07 menyediakan seed/reset Auth + Firestore
+Emulator terisolasi, mode emulator Flutter, integrasi transaksi, CI, black-box
+dan template UAT. Status acceptance dan hasil run aktual ada pada
+[PHASE_07_REPORT.md](PHASE_07_REPORT.md) dan [QA_GATE.md](QA_GATE.md).
+Perangkat nyata/UAT belum dijalankan; jangan menyatakan FULL PASS atau memulai
+Phase 08. Catatan Phase 06.5 di bawah dipertahankan sebagai riwayat.
+
 Splash diperbarui sesuai papan Auth biru dengan logo terbaru pada 5 November
 2026. Lihat [laporan splash](SPLASH_REFERENCE_REPORT.md). Tetap Phase 06.5.
 

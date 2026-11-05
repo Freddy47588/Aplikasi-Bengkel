@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'core/data/firebase_environment.dart';
 import 'core/widgets/session_splash.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MaterialApp(home: SessionSplash()));
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await const FirebaseEnvironment().initialize();
     runApp(const ProviderScope(child: BengkelKuApp()));
   } catch (_) {
     runApp(

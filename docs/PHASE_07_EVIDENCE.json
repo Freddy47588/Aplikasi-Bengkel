@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-05",
+  "timezone": "Asia/Jakarta",
+  "baseHead": "c63b54903217b5f1338934cb022075d7f1ecfa0e",
+  "flutterTests": {
+    "passed": 102,
+    "failed": 0
+  },
+  "integration": {
+    "passed": 1,
+    "failed": 0,
+    "durationMs": 25479.904
+  },
+  "dataset": {
+    "projectId": "demo-bengkelku",
+    "authAccounts": 4,
+    "counts": {
+      "users": 4,
+      "technicians": 1,
+      "vehicles": 6,
+      "services": 5,
+      "spareparts": 12,
+      "stockMovements": 17,
+      "bookings": 8,
+      "bookingSlots": 8,
+      "serviceOrders": 5,
+      "partRequests": 5,
+      "partUsages": 5,
+      "events": 27,
+      "invoices": 4,
+      "payments": 8
+    },
+    "paidRevenue": 127000
+  },
+  "apk": {
+    "bytes": 216241332,
+    "sha256": "1C286F69B9AC670D9682994688891A93C7C23EC4E343C5ACC135708D25F0D6AE"
+  },
+  "androidPhysical": "NOT RUN",
+  "ios": "NOT RUN",
+  "uat": "NOT RUN",
+  "productionRulesIndexes": "NOT DEPLOYED",
+  "rules": {
+    "passed": 38,
+    "failed": 0,
+    "durationMs": 130205.5443
+  },
+  "cliDataCycle": {
+    "status": "PASS",
+    "invocations": 8,
+    "resetDocumentPaths": 115,
+    "resetAuthAccounts": 4
+  },
+  "toolchain": {
+    "flutter": "3.44.2",
+    "dart": "3.12.2",
+    "node": "24.22.1",
+    "java": "25.0.4",
+    "firebaseCLI": "15.34.0"
+  },
+  "indexDefinitions": {
+    "status": "PASS",
+    "count": 35,
+    "productionReady": "NOT RUN"
+  }
+}

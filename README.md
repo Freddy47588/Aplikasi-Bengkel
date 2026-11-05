@@ -93,4 +93,7 @@ Riwayat Phase 01: [status fondasi](docs/PHASE_STATUS.md) dan
 - Auth/session cache native setelah process kill dan email produksi perlu smoke test perangkat.
 - Release Android tetap unsigned sampai keystore asli disiapkan; iOS perlu Team asli.
 
-Scope berhenti pada Phase 06.5; Phase 07 belum dimulai. PR untuk review tanpa auto-merge. [Roadmap](docs/ROADMAP.md).
+Phase 07 menambahkan QA emulator terisolasi, seed/reset dan CI. Panduan akun/data:
+[TEST_DATA_GUIDE](docs/TEST_DATA_GUIDE.md). Hasil otomatis, batas pengujian perangkat
+dan UAT: [laporan Phase 07](docs/PHASE_07_REPORT.md) dan [QA Gate](docs/QA_GATE.md).
+Phase 08 belum dimulai. [Roadmap](docs/ROADMAP.md).
