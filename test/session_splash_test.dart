@@ -22,10 +22,10 @@ void main() {
       '${root.toString().replaceFirst(RegExp(r'/$'), '')}/',
     ).resolve('../../bin/cache/artifacts/material_fonts/');
     final loader = FontLoader('Roboto');
-    for (final name in ['regular', 'medium', 'bold']) {
+    for (final name in ['Regular', 'Medium', 'Bold']) {
       loader.addFont(
         File.fromUri(
-          fonts.resolve('roboto-$name.ttf'),
+          fonts.resolve('Roboto-$name.ttf'),
         ).readAsBytes().then((bytes) => ByteData.sublistView(bytes)),
       );
     }

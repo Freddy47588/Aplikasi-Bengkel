@@ -497,10 +497,10 @@ void main() {
     ).resolve('../../bin/cache/artifacts/material_fonts/');
     final roboto = FontLoader('Roboto');
     for (final name in [
-      'roboto-regular.ttf',
-      'roboto-medium.ttf',
-      'roboto-bold.ttf',
-      'roboto-black.ttf',
+      'Roboto-Regular.ttf',
+      'Roboto-Medium.ttf',
+      'Roboto-Bold.ttf',
+      'Roboto-Black.ttf',
     ]) {
       roboto.addFont(
         File.fromUri(
@@ -512,7 +512,7 @@ void main() {
     final icons = FontLoader('MaterialIcons')
       ..addFont(
         File.fromUri(
-          fonts.resolve('materialicons-regular.otf'),
+          fonts.resolve('MaterialIcons-Regular.otf'),
         ).readAsBytes().then(ByteData.sublistView),
       );
     await icons.load();
