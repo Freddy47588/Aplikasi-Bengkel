@@ -1,5 +1,10 @@
 # Anti Slop delivery gate
 
+Gate tambahan untuk splash biru 5 November 2026 berada pada
+[laporan splash](SPLASH_REFERENCE_REPORT.md). Alasan gradient dan wave pada
+splash mengikuti permintaan referensi terbaru; penilaian di bawah mencatat
+audit UI sebelum perubahan splash tersebut.
+
 Mode during dari pilihan sesi. Scope: perubahan UI Flutter pada audit visual
 fidelity, bukan sertifikasi seluruh platform. Bukti: 10 papan pengguna,
 37 render fixture, 99 tes, analyze dan build APK debug. Native UAT/iOS serta

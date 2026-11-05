@@ -1,5 +1,10 @@
 # Aset generated untuk mockup
 
+> Tambahan 5 November 2026: `splash-vehicles.png` dibuat lewat built-in
+> ImageGen untuk mobil putih dan motor biru realistis pada splash. Wave
+> splash digambar sebagai kurva, dengan master logo terbaru versi putih.
+> Prompt, export native, dan render ada pada [laporan splash](SPLASH_REFERENCE_REPORT.md).
+
 Pembaruan audit pada `main`: lihat [laporan visual fidelity](UI_VISUAL_FIDELITY_REPORT.md)
 untuk manifest terbaru. Bentuk aset existing dipertahankan kecuali ilustrasi
 kendaraan yang dibuat ulang; resolusi PNG diperkecil. Instruksi lanjutan

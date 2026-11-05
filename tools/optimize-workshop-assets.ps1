@@ -4,7 +4,7 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $files = @(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'assets/illustrations') -Filter '*.png')
 $files += Get-Item -LiteralPath (Join-Path $projectRoot 'assets/branding/emblem-mockup.png')
 foreach ($file in $files) {
-  $limit = if ($file.Name -eq 'wave.png') { 1296 } elseif ($file.Name -eq 'emblem-mockup.png') { 512 } else { 864 }
+  $limit = if ($file.Name -eq 'wave.png') { 1296 } elseif ($file.Name -eq 'splash-vehicles.png') { 1152 } elseif ($file.Name -eq 'emblem-mockup.png') { 512 } else { 864 }
   $source = [System.Drawing.Image]::FromFile($file.FullName)
   if ($source.Width -le $limit) { $source.Dispose(); continue }
   $height = [int][Math]::Round($source.Height * $limit / $source.Width)

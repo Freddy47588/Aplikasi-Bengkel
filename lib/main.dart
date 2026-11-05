@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'core/widgets/session_splash.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MaterialApp(home: SessionSplash()));
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

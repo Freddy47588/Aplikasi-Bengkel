@@ -22,15 +22,11 @@ foreach ($density in @{mdpi=48; hdpi=72; xhdpi=96; xxhdpi=144; xxxhdpi=192}.GetE
   Export-Logo "android/app/src/main/res/mipmap-$($density.Key)/ic_launcher.png" $density.Value $density.Value $true
 }
 Export-Logo 'android/app/src/main/res/drawable-nodpi/brand_emblem_mockup_image.png' 512 512 $false 1
-Export-Logo 'android/app/src/main/res/drawable-nodpi/splash_lockup.png' 400 480 $false 0.65
 
 $iconDir = Join-Path $projectRoot 'ios/Runner/Assets.xcassets/AppIcon.appiconset'
 foreach ($icon in (Get-Content -Raw (Join-Path $iconDir 'Contents.json') | ConvertFrom-Json).images) {
   $size = [int]([double]($icon.size.Split('x')[0]) * [double]($icon.scale.TrimEnd('x')))
   Export-Logo "ios/Runner/Assets.xcassets/AppIcon.appiconset/$($icon.filename)" $size $size $true
 }
-foreach ($scale in 1..3) {
-  $suffix = if ($scale -eq 1) { '' } else { "@${scale}x" }
-  Export-Logo "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage$suffix.png" (200*$scale) (240*$scale) $false 0.65
-}
 $logo.Dispose()
+& (Join-Path $PSScriptRoot 'export-reference-splash.ps1')

@@ -5,6 +5,7 @@ import '../../app/theme/app_tokens.dart';
 import 'status_chip.dart';
 import 'workshop_art.dart';
 export 'workshop_art.dart';
+export 'session_splash.dart';
 
 Future<bool> confirmWorkshopAction(
   BuildContext context,
@@ -249,29 +250,6 @@ class PageIntro extends StatelessWidget {
           textAlign: showTitle ? TextAlign.start : TextAlign.center,
         ),
       ],
-    ),
-  );
-}
-
-class SessionSplash extends StatelessWidget {
-  const SessionSplash({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: WorkshopBody(
-      showWave: true,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpace.xl),
-          child: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              BrandLockup(),
-              WorkshopIllustration(WorkshopArt.vehicles, height: 180),
-              LoadingState(),
-            ],
-          ),
-        ),
-      ),
     ),
   );
 }

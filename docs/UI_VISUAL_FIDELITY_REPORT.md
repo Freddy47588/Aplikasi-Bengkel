@@ -1,5 +1,9 @@
 # BengkelKu: visual fidelity review
 
+> Pembaruan splash 5 November 2026 menggantikan catatan splash off-white dan
+> native logo-only di laporan historis ini. Versi aktif mengikuti papan Auth
+> biru dengan logo terbaru. Lihat [laporan splash](SPLASH_REFERENCE_REPORT.md).
+
 Pekerjaan pada branch `main`, checkout `D:/Portfolio-Projects/Aplikasi-Bengkel`.
 HEAD awal setelah fetch/fast-forward aman:
 `f6658c73716c048e698343045d7bf99d2bffbd7f`. Tidak membuat branch, worktree,

@@ -1,5 +1,9 @@
 # Branding BengkelKu — universal blue identity
 
+> Splash aktif mengikuti papan Auth biru dengan versi putih logo terbaru,
+> kendaraan realistis, dan wave. Export native kini terpisah dari launcher.
+> Lihat [laporan splash](SPLASH_REFERENCE_REPORT.md) untuk source dan batas platform.
+
 > Logo aktif terbaru: gear biru sederhana dan wrench putih sepenuhnya di
 > dalamnya, dibuat ulang atas permintaan pengguna agar ikon APK lebih rapi.
 > Semua export Android/iOS, splash, app, dan PDF memakai master

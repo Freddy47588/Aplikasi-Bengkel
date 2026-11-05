@@ -1,5 +1,8 @@
 # Phase status - BengkelKu
 
+Splash diperbarui sesuai papan Auth biru dengan logo terbaru pada 5 November
+2026. Lihat [laporan splash](SPLASH_REFERENCE_REPORT.md). Tetap Phase 06.5.
+
 Audit lanjutan pada `main` (base `f6658c7`): komposisi dan aset diperbaiki,
 10 referensi dibaca, 37 after diperiksa, 99 tes dan build APK lulus. Lihat
 [visual fidelity report](UI_VISUAL_FIDELITY_REPORT.md). Phase 07 tetap belum

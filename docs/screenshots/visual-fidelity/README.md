@@ -1,5 +1,9 @@
 # Before / after visual fidelity
 
+Splash terbaru: [render sesuai rasio referensi](splash-reference.png) dan
+[render export native](splash-native.png), menggantikan splash off-white
+di set after historis. Lihat [laporan splash](../../SPLASH_REFERENCE_REPORT.md).
+
 Baseline: commit `f6658c7`, render fixture yang sudah ada pada repository.
 After: render ulang widget Flutter setelah perbaikan. Kedua set memakai
 390x740dp, text scaling 100%, raster 780x1480. Konten di bawah viewport dapat

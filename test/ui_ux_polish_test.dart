@@ -98,8 +98,10 @@ Future<void> captureFixture(
       await precacheImage(img.image, key.currentContext!);
     }
   });
-  final scrollable = find.byType(Scrollable).first;
-  tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  if (find.byType(Scrollable).evaluate().isNotEmpty) {
+    final scrollable = find.byType(Scrollable).first;
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  }
   if (settle) {
     await tester.pumpAndSettle();
   } else {
