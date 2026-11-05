@@ -15,7 +15,9 @@ tidak dimasukkan ke commit QA. Tidak membuat branch, worktree atau PR; tanpa
 reset, force push, Firebase deploy atau upgrade billing.
 
 Seluruh 18 file test Flutter existing dan 5 suite test_rules existing
-dipertahankan. Tidak mengubah Rules atau struktur test lama. Tambahan: guard
+dipertahankan. Tidak mengubah Rules atau struktur test lama. Referensi font
+SDK pada dua test existing diperbaiki agar sesuai nama file case-sensitive
+di Linux; assertion dan cakupan existing dipertahankan. Tambahan: guard
 Flutter emulator, dua guard seed/reset, dan satu integrasi lintas modul dengan
 login Auth Emulator sebenarnya. Perubahan aplikasi terbatas pada pemilihan
 Firebase app/environment dan provider, tanpa redesign UI/UX.
@@ -34,8 +36,9 @@ Firebase app/environment dan provider, tanpa redesign UI/UX.
 | Guard endpoint/project dan emulator mati | PASS, 2 test, 0 gagal pada Node 24.22.1 |
 | npm run test:rules final | PASS, 38 test, 0 gagal, 130,2 detik (35 existing + 2 guard + 1 integrasi) |
 | Seed/reset/rekonsiliasi/integrasi | PASS, integrasi pada suite final 25,5 detik; targeted 67,1 detik; 8 pemanggilan CLI seed/validate/reset PASS |
+| Retest font lintas platform | PASS lokal 34/34 pada dua file test; nama case-sensitive diverifikasi terhadap arsip resmi font Flutter |
 | git diff --check | PASS pada pemeriksaan saat penulisan; diperiksa lagi sebelum commit |
-| Review credential | PASS, 26 file QA staged; tidak ada pola private key/token, artefak lokal atau registrant pengguna |
+| Review credential | PASS, diff QA direview; tidak ada pola private key/token, artefak lokal atau registrant pengguna |
 
 Run sebelum interupsi tidak dihitung sebagai PASS jika tidak memiliki hasil
 selesai. Analisis dan build awal pernah berhasil, tetapi pemeriksaan final
@@ -175,18 +178,34 @@ persetujuan opsional dan Likert 1–5. Template terpisah dari hasil aktual:
 Workflow `.github/workflows/qa.yml` menjalankan pub get, format, analyze,
 Flutter test, npm ci, check konfigurasi/indexes dan Auth/Firestore Rules test.
 Trigger main push/PR, izin contents read, tanpa secrets atau deploy production.
-Status remote workflow harus diperiksa terhadap commit yang benar sesudah push;
-hasil lokal bukan klaim CI remote PASS.
+CI remote **PASS** untuk source commit
+`ac541de4af3b9196cbc238c4796f5ad926e3385d`:
+[run 42059312009](https://github.com/Freddy47588/Aplikasi-Bengkel/actions/runs/42059312009).
+Kedua job success: Flutter pub get/format/analyze dan 102 test PASS; Firebase
+config/indexes dan 38 Auth/Rules/integrasi PASS. Dataset remote sesuai manifest,
+empat akun dan paid revenue fixture Rp127.000. Hasil diperiksa dari job dan log
+GitHub Actions, bukan disimpulkan dari test lokal.
+
+[Run awal 42022724423](https://github.com/Freddy47588/Aplikasi-Bengkel/actions/runs/42022724423)
+gagal pada setup test splash: nama roboto-*.ttf tidak cocok dengan kapitalisasi
+Roboto-*.ttf pada filesystem Linux. Job Firebase sudah PASS. Perbaikan hanya
+referensi nama file pada dua test existing, termasuk jalur capture MaterialIcons;
+nama dibandingkan dengan arsip font resmi SDK. Retest lokal 34/34 dan seluruh
+102 test pada CI ulang PASS (QA-10). Tidak melewati atau menghapus test gagal.
 
 Rules/indexes production: **NOT DEPLOYED**. Perintah operator dan checklist
 READY/smoke query tercantum di SECURITY_AUDIT. Billing tetap tidak diubah dan
 tidak menambah layanan di luar Auth/Firestore Spark existing.
 
-Perubahan QA direview dan dipublikasikan melalui commit pada main saja; hasil
-SHA/push dan CI remote diverifikasi sesudah commit. Registrant lokal awal tetap
-di working tree dan dikecualikan dari commit. Tidak memakai force push.
+Perubahan QA dipublikasikan pada main: `ae74ee6` untuk implementasi Phase 07,
+`ac541de` untuk perbaikan nama font CI, diikuti commit bukti dokumentasi.
+Push origin/main berhasil tanpa force push. HEAD akhir dokumentasi dilaporkan
+pada hasil Git sesi untuk menghindari referensi hash dirinya sendiri.
+Registrant lokal awal tetap di working tree dan dikecualikan dari commit.
+Emulator lokal telah dihentikan, port 8080/9099 tertutup dan password fixture
+sisa run dihapus; start emulator dan seed kembali untuk login demonstrasi.
 
 Keputusan acceptance: **BLOCKED**, belum FULL PASS. Sebelum Phase 08: uji Infinix,
 jalankan UAT nyata dan retest temuan; sepakati
-gap katalog TA, periksa CI remote dan checklist operator deployment. Lihat
+gap katalog TA dan checklist operator deployment. CI otomatis sudah PASS. Lihat
 [QA_GATE.md](QA_GATE.md). Phase 08 tidak dimulai otomatis.

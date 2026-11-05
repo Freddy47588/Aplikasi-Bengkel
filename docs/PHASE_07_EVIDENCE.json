@@ -62,5 +62,23 @@
     "status": "PASS",
     "count": 35,
     "productionReady": "NOT RUN"
+  },
+  "ci": {
+    "status": "PASS",
+    "sourceCommit": "ac541de4af3b9196cbc238c4796f5ad926e3385d",
+    "runId": 42059312009,
+    "url": "https://github.com/Freddy47588/Aplikasi-Bengkel/actions/runs/42059312009",
+    "flutterJob": "success",
+    "flutterPassed": 102,
+    "firebaseJob": "success",
+    "firebasePassed": 38,
+    "initialRunId": 42022724423,
+    "initialResult": "FAIL: case-sensitive SDK font path in test setup; QA-10 fixed"
+  },
+  "fontRetest": {
+    "status": "PASS",
+    "passed": 34,
+    "failed": 0,
+    "exactNamesCheckedAgainstOfficialArtifact": true
   }
 }

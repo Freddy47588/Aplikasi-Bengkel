@@ -15,6 +15,7 @@ low = dokumentasi/tooling. Bukti source dipisahkan dari hasil runtime.
 | QA-07 | Medium | Belum ada seed/reset lintas modul dengan real Auth | Audit tools dan test existing sebelum perubahan | FIXED | Seed rules-enforced, manifest, relasi dan reset; integrasi final + 8 CLI cycle PASS |
 | QA-08 | Medium | Preflight integrasi timeout saat memakai laporan ruleCoverage setelah suite negatif | Run emulator pertama: 37 PASS, integrasi gagal sebelum seed (10 detik) | FIXED | Probe bounded + token owner emulator-only, timeout 30 detik dan pesan berlokasi; guard tetap aktif; final 38/38 PASS |
 | QA-09 | Medium | Helper trusted tidak mengembalikan nilai callback SDK | Retest: preflight lolos, reset gagal membaca manifest undefined | FIXED | Capture hasil callback Promise<void>; integrasi targeted dan final 38/38 PASS |
+| QA-10 | Low | Test splash gagal pada Linux karena nama file font SDK case-sensitive | CI awal 42022724423: PathNotFoundException untuk roboto-regular/medium/bold.ttf; Windows sebelumnya PASS | FIXED | Gunakan Roboto-Regular/Medium/Bold/Black.ttf dan MaterialIcons-Regular.otf sesuai arsip resmi SDK pada dua test; retest lokal 34/34 PASS; hasil CI ulang dicatat pada PHASE_07_REPORT |
 
 Tidak ada bug kritis baru yang dinyatakan tertutup tanpa reproduksi dan uji
 ulang. ACCEPTED LIMITATION adalah batas desain existing, bukan hasil pengujian

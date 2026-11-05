@@ -16,8 +16,8 @@ Template UAT dan build APK tidak menggantikan bukti acceptance nyata.
 | UAT pengguna nyata | NOT RUN | Template tersedia, tidak ada responden/hasil aktual |
 | Android Infinix nyata | NOT RUN | ADB kosong; AND-01..11 pada TEST_PLAN |
 | Keterbatasan iOS dicatat | PASS | Windows tanpa native iOS; acceptance iOS NOT RUN |
-| Tidak ada credential pada diff QA | PASS | Scan 26 file staged; password/log/APK/registrant lokal dikecualikan |
-| CI | BLOCKED | Workflow disiapkan; tunggu hasil remote commit main |
+| Tidak ada credential pada diff QA | PASS | Diff QA direview; password/log/APK/registrant lokal dikecualikan |
+| CI | PASS | [Run 42059312009](https://github.com/Freddy47588/Aplikasi-Bengkel/actions/runs/42059312009), source ac541de: kedua job success, 102 Flutter + 38 Firebase; kegagalan font Linux awal diperbaiki (QA-10) |
 | Rules/indexes production | NOT RUN | NOT DEPLOYED; operator approval, READY dan smoke queries terpisah |
 
 Periksa BUG_TRACKER untuk gap UI katalog, deployment dan batas snapshot admin.
