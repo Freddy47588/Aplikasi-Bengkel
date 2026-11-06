@@ -53,10 +53,24 @@ class FirebaseEnvironment {
             options: DefaultFirebaseOptions.currentPlatform,
           );
     if (emulator) {
-      await FirebaseAuth.instanceFor(app: app).useAuthEmulator(host, authPort);
-      final firestore = FirebaseFirestore.instanceFor(app: app);
-      firestore.settings = const Settings(persistenceEnabled: false);
-      firestore.useFirestoreEmulator(host, firestorePort);
+      await connectEmulators(
+        FirebaseAuth.instanceFor(app: app),
+        FirebaseFirestore.instanceFor(app: app),
+      );
     }
+  }
+
+  Future<void> connectEmulators(
+    FirebaseAuth auth,
+    FirebaseFirestore firestore,
+  ) async {
+    // USB reverse needs loopback unchanged; AVD hosts are chosen explicitly.
+    await auth.useAuthEmulator(host, authPort, automaticHostMapping: false);
+    firestore.settings = const Settings(persistenceEnabled: false);
+    firestore.useFirestoreEmulator(
+      host,
+      firestorePort,
+      automaticHostMapping: false,
+    );
   }
 }
