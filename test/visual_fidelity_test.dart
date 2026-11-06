@@ -31,8 +31,11 @@ void main() {
     }.entries) {
       router.go('/admin/${page.key}');
       await tester.pumpAndSettle();
-      await reveal(tester, find.text(page.value));
-      await tester.tap(find.text(page.value));
+      final filter = page.key == 'inventory'
+          ? find.byTooltip(page.value)
+          : find.text(page.value);
+      await reveal(tester, filter);
+      await tester.tap(filter);
       await tester.pumpAndSettle();
       for (var n = 0; n < 8; n++) {
         await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
@@ -210,8 +213,12 @@ void main() {
                   reason: '$width/$scale/${role.name}/$path scroll',
                 );
               }
-              if (path == 'booking' || path == 'inventory') {
+              if (path == 'booking') {
                 expect(find.byType(WorkshopWave), findsNothing);
+              }
+              if (path == 'inventory') {
+                expect(find.byType(WorkshopWave), findsOneWidget);
+                expect(tester.getSize(find.byType(WorkshopWave)).height, 32);
               }
             }
           }

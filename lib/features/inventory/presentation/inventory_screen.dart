@@ -1,4 +1,7 @@
 import '../../../core/widgets/workshop_ui.dart';
+import '../../../app/theme/app_colors.dart';
+import '../../../core/constants/user_role.dart';
+import 'inventory_ui.dart';
 import '../../../core/widgets/empty_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +10,8 @@ import 'package:go_router/go_router.dart';
 import '../../../features/auth/data/auth_repository.dart';
 import '../../../core/data/inventory_repository.dart';
 import '../../../core/models/inventory.dart';
-import '../../../core/widgets/mobile_navigation.dart';
-import '../../../core/widgets/status_chip.dart';
 import '../../../core/models/service_history.dart';
+import '../../../core/widgets/mobile_navigation.dart';
 import '../../technician/presentation/service_orders_screen.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -23,7 +25,7 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
   final search = TextEditingController(), category = TextEditingController();
   String prefix = '', appliedCategory = '';
   bool? active = true;
-  bool low = false;
+  bool low = false, showFilters = false;
   final cursors = <DocumentSnapshot<Map<String, dynamic>>?>[null];
   @override
   void dispose() {
@@ -34,7 +36,8 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!ref.watch(authSessionProvider).isAuthenticated) {
+    final session = ref.watch(authSessionProvider);
+    if (!session.isAuthenticated) {
       return const SizedBox.shrink();
     }
     final filter = (
@@ -50,10 +53,19 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
       if (mounted) ref.invalidate(provider);
     }
 
+    void applySearch() => setState(() {
+      prefix = search.text.trim();
+      appliedCategory = category.text.trim();
+      cursors
+        ..clear()
+        ..add(null);
+    });
+
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(
-          widget.orderId == null ? 'Inventori sparepart' : 'Pilih sparepart SO',
+          widget.orderId == null ? 'Inventori Sparepart' : 'Pilih sparepart SO',
         ),
         leading: widget.orderId == null
             ? IconButton(
@@ -62,103 +74,147 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
               )
             : null,
         actions: [
-          IconButton(
-            tooltip: 'Muat ulang',
-            onPressed: () => ref.invalidate(provider),
-            icon: const Icon(Icons.refresh),
+          PopupMenuButton<String>(
+            tooltip: 'Menu inventori',
+            onSelected: (value) {
+              if (value == 'refresh') ref.invalidate(provider);
+              if (value == 'ledger') open(const StockLedgerScreen());
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'refresh', child: Text('Muat ulang')),
+              if (widget.orderId == null)
+                const PopupMenuItem(
+                  value: 'ledger',
+                  child: Text('Riwayat Stok'),
+                ),
+            ],
           ),
-          if (widget.orderId == null)
-            IconButton(
-              tooltip: 'Tambah sparepart',
-              onPressed: () => open(const SparepartEditor()),
-              icon: const Icon(Icons.add),
-            ),
         ],
       ),
       bottomNavigationBar: widget.orderId == null
-          ? const MobileNavigation(role: 'admin')
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (session.role == UserRole.admin)
+                  SafeArea(
+                    top: false,
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Tooltip(
+                          message: 'Tambah sparepart',
+                          child: FilledButton.icon(
+                            onPressed: () => open(const SparepartEditor()),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Tambah Sparepart'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                const MobileNavigation(role: 'admin'),
+              ],
+            )
           : null,
       body: WorkshopBody(
+        showWave: true,
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
-            const PageIntro(
-              showTitle: false,
+            const InventoryIntro(
               art: WorkshopArt.spareparts,
-              title: 'Ketersediaan sparepart',
               description:
-                  'Periksa stok dan batas minimum sebelum mencatat pemakaian servis.',
+                  'Kelola daftar sparepart, pantau stok, dan jaga ketersediaan untuk kebutuhan servis.',
             ),
-            if (widget.orderId == null)
-              OutlinedButton(
-                onPressed: () => open(const StockLedgerScreen()),
-                child: const Text('Ledger stok'),
-              ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: search,
-              decoration: const InputDecoration(
-                labelText: 'Cari kode sparepart',
-                prefixIcon: Icon(Icons.search),
-                helperText: 'Ketik bagian awal kode, misalnya OLI.',
-              ),
-            ),
-            const SizedBox(height: 12),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text('Filter inventori'),
-              leading: const Icon(Icons.tune),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: category,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori',
-                    helperText:
-                        'Gunakan nama kategori pada kartu sparepart; kosongkan untuk semua.',
+                Expanded(
+                  child: TextField(
+                    controller: search,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => applySearch(),
+                    decoration: InputDecoration(
+                      labelText: 'Cari SKU sparepart',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        tooltip: 'Terapkan pencarian',
+                        onPressed: applySearch,
+                        icon: const Icon(Icons.arrow_forward),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<bool?>(
-                  isExpanded: true,
-                  itemHeight: null,
-                  initialValue: active,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Semua')),
-                    DropdownMenuItem(value: true, child: Text('Aktif')),
-                    DropdownMenuItem(value: false, child: Text('Nonaktif')),
-                  ],
-                  onChanged: (v) => setState(() {
-                    active = v;
-                    cursors
-                      ..clear()
-                      ..add(null);
-                  }),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Stok minimum / habis'),
-                  value: low,
-                  onChanged: (v) => setState(() {
-                    low = v;
-                    cursors
-                      ..clear()
-                      ..add(null);
-                  }),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 56,
+                  width: 52,
+                  child: IconButton.outlined(
+                    tooltip: 'Filter inventori',
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    isSelected: showFilters,
+                    onPressed: () => setState(() => showFilters = !showFilters),
+                    icon: const Icon(Icons.tune),
+                  ),
                 ),
               ],
             ),
-            TextButton(
-              onPressed: () => setState(() {
-                prefix = search.text.trim();
-                appliedCategory = category.text.trim();
-                cursors
-                  ..clear()
-                  ..add(null);
-              }),
-              child: const Text('Terapkan pencarian'),
-            ),
+            if (showFilters) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Pencarian memakai awalan SKU. Kategori harus sama persis.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: category,
+                decoration: const InputDecoration(
+                  labelText: 'Kategori',
+                  helperText:
+                      'Gunakan kategori pada detail sparepart; kosongkan untuk semua.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<bool?>(
+                isExpanded: true,
+                itemHeight: null,
+                initialValue: active,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Semua')),
+                  DropdownMenuItem(value: true, child: Text('Aktif')),
+                  DropdownMenuItem(value: false, child: Text('Nonaktif')),
+                ],
+                onChanged: (v) => setState(() {
+                  active = v;
+                  cursors
+                    ..clear()
+                    ..add(null);
+                }),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Stok minimum / habis'),
+                value: low,
+                onChanged: (v) => setState(() {
+                  low = v;
+                  cursors
+                    ..clear()
+                    ..add(null);
+                }),
+              ),
+              TextButton(
+                onPressed: applySearch,
+                child: const Text('Terapkan pencarian'),
+              ),
+            ],
+            const SizedBox(height: 12),
             ref
                 .watch(provider)
                 .when(
@@ -175,27 +231,8 @@ class _InventoryState extends ConsumerState<InventoryScreen> {
                           icon: Icons.inventory_2_outlined,
                         ),
                       for (final p in page.items)
-                        WorkshopRecordCard(
-                          icon: Icons.inventory_2_outlined,
-                          title: p.text('name'),
-                          description:
-                              '${p.id} • ${p.text('category')}\nStok ${p.stock} ${p.text('unit')} • min. ${p.number('minimumStock')}\n${rupiah(p.number('sellPrice'))}',
-                          status: StatusChip(
-                            label: !p.active
-                                ? 'Nonaktif'
-                                : p.stock == 0
-                                ? 'Habis'
-                                : p.lowStock
-                                ? 'Stok rendah'
-                                : 'Aman',
-                            tone: !p.active
-                                ? StatusChipTone.neutral
-                                : p.stock == 0
-                                ? StatusChipTone.danger
-                                : p.lowStock
-                                ? StatusChipTone.warning
-                                : StatusChipTone.success,
-                          ),
+                        InventoryPartCard(
+                          part: p,
                           onTap: () => open(
                             SparepartDetailScreen(
                               sku: p.id,
@@ -386,8 +423,12 @@ class SparepartDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(sku)),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text('Detail Stok'),
+      ),
       body: WorkshopBody(
+        showWave: true,
         child: ref
             .watch(sparepartProvider(sku))
             .when(
@@ -400,73 +441,180 @@ class SparepartDetailScreen extends ConsumerWidget {
                   : ListView(
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                       children: [
                         WorkshopIllustration(
                           p.text('name').toLowerCase().contains('oli')
                               ? WorkshopArt.oil
                               : WorkshopArt.spareparts,
+                          height: 156,
                         ),
-                        const SizedBox(height: 16),
-                        WorkshopRecordCard(
-                          title: p.text('name'),
-                          description: '${p.id}\n${p.text('category')}',
-                          icon: Icons.inventory_2_outlined,
-                          status: StatusChip(
-                            label: p.active ? 'Aktif' : 'Nonaktif',
-                            tone: p.active
-                                ? StatusChipTone.success
-                                : StatusChipTone.neutral,
-                          ),
-                        ),
-                        ContentSection(
-                          title: 'Ketersediaan stok',
-                          children: [
-                            Text(
-                              '${p.stock} ${p.text('unit')}',
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Stok minimum: ${p.number('minimumStock')} ${p.text('unit')}',
-                            ),
-                            if (p.lowStock) const Text('Stok minimum / habis'),
-                          ],
-                        ),
-                        ContentSection(
-                          title: 'Harga & supplier',
-                          children: [
-                            Text('Harga beli: ${rupiah(p.number('buyPrice'))}'),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Harga jual: ${rupiah(p.number('sellPrice'))}',
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Supplier: ${p.text('supplier').isEmpty ? 'Belum dicatat' : p.text('supplier')}',
-                            ),
-                          ],
-                        ),
-                        OutlinedButton(
-                          onPressed: () => open(SparepartEditor(part: p)),
-                          child: const Text('Edit / arsipkan master'),
+                        const SizedBox(height: 12),
+                        Text(
+                          p.text('name'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 8),
-                        FilledButton(
-                          onPressed: p.active
-                              ? () => open(
-                                  StockOperationScreen(
-                                    sku: sku,
-                                    orderId: orderId,
-                                  ),
-                                )
-                              : null,
-                          child: Text(
-                            orderId == null
-                                ? 'Catat transaksi stok'
-                                : 'Catat pemakaian SO',
+                        Center(
+                          child: Chip(
+                            backgroundColor: AppColors.blueSurface,
+                            side: BorderSide.none,
+                            avatar: const Icon(
+                              Icons.qr_code,
+                              color: AppColors.secondary,
+                              size: 20,
+                            ),
+                            label: Text(
+                              p.id,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
+                        if (!p.active) Center(child: StockBadge(part: p)),
+                        const SizedBox(height: 20),
+                        Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(color: AppColors.blueBorder),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Column(
+                              children: [
+                                StockInfoRow(
+                                  icon: Icons.inventory_2_outlined,
+                                  label: 'Kategori',
+                                  value: p.text('category'),
+                                ),
+                                const Divider(height: 1),
+                                StockInfoRow(
+                                  icon: Icons.layers_outlined,
+                                  label: 'Stok Tersedia',
+                                  value: '',
+                                  badge: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '${p.stock} ${p.text('unit')}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      StockBadge(part: p),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 1),
+                                StockInfoRow(
+                                  icon: Icons.warning_amber_rounded,
+                                  color: AppColors.warning,
+                                  label: 'Stok Minimum',
+                                  value:
+                                      '${p.number('minimumStock')} ${p.text('unit')}',
+                                ),
+                                const Divider(height: 1),
+                                StockInfoRow(
+                                  icon: Icons.sell_outlined,
+                                  label: 'Harga jual',
+                                  value: rupiah(p.number('sellPrice')),
+                                ),
+                                const Divider(height: 1),
+                                StockInfoRow(
+                                  icon: Icons.receipt_long_outlined,
+                                  label: 'Harga beli',
+                                  value: rupiah(p.number('buyPrice')),
+                                ),
+                                if (p.text('supplier').isNotEmpty) ...[
+                                  const Divider(height: 1),
+                                  StockInfoRow(
+                                    icon: Icons.local_shipping_outlined,
+                                    label: 'Supplier',
+                                    value: p.text('supplier'),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        if (ref.watch(authSessionProvider).role ==
+                            UserRole.admin) ...[
+                          LayoutBuilder(
+                            builder: (context, box) {
+                              final incoming = FilledButton.icon(
+                                onPressed: p.active && orderId == null
+                                    ? () => open(
+                                        StockOperationScreen(
+                                          sku: sku,
+                                          initialKind: MovementKind.receipt,
+                                        ),
+                                      )
+                                    : null,
+                                icon: const Icon(Icons.move_to_inbox_outlined),
+                                label: const Text('Stok Masuk'),
+                              );
+                              final outgoing = OutlinedButton.icon(
+                                onPressed: p.active
+                                    ? () => open(
+                                        StockOperationScreen(
+                                          sku: sku,
+                                          orderId: orderId,
+                                          initialKind: MovementKind.usage,
+                                        ),
+                                      )
+                                    : null,
+                                icon: const Icon(Icons.outbox_outlined),
+                                label: const Text('Stok Keluar'),
+                              );
+                              if (box.maxWidth < 340 ||
+                                  MediaQuery.textScalerOf(context).scale(1) >
+                                      1.3) {
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    incoming,
+                                    const SizedBox(height: 10),
+                                    outgoing,
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  Expanded(child: incoming),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: outgoing),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: p.active
+                                ? () => open(
+                                    StockOperationScreen(
+                                      sku: sku,
+                                      orderId: orderId,
+                                    ),
+                                  )
+                                : null,
+                            icon: const Icon(Icons.tune),
+                            label: Text(
+                              orderId == null
+                                  ? 'Catat transaksi stok / koreksi'
+                                  : 'Catat pemakaian SO',
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => open(SparepartEditor(part: p)),
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Edit / arsipkan master'),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         OutlinedButton(
                           onPressed: () => open(StockLedgerScreen(sku: sku)),
@@ -481,9 +629,15 @@ class SparepartDetailScreen extends ConsumerWidget {
 }
 
 class StockOperationScreen extends ConsumerStatefulWidget {
-  const StockOperationScreen({super.key, required this.sku, this.orderId});
+  const StockOperationScreen({
+    super.key,
+    required this.sku,
+    this.orderId,
+    this.initialKind = MovementKind.receipt,
+  }) : assert(initialKind != MovementKind.reversal);
   final String sku;
   final String? orderId;
+  final MovementKind initialKind;
   @override
   ConsumerState<StockOperationScreen> createState() => _StockOperationState();
 }
@@ -493,7 +647,7 @@ class _StockOperationState extends ConsumerState<StockOperationScreen> {
   final qty = TextEditingController(), reason = TextEditingController();
   late final so = TextEditingController(text: widget.orderId);
   late MovementKind kind = widget.orderId == null
-      ? MovementKind.receipt
+      ? widget.initialKind
       : MovementKind.usage;
   bool decrease = false, busy = false;
   MovementCommand? submitted;
@@ -653,16 +807,37 @@ class StockLedgerScreen extends ConsumerStatefulWidget {
 
 class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
   final cursors = <DocumentSnapshot<Map<String, dynamic>>?>[null];
+  late final search = TextEditingController(text: widget.sku);
+  late final order = TextEditingController(text: widget.orderId);
+  late String appliedSku = widget.sku, appliedOrder = widget.orderId;
+  bool showFilters = false;
+
+  @override
+  void dispose() {
+    search.dispose();
+    order.dispose();
+    super.dispose();
+  }
+
+  void applyFilters() => setState(() {
+    appliedSku = widget.sku.isEmpty ? canonicalSku(search.text) : widget.sku;
+    appliedOrder = widget.orderId.isEmpty ? order.text.trim() : widget.orderId;
+    cursors
+      ..clear()
+      ..add(null);
+  });
+
   @override
   Widget build(BuildContext context) {
     final provider = ledgerPageProvider((
       cursor: cursors.last,
-      sku: widget.sku,
-      serviceOrderId: widget.orderId,
+      sku: appliedSku,
+      serviceOrderId: appliedOrder,
     ));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ledger stok'),
+        backgroundColor: Colors.white,
+        title: const Text('Riwayat Stok'),
         actions: [
           IconButton(
             onPressed: () => ref.invalidate(provider),
@@ -672,55 +847,100 @@ class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
         ],
       ),
       body: WorkshopBody(
-        child: ref
-            .watch(provider)
-            .when(
-              loading: () => const LoadingState(),
-              error: (_, _) =>
-                  RetryLoad(onRetry: () => ref.invalidate(provider)),
-              data: (page) => ListView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  const WorkshopIllustration(WorkshopArt.ledger),
-                  const SizedBox(height: 16),
-                  if (page.items.isEmpty)
-                    const Text('Belum ada movement di halaman ini.'),
-                  for (final m in page.items)
-                    Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            StatusChip(
-                              label: m.kind.label,
-                              tone: m.delta < 0
-                                  ? StatusChipTone.warning
-                                  : StatusChipTone.success,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${m.sku} • ${m.delta > 0 ? '+' : ''}${m.delta}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            Text(
-                              '${m.data['balanceBefore']} → ${m.data['balanceAfter']}',
-                            ),
-                            Text('Alasan: ${m.data['reason']}'),
-                            Text('Actor: ${m.data['actorId']}'),
-                            Text(
-                              'Waktu: ${historyDate((m.data['createdAt'] as Timestamp?)?.toDate())}',
-                            ),
-                            if (m.data['serviceOrderId'] != null)
-                              Text('SO: ${m.data['serviceOrderId']}'),
-                            if (m.data['reversalOf'] != null)
-                              Text('Reversal: ${m.data['reversalOf']}'),
-                            if (m.kind != MovementKind.reversal)
-                              TextButton(
-                                onPressed: () async {
+        showWave: true,
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          children: [
+            const InventoryIntro(
+              art: WorkshopArt.ledger,
+              description:
+                  'Riwayat pergerakan stok sparepart (masuk, keluar, dan koreksi).',
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: search,
+                    enabled: widget.sku.isEmpty,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => applyFilters(),
+                    decoration: InputDecoration(
+                      labelText: 'Cari riwayat: SKU',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        tooltip: 'Cari riwayat stok',
+                        onPressed: applyFilters,
+                        icon: const Icon(Icons.arrow_forward),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 56,
+                  width: 52,
+                  child: IconButton.outlined(
+                    tooltip: 'Filter riwayat stok',
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    isSelected: showFilters,
+                    onPressed: () => setState(() => showFilters = !showFilters),
+                    icon: const Icon(Icons.tune),
+                  ),
+                ),
+              ],
+            ),
+            if (showFilters) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Gunakan SKU lengkap. Filter tetap mencakup seluruh halaman ledger.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: order,
+                enabled: widget.orderId.isEmpty,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => applyFilters(),
+                decoration: const InputDecoration(
+                  labelText: 'ID Service Order',
+                ),
+              ),
+              TextButton(
+                onPressed: applyFilters,
+                child: const Text('Terapkan filter riwayat'),
+              ),
+            ],
+            const SizedBox(height: 12),
+            ref
+                .watch(provider)
+                .when(
+                  loading: () => const LoadingState(),
+                  error: (_, _) =>
+                      RetryLoad(onRetry: () => ref.invalidate(provider)),
+                  data: (page) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (page.items.isEmpty)
+                        const EmptyState(
+                          title: 'Belum ada riwayat stok',
+                          description:
+                              'Tidak ada transaksi sesuai filter di halaman ini.',
+                          icon: Icons.history,
+                        ),
+                      for (final m in page.items)
+                        StockMovementCard(
+                          movement: m,
+                          onReverse:
+                              m.kind == MovementKind.reversal ||
+                                  ref.watch(authSessionProvider).role !=
+                                      UserRole.admin
+                              ? null
+                              : () async {
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -734,21 +954,18 @@ class _StockLedgerState extends ConsumerState<StockLedgerScreen> {
                                   );
                                   if (mounted) ref.invalidate(provider);
                                 },
-                                child: const Text('Reversal penuh'),
-                              ),
-                          ],
                         ),
+                      PageButtons(
+                        page: cursors.length,
+                        hasMore: page.hasMore,
+                        previous: () => setState(() => cursors.removeLast()),
+                        next: () => setState(() => cursors.add(page.cursor)),
                       ),
-                    ),
-                  PageButtons(
-                    page: cursors.length,
-                    hasMore: page.hasMore,
-                    previous: () => setState(() => cursors.removeLast()),
-                    next: () => setState(() => cursors.add(page.cursor)),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+          ],
+        ),
       ),
     );
   }
