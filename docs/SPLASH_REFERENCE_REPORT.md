@@ -64,12 +64,32 @@ ke empat tepi. Bitmap native mengikuti rasio layar dengan scale-to-fill;
 landscape native belum diuji. `export-mockup-brand.ps1` kini memanggil export
 splash sehingga regenerasi ikon tidak mengembalikan splash logo lama.
 
-Android 12+ menampilkan layar pembuka sistem dengan logo putih dan latar
-biru, lalu komposisi Flutter. API sistem hanya menyediakan warna opaque
-untuk bidang latar; kendaraan dan wave lengkap muncul pada frame Flutter.
+Pembaruan 6 November 2026: Android 12+ memakai vector drawable transparan
+eksplisit sebagai ikon system splash, untuk menghindari fallback ke launcher
+icon. Tema terang/gelap tetap memakai latar biru `#174B96` yang sama dengan
+background `SessionSplash`; background ikon juga transparan. `NormalTheme`
+memakai biru yang sama agar transisi tidak memakai background putih bawaan.
+API sistem hanya menyediakan satu warna opaque untuk bidang latar;
+kendaraan dan wave lengkap muncul pada frame Flutter. Fase pembuka sistem
+dan animasi masuk dari launcher masih dikendalikan Android/OEM, sehingga
+bidang biru singkat masih mungkin terlihat saat cold start. Ini tidak
+menghapus fase system splash Android 12+.
 Lihat [dokumentasi Android](https://developer.android.com/develop/ui/views/launch/splash-screen).
+Penggunaan background solid pada `NormalTheme` mengikuti
+[panduan Flutter](https://docs.flutter.dev/platform-integration/android/splash-screen).
+
+Android 11 ke bawah tetap memakai `splash_scene.png` lengkap melalui kedua
+resource `launch_background.xml`, tanpa layer emblem terpisah. Bitmap ini
+adalah export artwork Flutter yang sama; perpindahannya tetap mengikuti
+frame pertama Flutter, tanpa delay buatan. Scale-to-fill native dapat
+berbeda sedikit dengan layout Flutter pada rasio layar lain.
+`SessionSplash`, `SplashArtwork`, launcher icon, manifest, MainActivity,
+autentikasi, Firebase, navigasi, dan fitur bisnis tidak diubah.
 
 ## Validasi dan batas
+
+Catatan pada bagian ini berasal dari validasi awal 5 November 2026.
+Hasil pengujian perangkat untuk perbaikan startup ada di bagian berikutnya.
 
 Tes splash memeriksa full bleed, label loading, tidak ada spinner/scroll,
 dan pemisahan wordmark, subtitle, dan kendaraan pada 320x568, 360x800,
@@ -98,6 +118,73 @@ Pemeriksaan visual dilakukan terhadap poster yang dilampirkan. Kendaraan
 adalah hasil generasi ulang, bukan potongan file desain asli. Tidak mengklaim
 kesamaan piksel 100%. Native UAT Android dan build/render iOS belum dijalankan
 karena tidak ada emulator/perangkat Android dan host ini Windows.
+
+## Validasi perbaikan startup: 6 November 2026
+
+Audit mencakup `values-v31`, `values-night-v31`, kedua resource launch
+background, tema dasar/gelap, manifest, MainActivity, dan
+`lib/core/widgets/session_splash.dart`. Perubahan implementasi hanya pada
+empat file tema Android dan satu vector drawable transparan. Artwork,
+aset launcher, kode Dart, dan logika pemuatan sesi tidak diubah oleh
+perbaikan ini. Tidak ada timer, penahanan frame, atau Activity splash baru.
+
+Pemeriksaan awal: `flutter analyze` lulus tanpa issue (7,6 detik),
+`flutter test` lulus 110 tes (95 detik), dan `flutter build apk --debug`
+lulus (353,5 detik). Log berada di `build/unified-splash-analyze.log`,
+`build/unified-splash-tests.log`, dan `build/unified-splash-apk.log`.
+Delapan XML berhasil diparse. Dump AAPT2 APK memastikan tema `v31` dan
+`night-v31` menunjuk ke `splash_transparent`, path vector memiliki fill
+`#00000000`, dan tema legacy tetap memakai `launch_background` lengkap.
+
+APK dipasang ulang menggunakan `adb install -r` (Success), tanpa menghapus
+data aplikasi, ke Infinix X6833B Android 14/API 34, 1080x2460, density 480,
+mode gelap. Tiga cold start dengan force-stop menghasilkan `Status: ok`
+dan `LaunchState: COLD`; waktu menuju frame pertama dari `am start -W`
+adalah 5778, 5690, dan 3928 ms. Satu cold start tambahan dilakukan dengan
+mengetuk ikon BengkelKu di XOS Launcher setelah force-stop; log sistem
+mencatat 4778 ms. Rekaman diperiksa sebagai rangkaian frame: tidak terlihat
+logo-only native maupun kilatan hitam/putih. Layar berlanjut ke login tanpa
+crash/ANR pada log pengujian. Pada sebagian start, splash Flutter sangat
+singkat karena sesi sudah siap; tidak ditambahkan delay untuk memaksanya.
+
+Bidang biru native tetap terlihat selama sekitar 4–6 detik pada cold start
+APK debug perangkat ini. Mengganti ikon dengan transparansi tidak
+menghilangkan waktu startup engine atau fase sistem Android. Durasi build
+release belum diuji. Perangkat/emulator Android 11 ke bawah tidak tersedia;
+hasil untuk versi tersebut terbatas pada audit resource dan artifact APK,
+bukan klaim UAT perangkat. Mode terang juga diaudit melalui resource APK;
+pengujian perangkat memakai mode gelap yang sudah aktif.
+
+Validasi tambahan memakai salinan source dari `main` pada `d638154` dengan
+hanya lima resource Android perbaikan ini, karena pekerjaan teknisi lain
+muncul bersamaan di working tree. Analisis salinan tersebut lulus tanpa
+issue (25,8 detik) dan seluruh 110 tes lulus (158 detik). Log berada di
+`build/unified-splash-validation/`; tidak ada source aplikasi atau
+dependency yang diubah untuk validasi ini.
+
+Build bersih selesai dalam 606,5 detik. Pemeriksaan perangkat mendeteksi
+registrant plugin otomatis yang belum terbentuk pada setup salinan;
+`flutter pub get --offline` membentuknya kembali, lalu
+`flutter build apk --debug` lulus dalam 40,6 detik. Ini perbaikan setup
+validasi, tanpa perubahan source Firebase atau dependency. APK final
+dipasang ulang (Success) dan cold start tambahan lulus (`COLD`, `Status: ok`,
+5779 ms): bidang biru tanpa logo native, splash Flutter lengkap, lalu login.
+Rekaman final adalah `cold-start-validated.mp4`; log proses aplikasi adalah
+`logcat-validated.txt`, keduanya di direktori evidence lokal. Tidak ada
+error registrasi plugin/Firebase, fatal exception, atau ANR aplikasi pada
+pengujian final.
+
+APK final: `build/unified-splash-evidence/bengkelku-debug.apk`,
+179704748 byte, SHA256
+`95DC4B9D1B1E92BCE03DD50242BEBDCCBD778A99088539306904F64556DDD19E`.
+Kedua referensi ikon transparan juga dikonfirmasi ulang pada resource APK
+final. Kelima resource Android identik byte demi byte dengan source yang
+divalidasi.
+
+Rekaman dan log lokal berada di `build/unified-splash-evidence/`.
+Perubahan registrant platform serta pekerjaan layar teknisi yang muncul
+bersamaan di working tree tidak termasuk commit splash. Phase 08 tidak
+dikerjakan dalam perubahan ini.
 
 ## Delivery gate perubahan splash
 
