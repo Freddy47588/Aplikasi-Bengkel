@@ -1,0 +1,23 @@
+00:00 +0: loading D:/Portfolio-Projects/Aplikasi-Bengkel/test/android_emulator_network_test.dart
+00:00 +0: Android debug permits emulator HTTP only for the explicit local hosts
+00:00 +0 -1: Android debug permits emulator HTTP only for the explicit local hosts [E]
+  Expected: contains 'android:networkSecurityConfig="@xml/emulator_network_security"'
+    Actual: '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\r\n'
+              '    <!-- The INTERNET permission is required for development. Specifically,\r\n'
+              '         the Flutter tool needs it to communicate with the running application\r\n'
+              '         to allow setting breakpoints, to provide hot reload, etc.\r\n'
+              '    -->\r\n'
+              '    <uses-permission android:name="android.permission.INTERNET"/>\r\n'
+              '</manifest>\r\n'
+              ''
+     Which: does not contain 'android:networkSecurityConfig="@xml/emulator_network_security"'
+
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\android_emulator_network_test.dart 11:7        main.<fn>
+
+00:00 +0 -1: emulator cleartext opt-in is absent from main and profile manifests
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  D:/Portfolio-Projects/Aplikasi-Bengkel/test/android_emulator_network_test.dart: Android debug permits emulator HTTP only for the explicit local hosts

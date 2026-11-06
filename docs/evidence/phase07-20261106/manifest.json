@@ -1,0 +1,102 @@
+[
+  {
+    "file": "network-regression-after.txt",
+    "sha256": "cc4844a281ee3b96358856de593a658edd82f92c71e5a590df26e2a1df40ee5e",
+    "bytes": 283
+  },
+  {
+    "file": "network-regression-before.txt",
+    "sha256": "f764267e5ad78db75f3d2c0c0ac26c48ac090a6935eb2f99ee68b2f83dc68e6d",
+    "bytes": 1446
+  },
+  {
+    "file": "p07-admin-afternoon.png",
+    "sha256": "89fdee1ebd40224879db5450244e69d13ff3094368cfda6519e41548169cb621",
+    "bytes": 221357
+  },
+  {
+    "file": "p07-admin-inventory.png",
+    "sha256": "1fdbf70a7eb913ab98eb71fae1bea7be386d4c3f26801cff53efea9cbad784af",
+    "bytes": 295829
+  },
+  {
+    "file": "p07-booking-cancelled.png",
+    "sha256": "203f187767262ceba07b633f36fd134c0ef1e0b1596be2370e8950cbc2a91215",
+    "bytes": 164867
+  },
+  {
+    "file": "p07-booking-created.png",
+    "sha256": "a12b428d7be2cc5f305a8053dedda6e1ce46cd37a065a70125376a5c165b88d5",
+    "bytes": 167195
+  },
+  {
+    "file": "p07-checklist-saved.png",
+    "sha256": "e42ea11ca4f4aedea494851cddbfd780cd11b80396b9248a7c4aa8ea8a8a10ea",
+    "bytes": 202521
+  },
+  {
+    "file": "p07-cold-1.png",
+    "sha256": "f3eeb64b81d4db21eb88cac60ecfb2a417a85df0b49966b412535fe1ed6fd58f",
+    "bytes": 224866
+  },
+  {
+    "file": "p07-cold-2.png",
+    "sha256": "2b7bb5071f8204317bba071df9cde2b01fb13e08bc81701cd0d95df94b1d0db5",
+    "bytes": 224590
+  },
+  {
+    "file": "p07-cold-3.png",
+    "sha256": "9762ec1395dd60538756089d1883230aaf1ed27a4763b0a4a5b9b2f0586b3403",
+    "bytes": 224826
+  },
+  {
+    "file": "p07-font-13.png",
+    "sha256": "863df9676c45378644e9a8f412d665aaeafbdab421a9fa2373110510d63449bc",
+    "bytes": 233538
+  },
+  {
+    "file": "p07-foreground.png",
+    "sha256": "8adf98549cb41ebeeba027104a117436c64bd2192cd15dc6a7a3629eebee8be0",
+    "bytes": 224593
+  },
+  {
+    "file": "p07-ledger.png",
+    "sha256": "288f08715020dc71c1e360d378249b261cff785b02ed5c6811d742a94eb2e3d2",
+    "bytes": 309998
+  },
+  {
+    "file": "p07-report.png",
+    "sha256": "d7046a7210585b0af5911181ba72b01284961df4d529777708d9f8f48cdcc440",
+    "bytes": 300393
+  },
+  {
+    "file": "p07-service-selected.png",
+    "sha256": "fcd13653718145136d2e6b69c81d9be3874882e8aff1477e7a7d0fb639e90c9d",
+    "bytes": 268662
+  },
+  {
+    "file": "p07-services-open.png",
+    "sha256": "476f7023f32c7c2d67f8bea62a4476eae547158fa12af58af61345aa3602010f",
+    "bytes": 276216
+  },
+  {
+    "file": "p07-technician-home.png",
+    "sha256": "430fb96f83fd0e9e1282931f93f153c7d86596bda521c225261c1d4dc3471c18",
+    "bytes": 224447
+  },
+  {
+    "file": "routing-regression-after.txt",
+    "sha256": "2e765a31da815b553f4e7b932c93612d598816a06d5db35e7610b016b7ec01be",
+    "bytes": 276
+  },
+  {
+    "file": "routing-regression-before.txt",
+    "sha256": "e3744cef0dd9b354a5121e0562cab67b47858254f3cabedd5d8df9fdff3e4da4",
+    "bytes": 805
+  },
+  {
+    "file": "seed-validation.json",
+    "sha256": "5bd1e9efc505af2da6eb9ff7ea2f13eb9ade8b4affd2983be54ebbe98f3237da",
+    "bytes": 411
+  }
+]

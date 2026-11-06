@@ -1,0 +1,4 @@
+00:00 +0: loading D:/Portfolio-Projects/Aplikasi-Bengkel/test/android_emulator_network_test.dart
+00:00 +0: Android debug permits emulator HTTP only for the explicit local hosts
+00:00 +1: emulator cleartext opt-in is absent from main and profile manifests
+00:00 +2: All tests passed!

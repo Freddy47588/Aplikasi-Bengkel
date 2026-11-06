@@ -1,5 +1,12 @@
 # QA Gate Phase 07 menuju Phase 08
 
+Pembaruan 6 November. Gate tetap BLOCKED. Pengujian Infinix sudah berjalan,
+AND-01/02/08/11 PASS pada cakupan laporan perangkat. AND-03..07/09/10 masih
+NOT RUN atau baru diuji sebagian. UAT pengguna nyata NOT RUN. QA-01 diterima
+sebagai batas scope Phase 07. Rujuk [hasil perangkat](PHASE_07_DEVICE_RESULTS.md).
+Rules production telah dirilis pada sesi deploy terpisah sebelumnya; indexes
+belum dideploy dan READY belum diverifikasi. Tabel 5 November berikut adalah riwayat.
+
 5 November 2026 WIB. Keputusan keseluruhan: **BLOCKED**, bukan FULL PASS.
 Template UAT dan build APK tidak menggantikan bukti acceptance nyata.
 

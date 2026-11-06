@@ -1,0 +1,4 @@
+00:00 +0: loading D:/Portfolio-Projects/Aplikasi-Bengkel/test/firebase_environment_test.dart
+00:00 +0: physical USB and AVD preserve explicit emulator routing on both SDKs
+00:00 +1: emulator mode rejects release, remote endpoints and invalid ports
+00:00 +2: All tests passed!

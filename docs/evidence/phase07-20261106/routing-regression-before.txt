@@ -1,0 +1,16 @@
+00:00 +0: loading D:/Portfolio-Projects/Aplikasi-Bengkel/test/firebase_environment_test.dart
+00:00 +0: physical USB and AVD preserve explicit emulator routing on both SDKs
+00:00 +0 -1: physical USB and AVD preserve explicit emulator routing on both SDKs [E]
+  Expected: false
+    Actual: <true>
+  Auth must preserve USB reverse host 127.0.0.1
+
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\firebase_environment_test.dart 55:9            main.<fn>
+
+00:00 +0 -1: emulator mode rejects release, remote endpoints and invalid ports
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  D:/Portfolio-Projects/Aplikasi-Bengkel/test/firebase_environment_test.dart: physical USB and AVD preserve explicit emulator routing on both SDKs

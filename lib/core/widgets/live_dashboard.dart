@@ -261,14 +261,14 @@ class LiveDashboard extends ConsumerWidget {
                   : 'Kendali bengkel',
               title: identity == null || identity.isEmpty
                   ? (technician
-                        ? 'Siap untuk pekerjaan berikutnya?'
+                        ? 'Pekerjaan teknisi'
                         : 'Selamat datang di BengkelKu')
                   : 'Halo, $identity',
               description: customer
-                  ? 'Rawat kendaraan, atur jadwal, dan ikuti setiap progres servis.'
+                  ? 'Booking dan riwayat servis kendaraan Anda.'
                   : technician
-                  ? 'Fokus pada kendaraan yang ditugaskan, pemeriksaan, dan tindakan berikutnya.'
-                  : 'Pantau antrean, koordinasikan tim, dan jaga bengkel tetap bergerak.',
+                  ? 'Lihat tugas dan catat hasil pemeriksaan kendaraan.'
+                  : 'Kelola booking dan pekerjaan bengkel.',
             ),
             const SizedBox(height: 16),
             FilledButton.icon(

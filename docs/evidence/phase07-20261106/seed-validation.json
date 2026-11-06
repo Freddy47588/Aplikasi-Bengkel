@@ -1,0 +1,21 @@
+{
+  "projectId": "demo-bengkelku",
+  "authAccounts": 4,
+  "counts": {
+    "users": 4,
+    "technicians": 1,
+    "vehicles": 6,
+    "services": 5,
+    "spareparts": 12,
+    "stockMovements": 17,
+    "bookings": 8,
+    "bookingSlots": 8,
+    "serviceOrders": 5,
+    "partRequests": 5,
+    "partUsages": 5,
+    "events": 27,
+    "invoices": 4,
+    "payments": 8
+  },
+  "paidRevenue": 127000
+}

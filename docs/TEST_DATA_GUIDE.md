@@ -62,6 +62,11 @@ test context, bukan register publik. Dokumen users tidak mendapat field tambahan
 
 ## Login Flutter pada emulator
 
+Pada main mulai 316b6ab, pemetaan host otomatis SDK dinonaktifkan dan build
+Android debug mengizinkan HTTP hanya ke host lokal emulator. Rebuild APK jika
+memakai versi sebelumnya. Pada Infinix USB, periksa `adb reverse --list` setelah
+menyambungkan ulang kabel atau memulai sesi baru, kemudian validasi dataset.
+
 ```sh
 flutter run --dart-define=USE_FIREBASE_EMULATOR=true --dart-define=FIREBASE_EMULATOR_HOST=10.0.2.2
 ```

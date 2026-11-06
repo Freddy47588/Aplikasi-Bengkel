@@ -186,7 +186,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                             .load(from, until);
                         if (mounted) setState(() => report = result);
                       }),
-                child: const Text('Muat laporan nyata (maks. 31 hari)'),
+                child: const Text('Muat laporan (maks. 31 hari)'),
               ),
               const Text(
                 'Laporan memakai periode yang dipilih. Omzet: total invoice lunas menurut tanggal pelunasan; bukan laba. Refund penuh dikeluarkan dari omzet. Stok menipis adalah kondisi saat ini.',

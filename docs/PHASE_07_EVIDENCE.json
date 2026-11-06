@@ -80,5 +80,30 @@
     "passed": 34,
     "failed": 0,
     "exactNamesCheckedAgainstOfficialArtifact": true
+  },
+  "closureSession": {
+    "date": "2026-11-06",
+    "baseHead": "be48f3312ebe28b82600cc6682fae5398b729bfa",
+    "testedSource": "316b6ab36d28cd1a88baa25340f1dac8973383e8",
+    "ciRun": 42183175980,
+    "ciStatus": "PASS",
+    "device": "Infinix X6833B",
+    "android": "14 / API 34",
+    "results": "PHASE_07_DEVICE_RESULTS.md",
+    "blackBox": {
+      "pass": 3,
+      "notRun": 33,
+      "blocked": 1
+    },
+    "uat": "NOT RUN",
+    "gate": "BLOCKED",
+    "productionDeployThisSession": false,
+    "priorRulesRelease": "DEPLOYED with prior explicit approval",
+    "indexes": "NOT DEPLOYED",
+    "copyWidgetTests": {
+      "passed": 34,
+      "failed": 0
+    },
+    "copyApkSha256": "71CCA4CF421312ADB09C081528203AD1A883896591B85E8D0E1B9BC935CB5F3E"
   }
 }

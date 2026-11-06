@@ -1,12 +1,24 @@
 # Bug dan gap Phase 07
 
+Pembaruan 6 November 2026. QA-11 FIXED, pemetaan loopback otomatis SDK
+menghalangi adb reverse pada Infinix; commit 9ffb1ec dan test routing red/green.
+QA-12 FIXED, Android menolak HTTP emulator; commit 316b6ab dan dua test jaringan
+red/green. Login tiga role di HP PASS setelah kedua perbaikan.
+QA-13 OPEN untuk triase, laporan tap Jenis layanan tanpa daftar belum
+tereproduksi pada build emulator 316b6ab. Lima layanan terbuka, pilihan Ganti Oli
+dan kirim booking berhasil. Perlu cocokkan build/katalog pada laporan awal.
+QA-02 tetap OPEN untuk sisa AND/black-box dan UAT, meskipun perangkat sudah tersedia.
+QA-03 kini menyisakan indexes/READY dan smoke production. Rules sudah dirilis
+pada sesi terpisah sebelumnya dengan persetujuan pengguna. Bukti pada
+[hasil perangkat](PHASE_07_DEVICE_RESULTS.md).
+
 Tanggal 5 November 2026 WIB. Severity: critical = akses tidak sah/kehilangan data;
 high = transaksi utama salah; medium = kebutuhan fitur/acceptance belum terpenuhi;
 low = dokumentasi/tooling. Bukti source dipisahkan dari hasil runtime.
 
 | ID | Severity | Temuan | Bukti/reproduksi | Status | Tindakan / uji ulang |
 | --- | --- | --- | --- | --- | --- |
-| QA-01 | Medium | Admin tidak memiliki UI CRUD katalog layanan | README menyatakan operator Console; tidak ada screen CRUD services | OPEN | Gap kebutuhan TA; sepakati cakupan implementasi sebelum klaim full CRUD. Rules positif/negatif katalog tetap diuji. Tidak menambah UI pada fase QA |
+| QA-01 | Medium | Admin tidak memiliki UI CRUD katalog layanan | README menyatakan operator Console; tidak ada screen CRUD services | ACCEPTED LIMITATION (Phase 07) | 6 Nov: pengguna mendelegasikan keputusan; Console diterima sebagai batas scope Phase 07. Tidak mengklaim full CRUD mobile. UI katalog untuk TA memerlukan instruksi terpisah; BB-A16 tetap BLOCKED, bukan PASS |
 | QA-02 | Medium | UAT pengguna nyata dan smoke Infinix belum dilakukan | ADB tidak mendeteksi perangkat; tidak ada form responden terisi | OPEN | Jalankan TEST_PLAN AND-01..11 dan UAT; lampirkan bukti asli |
 | QA-03 | Medium | Index READY dan Rules production belum diverifikasi/deploy | Scope sesi tidak mengizinkan deploy otomatis | OPEN | Operator review, persetujuan terpisah, READY dan smoke queries |
 | QA-04 | Medium | Snapshot part invoice saat issue mempercayai admin | PAYMENT_SCHEMA.md; rules issued tidak fold ledger part dinamis | ACCEPTED LIMITATION | Rekonsiliasi ledger oleh operator; bukan klaim pencegahan fraud admin |

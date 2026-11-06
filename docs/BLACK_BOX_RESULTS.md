@@ -1,5 +1,14 @@
 # Black-box results Phase 07
 
+Pembaruan perangkat 6 November pada Infinix X6833B, Android 14, source 316b6ab,
+dataset demo-bengkelku. BB-C07 PASS untuk kirim booking, BB-A01 PASS untuk
+login/dashboard, BB-A15 PASS untuk laporan fixture Rp127.000. Pembatalan,
+checklist, diagnosis/tindakan dan pause/resume telah diamati, tetapi kasus
+lengkap dengan seluruh input negatif/retry yang belum dijalankan tetap NOT RUN.
+Ringkasan terbaru 3 PASS, 33 NOT RUN, 1 BLOCKED. Actual dan bukti asli ada pada
+[PHASE_07_DEVICE_RESULTS.md](PHASE_07_DEVICE_RESULTS.md). Tabel template di
+bawah merekam status awal 5 November dan bukan hasil terbaru.
+
 5 November 2026 WIB. Build/commit untuk sesi manual: belum diisi. Lingkungan:
 `demo-bengkelku`, panduan akun/data pada TEST_DATA_GUIDE.md. Semua baris di bawah
 adalah test case UI yang siap dijalankan. Actual result tidak diisi dari unit
