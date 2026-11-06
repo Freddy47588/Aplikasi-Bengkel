@@ -92,6 +92,29 @@ void main() {
     verify(() => auth.signOut()).called(1);
   });
   test(
+    'password reset trims email suppresses enumeration and preserves network errors',
+    () async {
+      when(
+        () => auth.sendPasswordResetEmail(email: 'a@example.test'),
+      ).thenAnswer((_) async {});
+      await repo.resetPassword(' a@example.test ');
+      verify(
+        () => auth.sendPasswordResetEmail(email: 'a@example.test'),
+      ).called(1);
+      when(
+        () => auth.sendPasswordResetEmail(email: 'unknown@example.test'),
+      ).thenThrow(FirebaseAuthException(code: 'user-not-found'));
+      await expectLater(repo.resetPassword('unknown@example.test'), completes);
+      when(
+        () => auth.sendPasswordResetEmail(email: 'a@example.test'),
+      ).thenThrow(FirebaseAuthException(code: 'network-request-failed'));
+      await expectLater(
+        repo.resetPassword('a@example.test'),
+        throwsA(isA<FirebaseAuthException>()),
+      );
+    },
+  );
+  test(
     'profile stream switches accounts without leaking prior user updates; deactivation is live',
     () async {
       final changes = StreamController<User?>();

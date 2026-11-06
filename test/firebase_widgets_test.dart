@@ -129,9 +129,11 @@ void main() {
           child: const MaterialApp(home: AccountScreen()),
         ),
       );
-      await tester.tap(find.text('Kirim ulang verifikasi'));
+      await reveal(tester, find.text('Kirim Ulang'));
+      await tester.tap(find.text('Kirim Ulang'));
       await tester.pumpAndSettle();
       expect(fake.calls.last, 'verify');
+      await reveal(tester, find.text('Periksa ulang status akun'));
       await tester.tap(find.text('Periksa ulang status akun'));
       await tester.pumpAndSettle();
       expect(fake.calls.last, 'refresh');
@@ -148,7 +150,7 @@ void main() {
         find.text('Akun dinonaktifkan. Hubungi pengelola bengkel.'),
         findsOneWidget,
       );
-      expect(find.text('Kirim ulang verifikasi'), findsNothing);
+      expect(find.text('Kirim Ulang'), findsNothing);
       await tester.pumpWidget(const SizedBox());
     },
   );
