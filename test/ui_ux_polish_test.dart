@@ -547,7 +547,14 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('Halo, pelanggan'), findsOneWidget);
+          expect(
+            find.text(
+              role == UserRole.customer
+                  ? 'pelanggan@example.test'
+                  : 'Halo, pelanggan',
+            ),
+            findsOneWidget,
+          );
           expect(
             tester
                 .widget<NavigationBar>(find.byType(NavigationBar))
@@ -562,7 +569,7 @@ void main() {
             );
           }
           final action = role == UserRole.customer
-              ? 'Booking Servis'
+              ? 'Buat Booking'
               : role == UserRole.admin
               ? 'Kelola Booking'
               : 'Tugas Saya';
@@ -734,18 +741,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(bookingsProvider).requireValue.length, 1);
     await tester.scrollUntilVisible(
-      find.text('Booking aktif'),
+      find.text('Ringkasan booking'),
       150,
       scrollable: find.byType(Scrollable).first,
     );
-    final card = find.ancestor(
-      of: find.text('Booking aktif'),
-      matching: find.byType(Card),
-    );
-    expect(find.descendant(of: card, matching: find.text('1')), findsOneWidget);
+    await tester.tap(find.text('Ringkasan booking'));
+    await tester.pumpAndSettle();
+    expect(find.text('Booking aktif: 1'), findsOneWidget);
     source.add([]);
     await tester.pumpAndSettle();
-    expect(find.descendant(of: card, matching: find.text('0')), findsOneWidget);
+    expect(find.text('Booking aktif: 0'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 

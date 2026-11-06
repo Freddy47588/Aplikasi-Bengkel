@@ -7,7 +7,6 @@ import '../../../core/data/service_history_repository.dart';
 import '../../../core/data/vehicle_repository.dart';
 import '../../../core/models/service_history.dart';
 import '../../../core/models/service_order.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/foundation_pages.dart';
 import '../../../core/widgets/logout_button.dart';
 import '../../../core/widgets/mobile_navigation.dart';
@@ -23,8 +22,9 @@ class CustomerDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider);
-    if (!session.isAuthenticated || session.role?.name != 'customer')
+    if (!session.isAuthenticated || session.role?.name != 'customer') {
       return const SizedBox.shrink();
+    }
     final orders = ref.watch(ordersPageProvider(null));
     final bookings = ref.watch(bookingsProvider);
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
@@ -136,13 +136,10 @@ class CustomerDashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Kelola servis dan kendaraan Anda dengan mudah.'),
-            if (!largeText) const CustomerVehicleArt(height: 132),
-            Transform.translate(
-              offset: Offset(0, largeText ? 0 : -8),
-              child: summary,
-            ),
-            const SizedBox(height: 12),
+            const Text('Booking, kendaraan, dan riwayat servis Anda.'),
+            if (!largeText) const CustomerVehicleArt(height: 112),
+            summary,
+            const SizedBox(height: 20),
             const SectionHeader(title: 'Akses Cepat'),
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -166,6 +163,7 @@ class CustomerDashboardScreen extends ConsumerWidget {
                     SizedBox(
                       width: largeText ? box.maxWidth : (box.maxWidth - 16) / 3,
                       child: Card(
+                        margin: EdgeInsets.zero,
                         shape: _shape,
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(

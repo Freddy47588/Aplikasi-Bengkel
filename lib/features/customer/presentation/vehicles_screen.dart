@@ -75,19 +75,19 @@ class VehiclesScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
               children: [
                 if (MediaQuery.textScalerOf(context).scale(1) <= 1.3)
-                  const CustomerVehicleArt(),
-                const SizedBox(height: 18),
+                  const CustomerVehicleArt(height: 104),
+                const SizedBox(height: 12),
                 Text(
-                  'Daftar Kendaraan Anda',
+                  'Daftar kendaraan',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Kelola data kendaraan untuk booking servis dan riwayat perbaikan. Ketuk kartu untuk mengedit.',
+                  'Ketuk kendaraan untuk mengubah nama atau nomor polisi.',
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 if (vehicles.isEmpty)
                   const EmptyState(
                     title: 'Belum ada kendaraan',
@@ -107,7 +107,7 @@ class VehiclesScreen extends ConsumerWidget {
                     ),
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                      contentPadding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
                       leading: const Icon(
                         Icons.directions_car_outlined,
                         color: AppColors.secondary,
@@ -257,48 +257,51 @@ class _VehicleFormState extends ConsumerState<_VehicleForm> {
       widget.vehicle == null ? 'Tambah kendaraan' : 'Edit kendaraan',
       textAlign: TextAlign.center,
     ),
-    content: Form(
-      key: form,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (MediaQuery.textScalerOf(context).scale(1) <= 1.3)
-            const CustomerVehicleArt(form: true, height: 104),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: name,
-            enabled: !busy,
-            maxLength: 80,
-            decoration: const InputDecoration(
-              labelText: 'Nama kendaraan',
-              hintText: 'Merek / model kendaraan',
-              prefixIcon: Icon(Icons.directions_car_outlined),
+    content: SizedBox(
+      width: 400,
+      child: Form(
+        key: form,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (MediaQuery.textScalerOf(context).scale(1) <= 1.3)
+              const CustomerVehicleArt(form: true, height: 104),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: name,
+              enabled: !busy,
+              maxLength: 80,
+              decoration: const InputDecoration(
+                labelText: 'Nama kendaraan',
+                hintText: 'Merek / model kendaraan',
+                prefixIcon: Icon(Icons.directions_car_outlined),
+              ),
+              validator: (v) =>
+                  (v?.trim().isEmpty ?? true) ? 'Isi nama kendaraan.' : null,
             ),
-            validator: (v) =>
-                (v?.trim().isEmpty ?? true) ? 'Isi nama kendaraan.' : null,
-          ),
-          TextFormField(
-            controller: plate,
-            enabled: !busy,
-            maxLength: 13,
-            textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Plat nomor',
-              hintText: 'B 1234 XYZ',
-              prefixIcon: Icon(Icons.pin_outlined),
+            TextFormField(
+              controller: plate,
+              enabled: !busy,
+              maxLength: 13,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Plat nomor',
+                hintText: 'B 1234 XYZ',
+                prefixIcon: Icon(Icons.pin_outlined),
+              ),
+              validator: (v) {
+                try {
+                  normalizePlate(v ?? '');
+                  return null;
+                } catch (_) {
+                  return 'Plat harus seperti B 1234 XYZ.';
+                }
+              },
             ),
-            validator: (v) {
-              try {
-                normalizePlate(v ?? '');
-                return null;
-              } catch (_) {
-                return 'Plat harus seperti B 1234 XYZ.';
-              }
-            },
-          ),
-          if (error != null) Text(error!),
-          if (busy) const CircularProgressIndicator(),
-        ],
+            if (error != null) Text(error!),
+            if (busy) const CircularProgressIndicator(),
+          ],
+        ),
       ),
     ),
     actions: [

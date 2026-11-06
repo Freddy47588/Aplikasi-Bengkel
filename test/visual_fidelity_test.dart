@@ -138,7 +138,7 @@ void main() {
       testAuth(container).signIn(role);
       final links = <String, String>{
         if (role == UserRole.customer) ...{
-          'Booking Servis': 'booking',
+          'Buat Booking': 'booking',
           'Kendaraan Saya': 'vehicles',
           'Booking Saya': 'bookings',
         },
@@ -158,6 +158,16 @@ void main() {
       for (final link in links.entries) {
         router.go('/${role.name}/home');
         await tester.pumpAndSettle();
+        if (role == UserRole.customer &&
+            [
+              'Booking Saya',
+              'Progres Servis',
+              'Invoice & Pembayaran',
+            ].contains(link.key)) {
+          await reveal(tester, find.text('Menu lainnya'));
+          await tester.tap(find.text('Menu lainnya'));
+          await tester.pumpAndSettle();
+        }
         await reveal(tester, find.text(link.key));
         await tester.tap(find.text(link.key));
         await tester.pumpAndSettle();
