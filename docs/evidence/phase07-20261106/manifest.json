@@ -1,10 +1,5 @@
 [
   {
-    "file": ".gitattributes",
-    "sha256": "af24a94358c83978d488bf2a15e9caa9b70c3b2e46181441256d5a5edc90086a",
-    "bytes": 50
-  },
-  {
     "file": "network-regression-after.txt",
     "sha256": "cc4844a281ee3b96358856de593a658edd82f92c71e5a590df26e2a1df40ee5e",
     "bytes": 283
