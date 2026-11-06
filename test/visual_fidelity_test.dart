@@ -31,9 +31,7 @@ void main() {
     }.entries) {
       router.go('/admin/${page.key}');
       await tester.pumpAndSettle();
-      final filter = page.key == 'inventory'
-          ? find.byTooltip(page.value)
-          : find.text(page.value);
+      final filter = find.byTooltip(page.value);
       await reveal(tester, filter);
       await tester.tap(filter);
       await tester.pumpAndSettle();

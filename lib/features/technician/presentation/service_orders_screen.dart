@@ -2,6 +2,7 @@ import '../../../core/widgets/workshop_ui.dart';
 import 'technician_task_ui.dart';
 import 'technician_form_ui.dart';
 import 'service_completion_screen.dart';
+import 'admin_service_ui.dart';
 import '../../../app/theme/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/router/app_router.dart';
 import '../../../core/data/service_order_repository.dart';
+import '../../../core/data/inventory_repository.dart';
 import '../../../core/models/service_order.dart';
 import '../../../core/widgets/mobile_navigation.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -48,6 +50,176 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
   void dispose() {
     search.dispose();
     super.dispose();
+  }
+
+  Widget adminList(BuildContext context) {
+    final provider = ordersPageProvider(cursors.last);
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        toolbarHeight: MediaQuery.textScalerOf(context).scale(1) > 1.3
+            ? 96
+            : kToolbarHeight,
+        title: const Text(
+          'Daftar Service Order',
+          softWrap: true,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+        ),
+        leading: IconButton(
+          tooltip: 'Kembali ke dashboard',
+          onPressed: () => context.go('/admin/home'),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Menu Service Order',
+            onSelected: (value) {
+              if (value == 'technicians') {
+                context.go('/admin/technicians');
+              } else {
+                ref.invalidate(provider);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'technicians',
+                child: Text('Kelola teknisi'),
+              ),
+              PopupMenuItem(value: 'refresh', child: Text('Muat ulang')),
+            ],
+          ),
+        ],
+      ),
+      bottomNavigationBar: const MobileNavigation(role: 'admin'),
+      body: WorkshopBody(
+        showWave: true,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          children: [
+            const TechnicianFormIntro(
+              art: WorkshopArt.checklist,
+              description:
+                  'Lihat dan kelola Service Order untuk seluruh pengerjaan servis.',
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: search,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) =>
+                        setState(() => query = value.trim().toLowerCase()),
+                    decoration: const InputDecoration(
+                      labelText: 'Cari SO / kendaraan',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 52,
+                  height: 56,
+                  child: IconButton.outlined(
+                    tooltip: 'Filter Service Order',
+                    isSelected: showFilters,
+                    onPressed: () => setState(() => showFilters = !showFilters),
+                    icon: const Icon(Icons.tune),
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pencarian dan filter berlaku pada halaman ini (maks. 20 SO).',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (showFilters) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<ServiceOrderStatus>(
+                initialValue: status,
+                isExpanded: true,
+                itemHeight: null,
+                decoration: const InputDecoration(
+                  labelText: 'Status Service Order',
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('Semua status'),
+                  ),
+                  for (final value in ServiceOrderStatus.values)
+                    DropdownMenuItem(value: value, child: Text(value.label)),
+                ],
+                onChanged: (value) => setState(() => status = value),
+              ),
+            ],
+            const SizedBox(height: 12),
+            ref
+                .watch(provider)
+                .when(
+                  loading: () => const LoadingState(),
+                  error: (_, _) =>
+                      RetryLoad(onRetry: () => ref.invalidate(provider)),
+                  data: (page) {
+                    final visible = page.items.where(
+                      (o) =>
+                          (status == null || o.status == status) &&
+                          [
+                            o.id,
+                            o.text('vehiclePlate'),
+                            o.text('vehicleName'),
+                            o.text('serviceName'),
+                            o.text('technicianName'),
+                          ].any((text) => text.toLowerCase().contains(query)),
+                    );
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (visible.isEmpty)
+                          const EmptyState(
+                            title: 'Service Order belum ditemukan',
+                            description:
+                                'Ubah pencarian atau filter, atau periksa halaman lain.',
+                            icon: Icons.search_off,
+                          ),
+                        for (final order in visible)
+                          AdminRecordCard(
+                            title: order.id,
+                            icon: Icons.directions_car_outlined,
+                            lines: [
+                              '${order.text('vehiclePlate')} · ${order.text('vehicleName')}',
+                              order.text('serviceName'),
+                              'Teknisi: ${order.text('technicianName').isEmpty ? 'Belum tercatat' : order.text('technicianName')}',
+                            ],
+                            status: StatusChip(
+                              label: order.status.label,
+                              tone: orderStatusTone(order.status),
+                            ),
+                            onTap: () =>
+                                context.go('/admin/orders/${order.id}'),
+                          ),
+                        PageButtons(
+                          page: cursors.length,
+                          hasMore: page.hasMore,
+                          previous: () => setState(() => cursors.removeLast()),
+                          next: () => setState(() => cursors.add(page.cursor)),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget technicianList(BuildContext context, String uid) {
@@ -202,6 +374,7 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
     if (!session.isAuthenticated) return const SizedBox.shrink();
     final role = session.role!.name;
     if (role == 'technician') return technicianList(context, session.userId);
+    if (role == 'admin') return adminList(context);
     final provider = ordersPageProvider(cursors.last);
     return Scaffold(
       appBar: AppBar(title: const Text('Service Order')),
@@ -333,9 +506,16 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
     final provider = serviceOrderProvider(widget.id);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: role == 'technician' ? Colors.white : null,
+        backgroundColor: role != 'customer' ? Colors.white : null,
+        toolbarHeight:
+            role == 'admin' && MediaQuery.textScalerOf(context).scale(1) > 1.3
+            ? 96
+            : kToolbarHeight,
         title: Text(
           role == 'technician' ? 'Detail Tugas' : 'Detail Service Order',
+          softWrap: true,
+          maxLines: 2,
+          textAlign: TextAlign.center,
         ),
         leading: IconButton(
           tooltip: 'Kembali ke daftar pekerjaan',
@@ -346,7 +526,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
       ),
       bottomNavigationBar: MobileNavigation(role: role),
       body: WorkshopBody(
-        showWave: role == 'technician',
+        showWave: role != 'customer',
         child: ref
             .watch(provider)
             .when(
@@ -438,6 +618,67 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                         ),
                       );
                       if (yes == true && mounted) await transition(next);
+                    },
+                  );
+                }
+                if (role == 'admin') {
+                  return AdminOrderDetail(
+                    key: ValueKey(order.id),
+                    order: order,
+                    busy: busy,
+                    onAssign: () async {
+                      final target = await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (_) => const TechniciansScreen(select: true),
+                        ),
+                      );
+                      if (target != null && mounted) {
+                        await run(
+                          () => ref
+                              .read(serviceOrderRepositoryProvider)
+                              .assign(order.id, target, order.revision),
+                        );
+                      }
+                    },
+                    onPrice: () async {
+                      final price = await showDialog<int>(
+                        context: context,
+                        builder: (_) => LaborPriceDialog(
+                          initial: order.data['laborPrice'] as int?,
+                        ),
+                      );
+                      if (price != null && mounted) {
+                        await run(
+                          () => ref
+                              .read(serviceOrderRepositoryProvider)
+                              .setLaborPrice(order.id, order.revision, price),
+                        );
+                      }
+                    },
+                    onParts: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OrderPartsScreen(orderId: order.id),
+                        ),
+                      );
+                      if (mounted) ref.invalidate(orderInventoryProvider);
+                    },
+                    onInvoice: () => context.push(
+                      Uri(
+                        path: '/admin/invoices',
+                        queryParameters: {'orderId': order.id},
+                      ).toString(),
+                    ),
+                    onHistory: () => context.go('/admin/history/${order.id}'),
+                    onTransition: (next) async {
+                      final yes = await confirmWorkshopAction(
+                        context,
+                        'Perubahan mengikuti status dan aturan persetujuan Service Order.',
+                        title: '${workActionLabel(next, order.status)}?',
+                        confirmLabel: 'Lanjutkan',
+                      );
+                      if (yes && mounted) await transition(next);
                     },
                   );
                 }
