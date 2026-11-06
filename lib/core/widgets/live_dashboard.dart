@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/technician/presentation/service_orders_screen.dart';
+import '../../features/technician/presentation/technician_overview.dart';
 import '../data/booking_repository.dart';
 import '../data/inventory_repository.dart';
 import '../data/service_history_repository.dart';
@@ -31,6 +32,7 @@ class LiveDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (technician) return const TechnicianOverview();
     final session = ref.watch(authSessionProvider);
     final role = customer
         ? 'customer'

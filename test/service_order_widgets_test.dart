@@ -62,7 +62,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Mesin bising'), findsOneWidget);
-      final start = find.widgetWithText(OutlinedButton, 'Mulai pengerjaan');
+      final start = find.widgetWithText(FilledButton, 'Mulai pengerjaan');
       await tester.scrollUntilVisible(
         start,
         180,
@@ -74,11 +74,12 @@ void main() {
       await tester.tap(find.text('Lanjutkan'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('Dikerjakan'),
+        find.text('Diproses').first,
         -180,
         scrollable: find.byType(Scrollable).last,
       );
-      expect(find.text('Dikerjakan'), findsOneWidget);
+      expect(find.text('Diproses'), findsWidgets);
+      expect((await db.doc('serviceOrders/one').get())['status'], 'inProgress');
       await tester.scrollUntilVisible(
         find.widgetWithText(OutlinedButton, 'Checklist dan catatan kerja'),
         180,
@@ -172,6 +173,7 @@ void main() {
       }
       if (mode == 'error') {
         expect(find.text('Perlu dicoba lagi'), findsOneWidget);
+        await reveal(tester, find.text('Coba lagi'));
         await tester.tap(find.text('Coba lagi'));
         await tester.pump();
       }

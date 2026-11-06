@@ -1,4 +1,5 @@
 import '../../../core/widgets/workshop_ui.dart';
+import 'technician_task_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,11 +36,169 @@ class ServiceOrdersScreen extends ConsumerStatefulWidget {
 
 class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
   final cursors = <DocumentSnapshot<Map<String, dynamic>>?>[null];
+  final search = TextEditingController();
+  String query = '';
+  bool showFilters = false;
+  ServiceOrderStatus? status;
+
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  Widget technicianList(BuildContext context, String uid) {
+    final provider = ordersPageProvider(cursors.last);
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text('Daftar Tugas'),
+        leading: IconButton(
+          tooltip: 'Kembali ke dashboard',
+          onPressed: () => context.go('/technician/home'),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: () => ref.invalidate(provider),
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const MobileNavigation(role: 'technician'),
+      body: WorkshopBody(
+        showWave: true,
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          children: [
+            const TechnicianTaskIntro(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: search,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) =>
+                        setState(() => query = value.trim().toLowerCase()),
+                    decoration: const InputDecoration(
+                      labelText: 'Cari SO / kendaraan',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 52,
+                  height: 56,
+                  child: IconButton.outlined(
+                    tooltip: 'Filter tugas',
+                    isSelected: showFilters,
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () => setState(() => showFilters = !showFilters),
+                    icon: const Icon(Icons.tune),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pencarian dan filter berlaku pada halaman ini (maks. 20 tugas).',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (showFilters) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<ServiceOrderStatus>(
+                initialValue: status,
+                isExpanded: true,
+                itemHeight: null,
+                decoration: const InputDecoration(labelText: 'Status tugas'),
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('Semua status'),
+                  ),
+                  for (final value in ServiceOrderStatus.values)
+                    DropdownMenuItem(
+                      value: value,
+                      child: Text(technicianStatusLabel(value)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => status = value),
+              ),
+            ],
+            const SizedBox(height: 12),
+            ref
+                .watch(provider)
+                .when(
+                  loading: () => const LoadingState(),
+                  error: (_, _) =>
+                      RetryLoad(onRetry: () => ref.invalidate(provider)),
+                  data: (page) {
+                    final own = page.items
+                        .where((o) => o.technicianId == uid)
+                        .toList();
+                    final visible = own.where(
+                      (o) =>
+                          (status == null || o.status == status) &&
+                          [
+                            o.id,
+                            o.text('vehiclePlate'),
+                            o.text('vehicleName'),
+                            o.text('serviceName'),
+                          ].any((text) => text.toLowerCase().contains(query)),
+                    );
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (own.isEmpty)
+                          const EmptyState(
+                            title: 'Belum ada pekerjaan',
+                            description:
+                                'Belum ada Service Order di halaman ini.',
+                            icon: Icons.car_repair_outlined,
+                          )
+                        else if (visible.isEmpty)
+                          const EmptyState(
+                            title: 'Tugas belum ditemukan',
+                            description:
+                                'Tidak ada tugas sesuai pencarian dan filter pada halaman ini. Coba halaman lain atau ubah filter.',
+                            icon: Icons.search_off,
+                          ),
+                        for (final order in visible)
+                          TechnicianTaskCard(
+                            order: order,
+                            onTap: () =>
+                                context.go('/technician/orders/${order.id}'),
+                          ),
+                        PageButtons(
+                          page: cursors.length,
+                          hasMore: page.hasMore,
+                          previous: () => setState(() => cursors.removeLast()),
+                          next: () => setState(() => cursors.add(page.cursor)),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authSessionProvider);
     if (!session.isAuthenticated) return const SizedBox.shrink();
     final role = session.role!.name;
+    if (role == 'technician') return technicianList(context, session.userId);
     final provider = ordersPageProvider(cursors.last);
     return Scaffold(
       appBar: AppBar(title: const Text('Service Order')),
@@ -171,7 +330,10 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
     final provider = serviceOrderProvider(widget.id);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Service Order'),
+        backgroundColor: role == 'technician' ? Colors.white : null,
+        title: Text(
+          role == 'technician' ? 'Detail Tugas' : 'Detail Service Order',
+        ),
         leading: IconButton(
           tooltip: 'Kembali ke daftar pekerjaan',
           icon: const Icon(Icons.arrow_back),
@@ -181,6 +343,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
       ),
       bottomNavigationBar: MobileNavigation(role: role),
       body: WorkshopBody(
+        showWave: role == 'technician',
         child: ref
             .watch(provider)
             .when(
@@ -206,6 +369,58 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                         notes: order.text('notes'),
                       ),
                 );
+                if (role == 'technician') {
+                  if (order.technicianId != session.userId) {
+                    return const EmptyState(
+                      title: 'Tugas tidak dapat diakses',
+                      description:
+                          'Anda hanya dapat membuka tugas yang ditugaskan kepada Anda.',
+                      icon: Icons.lock_outline,
+                    );
+                  }
+                  return TechnicianTaskDetail(
+                    order: order,
+                    busy: busy,
+                    onChecklist: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WorkEditor(order: order),
+                      ),
+                    ),
+                    onParts: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderPartsScreen(orderId: order.id),
+                      ),
+                    ),
+                    onHistory: () =>
+                        context.go('/technician/history/${order.id}'),
+                    onTransition: (next) async {
+                      final yes = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          scrollable: true,
+                          title: Text(
+                            '${workActionLabel(next, order.status)}?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: const Text('Kembali'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: const Text('Lanjutkan'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (yes == true && mounted) await transition(next);
+                    },
+                  );
+                }
                 return ListView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,

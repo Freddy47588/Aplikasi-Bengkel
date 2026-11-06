@@ -149,9 +149,12 @@ void main() {
           'Inventory Sparepart': 'inventory',
           'Manajemen Teknisi': 'technicians',
         },
-        if (role == UserRole.technician) 'Pekerjaan Saya': 'jobs',
+        if (role == UserRole.technician) 'Tugas Saya': 'jobs',
         'Progres Servis': 'orders',
-        'Riwayat Servis': 'history',
+        if (role == UserRole.technician)
+          'Riwayat Pekerjaan': 'history'
+        else
+          'Riwayat Servis': 'history',
         if (role != UserRole.technician) 'Invoice & Pembayaran': 'invoices',
       };
       for (final link in links.entries) {
