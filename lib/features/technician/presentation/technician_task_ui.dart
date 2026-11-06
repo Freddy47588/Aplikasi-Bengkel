@@ -323,11 +323,13 @@ class TechnicianTaskDetail extends StatelessWidget {
     required this.onChecklist,
     required this.onParts,
     required this.onHistory,
+    this.onCompletion,
   });
   final ServiceOrder order;
   final bool busy;
   final Future<void> Function(ServiceOrderStatus) onTransition;
   final VoidCallback onChecklist, onParts, onHistory;
+  final VoidCallback? onCompletion;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -434,6 +436,16 @@ class TechnicianTaskDetail extends StatelessWidget {
         TextButton(
           onPressed: onHistory,
           child: const Text('Buka riwayat dan rincian biaya'),
+        ),
+      if (onCompletion != null &&
+          [
+            ServiceOrderStatus.awaitingApproval,
+            ServiceOrderStatus.completed,
+          ].contains(order.status))
+        OutlinedButton.icon(
+          onPressed: onCompletion,
+          icon: const Icon(Icons.task_alt),
+          label: const Text('Ringkasan penyelesaian'),
         ),
       const SizedBox(height: 12),
       ExpansionTile(

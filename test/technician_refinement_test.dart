@@ -7,6 +7,7 @@ import 'package:bengkel_kendaraan/core/models/service_order.dart';
 import 'package:bengkel_kendaraan/core/data/service_order_repository.dart';
 import 'package:bengkel_kendaraan/features/technician/presentation/technician_overview.dart';
 import 'package:bengkel_kendaraan/features/technician/presentation/technician_task_ui.dart';
+import 'package:bengkel_kendaraan/features/technician/presentation/service_completion_screen.dart';
 import 'package:bengkel_kendaraan/features/inventory/presentation/order_parts_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -102,6 +103,11 @@ Future<void> tapAction(
   await tester.tap(action);
   await tester.pumpAndSettle();
   if (confirm) {
+    if (label == 'Ajukan selesai' &&
+        find.byType(ServiceCompletionScreen).evaluate().isNotEmpty) {
+      await tester.tap(find.text('Ajukan Selesai'));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('Lanjutkan'));
     await tester.pumpAndSettle();
   }
@@ -329,8 +335,8 @@ void main() {
         (await db.doc('serviceOrders/task-active').get())['status'],
         'inProgress',
       );
-      expect(find.textContaining('Lengkapi checklist'), findsOneWidget);
-      await tapAction(tester, 'Checklist dan catatan kerja');
+      expect(find.textContaining('Lengkapi checklist'), findsWidgets);
+      await tapAction(tester, 'Ubah checklist dan catatan');
       for (final label in [
         'Kondisi kendaraan diperiksa',
         'Keselamatan diperiksa',
@@ -341,6 +347,7 @@ void main() {
         await tester.tap(check);
         await tester.pumpAndSettle();
       }
+      await tapAction(tester, 'Diagnosis, tindakan dan catatan');
       for (final (label, value) in [
         ('Diagnosis', 'Dudukan mesin perlu disetel'),
         ('Tindakan', 'Penyetelan dan uji mesin'),
@@ -352,8 +359,8 @@ void main() {
         await reveal(tester, field);
         await tester.enterText(field, value);
       }
-      await tapAction(tester, 'Simpan');
-      await tapAction(tester, 'Ajukan selesai', confirm: true);
+      await tapAction(tester, 'Simpan Checklist');
+      await tapAction(tester, 'Ajukan Selesai', confirm: true);
       final awaiting = (await db.doc('serviceOrders/task-active').get())
           .data()!;
       expect(awaiting['status'], 'awaitingApproval');
@@ -405,11 +412,12 @@ void main() {
       expect(sku, findsOneWidget);
       await tester.enterText(sku, 'FILTER-UJI');
       await tester.enterText(find.byType(TextFormField).at(1), '2');
-      await tester.enterText(
-        find.byType(TextFormField).at(2),
-        'Penggantian saat pemeriksaan',
+      final reason = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Alasan permintaan',
       );
-      await tapAction(tester, 'Kirim permintaan');
+      await reveal(tester, reason);
+      await tester.enterText(reason, 'Penggantian saat pemeriksaan');
+      await tapAction(tester, 'Ajukan Sparepart');
       final requests = await db
           .collection('serviceOrders/task-active/partRequests')
           .get();

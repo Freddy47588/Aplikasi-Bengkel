@@ -1,5 +1,8 @@
 import '../../../core/widgets/workshop_ui.dart';
 import 'technician_task_ui.dart';
+import 'technician_form_ui.dart';
+import 'service_completion_screen.dart';
+import '../../../app/theme/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -395,7 +398,24 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
                     ),
                     onHistory: () =>
                         context.go('/technician/history/${order.id}'),
+                    onCompletion: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ServiceCompletionScreen(orderId: order.id),
+                      ),
+                    ),
                     onTransition: (next) async {
+                      if (next == ServiceOrderStatus.awaitingApproval) {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ServiceCompletionScreen(orderId: order.id),
+                          ),
+                        );
+                        return;
+                      }
                       final yes = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
@@ -707,26 +727,59 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Catatan kerja')),
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      title: const Text('Checklist Pekerjaan'),
+    ),
     body: WorkshopBody(
+      showWave: true,
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         children: [
-          const WorkshopIllustration(WorkshopArt.checklist),
-          const SizedBox(height: 16),
-          WorkshopRecordCard(
-            title: widget.order.text('vehiclePlate'),
+          const TechnicianFormIntro(
+            art: WorkshopArt.checklist,
             description:
-                '${widget.order.text('vehicleName')}\n${widget.order.text('serviceName')}',
-            icon: Icons.car_repair_outlined,
+                'Isi checklist pemeriksaan sesuai prosedur servis kendaraan.',
           ),
+          TaskVehicleCard(
+            order: widget.order,
+            onTap: Navigator.canPop(context)
+                ? () => Navigator.pop(context)
+                : null,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Daftar Checklist Servis',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
           for (final key in inspectionKeys)
             Card(
               margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColors.blueBorder),
+              ),
               child: CheckboxListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                activeColor: AppColors.secondary,
+                checkColor: Colors.white,
+                side: const BorderSide(color: AppColors.muted, width: 2),
+                checkboxShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 controlAffinity: ListTileControlAffinity.leading,
-                title: Text(inspectionLabel(key)),
+                title: Text(
+                  inspectionLabel(key),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(inspectionDescription(key)),
                 value: checks[key],
                 onChanged: busy
                     ? null
@@ -734,24 +787,34 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
               ),
             ),
           const SizedBox(height: 16),
-          for (final (controller, label, max) in [
-            (diagnosis, 'Diagnosis', 2000),
-            (actions, 'Tindakan', 2000),
-            (notes, 'Catatan', 4000),
-          ])
-            TextField(
-              controller: controller,
-              enabled: !busy,
-              minLines: 3,
-              maxLines: 8,
-              maxLength: max,
-              decoration: InputDecoration(labelText: label),
-            ),
+          ExpansionTile(
+            title: const Text('Diagnosis, tindakan dan catatan'),
+            tilePadding: EdgeInsets.zero,
+            expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (controller, label, max) in [
+                (diagnosis, 'Diagnosis', 2000),
+                (actions, 'Tindakan', 2000),
+                (notes, 'Catatan', 4000),
+              ])
+                TextField(
+                  controller: controller,
+                  enabled: !busy,
+                  minLines: 3,
+                  maxLines: 8,
+                  maxLength: max,
+                  decoration: InputDecoration(labelText: label),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           if (error != null) Text(error!),
-          FilledButton(
+          FilledButton.icon(
+            icon: const Icon(Icons.check),
             onPressed: busy
                 ? null
                 : () async {
+                    if (busy) return;
                     setState(() {
                       busy = true;
                       error = null;
@@ -778,7 +841,7 @@ class _WorkEditorState extends ConsumerState<WorkEditor> {
                       }
                     }
                   },
-            child: Text(busy ? 'Menyimpan…' : 'Simpan'),
+            label: Text(busy ? 'Menyimpan…' : 'Simpan Checklist'),
           ),
         ],
       ),

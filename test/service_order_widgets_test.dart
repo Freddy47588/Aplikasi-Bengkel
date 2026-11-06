@@ -90,10 +90,13 @@ void main() {
       await tester.pumpAndSettle();
       await reveal(tester, find.byType(CheckboxListTile).first);
       await tester.tap(find.byType(CheckboxListTile).first);
+      await reveal(tester, find.text('Diagnosis, tindakan dan catatan'));
+      await tester.tap(find.text('Diagnosis, tindakan dan catatan'));
+      await tester.pumpAndSettle();
       await reveal(tester, find.byType(TextField).first);
       await tester.enterText(find.byType(TextField).first, 'Pemeriksaan mesin');
-      await reveal(tester, find.text('Simpan'));
-      await tester.tap(find.text('Simpan'));
+      await reveal(tester, find.text('Simpan Checklist'));
+      await tester.tap(find.text('Simpan Checklist'));
       await tester.pumpAndSettle();
       expect(
         (await db.doc('serviceOrders/one').get())['diagnosis'],

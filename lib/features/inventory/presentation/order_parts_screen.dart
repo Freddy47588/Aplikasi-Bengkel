@@ -1,4 +1,7 @@
 import '../../../core/widgets/workshop_ui.dart';
+import '../../../app/theme/app_colors.dart';
+import '../../../core/constants/user_role.dart';
+import '../../technician/presentation/technician_form_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -240,7 +243,7 @@ class PartRequestScreen extends ConsumerStatefulWidget {
 class _PartRequestState extends ConsumerState<PartRequestScreen> {
   final form = GlobalKey<FormState>();
   final sku = TextEditingController(),
-      qty = TextEditingController(),
+      qty = TextEditingController(text: '1'),
       reason = TextEditingController();
   String? id, error;
   bool busy = false;
@@ -253,96 +256,245 @@ class _PartRequestState extends ConsumerState<PartRequestScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Permintaan sparepart')),
-    body: WorkshopBody(
-      child: Form(
-        key: form,
-        child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(20),
-          children: [
-            const PageIntro(
-              art: WorkshopArt.spareparts,
-              title: 'Ajukan kebutuhan sparepart',
-              description:
-                  'Masukkan kode dari label sparepart. Admin memeriksa ketersediaan dan menyetujui pemakaian.',
-            ),
-            TextFormField(
-              controller: sku,
-              enabled: !busy && id == null,
-              maxLength: 40,
-              decoration: const InputDecoration(
-                labelText: 'SKU',
-                prefixIcon: Icon(Icons.inventory_2_outlined),
+  Widget build(BuildContext context) {
+    final session = ref.watch(authSessionProvider);
+    if (!session.isAuthenticated) return const SizedBox.shrink();
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text('Permintaan Sparepart'),
+      ),
+      body: WorkshopBody(
+        showWave: true,
+        child: ref
+            .watch(serviceOrderProvider(widget.orderId))
+            .when(
+              loading: () => const LoadingState(),
+              error: (_, _) => RetryLoad(
+                onRetry: () =>
+                    ref.invalidate(serviceOrderProvider(widget.orderId)),
               ),
-              validator: (v) =>
-                  validSku(canonicalSku(v ?? '')) ? null : 'SKU tidak valid.',
-            ),
-            TextFormField(
-              controller: qty,
-              enabled: !busy && id == null,
-              decoration: const InputDecoration(labelText: 'Qty'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final n = int.tryParse(v ?? '');
-                return n == null || n <= 0 || n > maxQuantity
-                    ? 'Qty harus 1–$maxQuantity.'
-                    : null;
+              data: (order) {
+                if (order == null) {
+                  return const Center(
+                    child: Text('Service Order tidak ditemukan.'),
+                  );
+                }
+                if (session.role != UserRole.technician ||
+                    order.technicianId != session.userId) {
+                  return const Center(
+                    child: Text(
+                      'Permintaan hanya untuk tugas teknisi yang bersangkutan.',
+                    ),
+                  );
+                }
+                final available = [
+                  'inProgress',
+                  'paused',
+                ].contains(order.status.name);
+                final editable = !busy && id == null && available;
+                final amount = int.tryParse(qty.text);
+                final validAmount =
+                    amount != null && amount >= 1 && amount <= maxQuantity;
+                return Form(
+                  key: form,
+                  child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    children: [
+                      const TechnicianFormIntro(
+                        art: WorkshopArt.spareparts,
+                        description:
+                            'Ajukan sparepart yang dibutuhkan untuk pekerjaan servis.',
+                      ),
+                      TaskVehicleCard(
+                        order: order,
+                        onTap: Navigator.canPop(context)
+                            ? () => Navigator.pop(context)
+                            : null,
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Daftar Sparepart',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Ajukan satu SKU per permintaan. Gunakan kode pada label sparepart.',
+                      ),
+                      const SizedBox(height: 12),
+                      if (!available)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'Permintaan baru tersedia setelah tugas dimulai.',
+                          ),
+                        ),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: AppColors.blueBorder),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 14),
+                                    child: Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: AppColors.secondary,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: sku,
+                                      enabled: editable,
+                                      maxLength: 40,
+                                      decoration: const InputDecoration(
+                                        labelText: 'SKU',
+                                      ),
+                                      validator: (v) =>
+                                          validSku(canonicalSku(v ?? ''))
+                                          ? null
+                                          : 'SKU tidak valid.',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton.outlined(
+                                    tooltip: 'Kurangi jumlah',
+                                    onPressed:
+                                        editable && validAmount && amount > 1
+                                        ? () => setState(
+                                            () => qty.text = '${amount - 1}',
+                                          )
+                                        : null,
+                                    icon: const Icon(Icons.remove),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 120,
+                                      ),
+                                      child: TextFormField(
+                                        controller: qty,
+                                        enabled: editable,
+                                        textAlign: TextAlign.center,
+                                        onChanged: (_) => setState(() {}),
+                                        decoration: const InputDecoration(
+                                          labelText: 'Qty',
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (v) {
+                                          final n = int.tryParse(v ?? '');
+                                          return n == null ||
+                                                  n <= 0 ||
+                                                  n > maxQuantity
+                                              ? 'Qty harus 1–$maxQuantity.'
+                                              : null;
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton.outlined(
+                                    tooltip: 'Tambah jumlah',
+                                    onPressed:
+                                        editable &&
+                                            validAmount &&
+                                            amount < maxQuantity
+                                        ? () => setState(
+                                            () => qty.text = '${amount + 1}',
+                                          )
+                                        : null,
+                                    icon: const Icon(Icons.add),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: reason,
+                        enabled: editable,
+                        minLines: 2,
+                        maxLines: 5,
+                        maxLength: 500,
+                        decoration: const InputDecoration(
+                          labelText: 'Alasan permintaan',
+                          helperText: 'Wajib untuk persetujuan admin.',
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Alasan wajib.'
+                            : null,
+                      ),
+                      if (error != null) Text(error!),
+                      FilledButton.icon(
+                        icon: const Icon(Icons.send_outlined),
+                        onPressed: busy || (!available && id == null)
+                            ? null
+                            : () async {
+                                if (busy || !form.currentState!.validate()) {
+                                  return;
+                                }
+                                final repo = ref.read(
+                                  inventoryRepositoryProvider,
+                                );
+                                id ??= repo.newOperationId();
+                                setState(() {
+                                  busy = true;
+                                  error = null;
+                                });
+                                try {
+                                  await repo.requestPart(
+                                    id!,
+                                    widget.orderId,
+                                    sku.text,
+                                    int.parse(qty.text),
+                                    reason.text,
+                                  );
+                                  if (context.mounted) {
+                                    Navigator.pop(context, true);
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    setState(() {
+                                      busy = false;
+                                      error =
+                                          'Permintaan belum dikonfirmasi: $e';
+                                    });
+                                  }
+                                }
+                              },
+                        label: Text(
+                          busy
+                              ? 'Mengirim…'
+                              : id == null
+                              ? 'Ajukan Sparepart'
+                              : 'Coba lagi permintaan yang sama',
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: reason,
-              enabled: !busy && id == null,
-              minLines: 2,
-              maxLines: 5,
-              maxLength: 500,
-              decoration: const InputDecoration(labelText: 'Alasan permintaan'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Alasan wajib.' : null,
-            ),
-            if (error != null) Text(error!),
-            FilledButton(
-              onPressed: busy
-                  ? null
-                  : () async {
-                      if (busy || !form.currentState!.validate()) return;
-                      final repo = ref.read(inventoryRepositoryProvider);
-                      id ??= repo.newOperationId();
-                      setState(() {
-                        busy = true;
-                        error = null;
-                      });
-                      try {
-                        await repo.requestPart(
-                          id!,
-                          widget.orderId,
-                          sku.text,
-                          int.parse(qty.text),
-                          reason.text,
-                        );
-                        if (context.mounted) Navigator.pop(context, true);
-                      } catch (e) {
-                        if (mounted) {
-                          setState(() {
-                            busy = false;
-                            error = 'Permintaan belum dikonfirmasi: $e';
-                          });
-                        }
-                      }
-                    },
-              child: Text(
-                busy
-                    ? 'Mengirim…'
-                    : id == null
-                    ? 'Kirim permintaan'
-                    : 'Coba lagi permintaan yang sama',
-              ),
-            ),
-          ],
-        ),
       ),
-    ),
-  );
+    );
+  }
 }
