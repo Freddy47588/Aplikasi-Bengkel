@@ -1,5 +1,10 @@
 [
   {
+    "file": ".gitattributes",
+    "sha256": "af24a94358c83978d488bf2a15e9caa9b70c3b2e46181441256d5a5edc90086a",
+    "bytes": 50
+  },
+  {
     "file": "network-regression-after.txt",
     "sha256": "cc4844a281ee3b96358856de593a658edd82f92c71e5a590df26e2a1df40ee5e",
     "bytes": 283
@@ -50,6 +55,11 @@
     "bytes": 224826
   },
   {
+    "file": "p07-copy-final.png",
+    "sha256": "0fb9a3db1b883d3c2b2440a86ff8c6cc54d5601415f81a2de8dd174573701739",
+    "bytes": 212881
+  },
+  {
     "file": "p07-font-13.png",
     "sha256": "863df9676c45378644e9a8f412d665aaeafbdab421a9fa2373110510d63449bc",
     "bytes": 233538
@@ -96,7 +106,7 @@
   },
   {
     "file": "seed-validation.json",
-    "sha256": "5bd1e9efc505af2da6eb9ff7ea2f13eb9ade8b4affd2983be54ebbe98f3237da",
-    "bytes": 411
+    "sha256": "1d3749695012d520bc19a2c6d1c0a804b9dc95096cdff4db3af9eae5571a5d4f",
+    "bytes": 390
   }
 ]
