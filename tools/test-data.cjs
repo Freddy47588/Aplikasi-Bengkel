@@ -7,7 +7,7 @@ const { initializeApp, deleteApp } = require('firebase/app');
 const { getAuth, connectAuthEmulator, signInWithEmailAndPassword } = require('firebase/auth');
 const { getFirestore, connectFirestoreEmulator, doc, collection, getDoc, getDocs, query,
   limit, setDoc, updateDoc, writeBatch, runTransaction, serverTimestamp: now, Timestamp, terminate } = require('firebase/firestore');
-const { PROJECT, preflight, localRequest } = require('./emulator-safety.cjs');
+const { PROJECT, preflight, localRequest, credentialsFileName } = require('./emulator-safety.cjs');
 
 const accounts = [
   ['p07-admin', 'admin.demo@bengkelku.test', 'admin'],
@@ -16,7 +16,7 @@ const accounts = [
   ['p07-technician', 'technician.demo@bengkelku.test', 'technician'],
 ];
 const manifestPath = '_testManifests/phase07';
-const credentialsPath = path.resolve(__dirname, '../.firebase/phase07-credentials.json');
+const credentialsPath = path.resolve(__dirname, '../.firebase', credentialsFileName(process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099'));
 
 async function context() {
   const config = await preflight();

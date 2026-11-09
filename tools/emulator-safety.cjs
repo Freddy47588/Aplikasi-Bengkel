@@ -39,4 +39,9 @@ async function preflight(env = process.env) {
   return config;
 }
 
-module.exports = { PROJECT, endpoint, configuration, localRequest, preflight };
+function credentialsFileName(authEndpoint) {
+  const port = endpoint(authEndpoint).split(':')[1];
+  return port === '9099' ? 'phase07-credentials.json' : `phase07-credentials-${port}.json`;
+}
+
+module.exports = { PROJECT, endpoint, configuration, localRequest, preflight, credentialsFileName };

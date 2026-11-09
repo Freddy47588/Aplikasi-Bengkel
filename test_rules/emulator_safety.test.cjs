@@ -3,6 +3,14 @@ const assert = require('node:assert/strict');
 const { configuration, preflight } = require('../tools/emulator-safety.cjs');
 const local = { GCLOUD_PROJECT: 'demo-bengkelku', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIRESTORE_EMULATOR_HOST: 'localhost:8080' };
 
+test('isolated Auth ports cannot overwrite the USB session credential file', () => {
+  const { credentialsFileName } = require('../tools/emulator-safety.cjs');
+  assert.equal(credentialsFileName('127.0.0.1:9099'), 'phase07-credentials.json');
+  assert.equal(credentialsFileName('localhost:9199'), 'phase07-credentials-9199.json');
+  assert.notEqual(credentialsFileName('localhost:9199'), credentialsFileName('127.0.0.1:9099'));
+  assert.throws(() => credentialsFileName('remote.example:9199'));
+});
+
 test('seed/reset fail closed for cloud project, absent or remote endpoints and conflicting project IDs', () => {
   for (const env of [{}, { ...local, GCLOUD_PROJECT: 'bengkelku-app-bebd9' },
     { ...local, FIREBASE_PROJECT_ID: 'other' }, { ...local, GOOGLE_CLOUD_PROJECT: 'other' },
