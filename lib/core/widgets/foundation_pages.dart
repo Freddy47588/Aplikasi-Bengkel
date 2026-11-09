@@ -155,8 +155,17 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
-        title: Text('${status.label} booking?'),
-        content: const Text('Pastikan perubahan status sudah sesuai.'),
+        title: Text(switch (status) {
+          BookingStatus.cancelled => 'Batalkan booking ini?',
+          BookingStatus.confirmed => 'Konfirmasi booking ini?',
+          BookingStatus.rejected => 'Tolak booking ini?',
+          BookingStatus.pending => 'Kembalikan booking ke status menunggu?',
+        }),
+        content: Text(
+          status == BookingStatus.cancelled || status == BookingStatus.rejected
+              ? 'Jadwal ini akan tersedia untuk booking lain.'
+              : 'Status booking akan menjadi ${status.label.toLowerCase()}.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
