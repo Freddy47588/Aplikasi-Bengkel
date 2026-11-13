@@ -740,11 +740,7 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     expect(container.read(bookingsProvider).requireValue.length, 1);
-    await tester.scrollUntilVisible(
-      find.text('Ringkasan booking'),
-      150,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await reveal(tester, find.text('Ringkasan booking'));
     await tester.tap(find.text('Ringkasan booking'));
     await tester.pumpAndSettle();
     expect(find.text('Booking aktif: 1'), findsOneWidget);
