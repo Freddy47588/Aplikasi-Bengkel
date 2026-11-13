@@ -39,7 +39,8 @@ class ReportRepository {
 
   Future<WorkshopReport> load(DateTime from, DateTime until) async {
     if (role != UserRole.admin) throw StateError('Laporan hanya admin.');
-    if (!until.isAfter(from) || until.difference(from).inDays > 31) {
+    if (!until.isAfter(from) ||
+        until.difference(from) > const Duration(days: 31)) {
       throw ArgumentError('Pilih periode 1–31 hari.');
     }
     Query<Map<String, dynamic>> period(String collection, String field) {
