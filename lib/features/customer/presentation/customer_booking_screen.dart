@@ -24,6 +24,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
   DateTime? date;
   int? hour;
   bool busy = false;
+  bool reviewing = false;
   String? error;
   @override
   void dispose() {
@@ -32,19 +33,37 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
   }
 
   Future<void> submit() async {
+    if (busy || reviewing) return;
     if (!form.currentState!.validate()) return;
     if (date == null) {
       setState(() => error = 'Pilih tanggal servis.');
       return;
     }
+    final vehicles = ref.read(vehiclesProvider);
+    final services = ref.read(servicesProvider);
+    final selectedVehicle = vehicles.asData?.value
+        .where((v) => v.id == vehicle)
+        .firstOrNull;
+    final selectedService = services.asData?.value
+        .where((s) => s.id == service)
+        .firstOrNull;
+    if (vehicles.isLoading ||
+        services.isLoading ||
+        vehicles.hasError ||
+        services.hasError ||
+        selectedVehicle == null ||
+        selectedService == null) {
+      setState(
+        () => error =
+            'Katalog berubah atau belum tersedia. Pilih kembali kendaraan dan layanan.',
+      );
+      return;
+    }
+    final customerId = ref.read(authSessionProvider).userId;
     final draft = BookingDraft(
-      vehicleId: vehicle!,
-      service: ref
-          .read(servicesProvider)
-          .requireValue
-          .firstWhere((s) => s.id == service)
-          .name,
-      serviceId: service!,
+      vehicleId: selectedVehicle.id,
+      service: selectedService.name,
+      serviceId: selectedService.id,
       scheduledAt: DateTime.utc(
         date!.year,
         date!.month,
@@ -58,13 +77,17 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
       setState(() => error = validation);
       return;
     }
+    setState(() {
+      reviewing = true;
+      error = null;
+    });
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
         title: const Text('Konfirmasi Booking'),
         content: Text(
-          '${ref.read(vehiclesProvider).requireValue.firstWhere((v) => v.id == vehicle).name}\n${draft.service}\n${bookingSchedule(draft.scheduledAt)}\n${draft.complaint}',
+          '${selectedVehicle.name}\n${draft.service}\n${bookingSchedule(draft.scheduledAt)}\n${draft.complaint}',
         ),
         actions: [
           TextButton(
@@ -78,14 +101,18 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (!mounted) return;
+    setState(() => reviewing = false);
+    if (confirmed != true) return;
     setState(() {
       busy = true;
       error = null;
     });
     try {
       final session = ref.read(authSessionProvider);
-      if (session.role?.name != 'customer') {
+      if (!session.isAuthenticated ||
+          session.role?.name != 'customer' ||
+          session.userId != customerId) {
         throw StateError('Sesi pelanggan diperlukan.');
       }
       final result = await ref
@@ -114,6 +141,13 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
     final services = ref.watch(servicesProvider);
     final availableVehicles = vehicles.asData?.value ?? <Vehicle>[];
     final availableServices = services.asData?.value ?? <WorkshopService>[];
+    final catalogReady =
+        !vehicles.isLoading &&
+        !services.isLoading &&
+        !vehicles.hasError &&
+        !services.hasError &&
+        availableVehicles.isNotEmpty &&
+        availableServices.isNotEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('Booking Servis')),
       bottomNavigationBar: const MobileNavigation(role: 'customer'),
@@ -308,8 +342,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                       if (busy)
                         const Center(child: CircularProgressIndicator()),
                       FilledButton(
-                        onPressed:
-                            busy || !vehicles.hasValue || !services.hasValue
+                        onPressed: busy || reviewing || !catalogReady
                             ? null
                             : submit,
                         child: const Text('Konfirmasi Booking'),
