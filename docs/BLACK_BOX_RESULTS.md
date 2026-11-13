@@ -1,5 +1,14 @@
 # Black-box results Phase 07
 
+Pembaruan 13 November 2026: tidak ada run black-box native baru. ADB tidak
+mendeteksi perangkat pada audit 12-13 November. Semua kasus yang belum diuji
+manual tetap NOT RUN atau BLOCKED; tiga PASS perangkat 6 November tetap
+berlaku hanya untuk build/dataset historis tersebut. UAT nyata NOT RUN.
+Regresi widget/repository dan screenshot fixture pada
+[REGRESSION_RESULTS](REGRESSION_RESULTS.md) membuktikan cakupan otomatis,
+bukan pengganti actual result manual. QA-14/15/16 sudah ditutup dengan tes
+red/green; QA-13 dropdown native masih memerlukan build/katalog yang sama.
+
 Pembaruan perangkat 6 November pada Infinix X6833B, Android 14, source 316b6ab,
 dataset demo-bengkelku. BB-C07 PASS untuk kirim booking, BB-A01 PASS untuk
 login/dashboard, BB-A15 PASS untuk laporan fixture Rp127.000. Pembatalan,

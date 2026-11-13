@@ -1,5 +1,24 @@
 # Bug dan gap Phase 07
 
+Pembaruan 13 November 2026, audit dimulai 12 November pada base `828fc59`.
+Tiga bug runtime baru direproduksi dan diperbaiki; detail serta hasil perintah
+pada [audit penuh](FULL_APP_AUDIT_REPORT.md) dan [regresi](REGRESSION_RESULTS.md).
+QA-13 tetap OPEN: race katalog berikut tidak membuktikan penyebab laporan
+dropdown native yang lama. ADB sesi ini kosong; UAT tetap NOT RUN.
+
+| ID | Severity | Temuan / reproduksi | Status | Perbaikan / bukti |
+| --- | --- | --- | --- | --- |
+| QA-14 | P1 High | Hapus layanan setelah validasi sebelum frame submit; `firstWhere` melempar StateError | FIXED | Snapshot nullable dan guard readiness; tes gagal sebelum fix, lulus sesudah; tidak ada write |
+| QA-15 | P2 Medium | Dua konfirmasi sebelum rebuild membuka dua dialog | FIXED | Lock sejak review, cancel membuka form lagi; satu dialog dan nol write pada cancel |
+| QA-16 | P2 Medium | Laporan menerima 31 hari + 1 detik | FIXED | Durasi utuh dibandingkan 31 hari; tes batas positif/negatif |
+| QA-17 | P3 Low, tooling | Dua tap test berada di luar viewport dan dua lint lokal | FIXED pada working tree | Reveal sebelum tap tanpa menghapus assertion; dua lint dibersihkan. Perubahan pada file yang sudah dirty tidak masuk commit audit |
+
+Gap F-02: admin belum memiliki CRUD kendaraan pelanggan, hanya snapshot pada
+booking/SO. Perlu keputusan scope/otorisasi terpisah, bukan pelonggaran rules.
+Notifikasi belum diimplementasikan, bukan bug runtime. QA-01 tetap ACCEPTED
+LIMITATION. Tidak ada verifikasi/deploy production baru; catatan berikut
+dipertahankan sebagai riwayat tanggal masing-masing.
+
 Pembaruan 6 November 2026. QA-11 FIXED, pemetaan loopback otomatis SDK
 menghalangi adb reverse pada Infinix; commit 9ffb1ec dan test routing red/green.
 QA-12 FIXED, Android menolak HTTP emulator; commit 316b6ab dan dua test jaringan

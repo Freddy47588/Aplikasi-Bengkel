@@ -1,0 +1,82 @@
+[
+  {
+    "local_log": "pub-get.log",
+    "bytes": 3836,
+    "sha256": "c4dd70fbf169a50f828da4c76a4743196dc8fa1647f7716d2f8e8086b10cc255"
+  },
+  {
+    "local_log": "baseline-flutter.log",
+    "bytes": 63406,
+    "sha256": "2f1139e2f6afc2692f7e5c6eb9d0be6764df6c6a6084340293e540f48cecadcd"
+  },
+  {
+    "local_log": "red.log",
+    "bytes": 10486,
+    "sha256": "2fbbb0cd93f5c89dd0180c9aaa6947603e41844fa4ecd38820ef2e5f353564dc"
+  },
+  {
+    "local_log": "green-targeted-final.log",
+    "bytes": 2754,
+    "sha256": "8f2fa4a15cd2bb40f0f2c155ea4c94afbbce4dabb38d614bd5f557d4de8cda83"
+  },
+  {
+    "local_log": "rules.log",
+    "bytes": 109668,
+    "sha256": "0146dc7bb7d62b5f80fa80fa17ec8c0b94b70dba4db5b1677a888827cb7263e3"
+  },
+  {
+    "local_log": "apk.log",
+    "bytes": 10432,
+    "sha256": "7139dbf6f592629a03d9d33a7322c9d9dae34bc2936d9c62d1f95e0e4ac381dc"
+  },
+  {
+    "local_log": "format-final.log",
+    "bytes": 100,
+    "sha256": "046f4e10c45b35487034055ea3b214259e768d22d3e07d39c7796f620640d7d2"
+  },
+  {
+    "local_log": "analyze-final.log",
+    "bytes": 200,
+    "sha256": "feab39a6be4f4802733d20481197fdc46653d321342329f7600ef78543551423"
+  },
+  {
+    "local_log": "flutter-final.log",
+    "bytes": 44192,
+    "sha256": "399ad363fcd23847a9137d1616848e586c7e5fc34fec2fd39cdd62f7bca2be2e"
+  },
+  {
+    "local_log": "capture-before.log",
+    "bytes": 494,
+    "sha256": "62637050190be06cb7f1cfd887568b6ad2044b85a83ddd3b0d20d73481993c62"
+  },
+  {
+    "local_log": "capture-after.log",
+    "bytes": 494,
+    "sha256": "62637050190be06cb7f1cfd887568b6ad2044b85a83ddd3b0d20d73481993c62"
+  },
+  {
+    "local_artifact": "build/app/outputs/flutter-apk/app-debug.apk",
+    "bytes": 216363781,
+    "sha256": "2e752bb5e5048559aa056c049ef0fc344d59cadecee316d379c0370c1af25432"
+  },
+  {
+    "fixture_screenshot": "before/fixture-booking-empty-submit.png",
+    "bytes": 67828,
+    "sha256": "335313087df732e5d745b2ca5a845df450f2fb6b2d0165d7caa4176ebb511e16"
+  },
+  {
+    "fixture_screenshot": "before/fixture-booking-empty-top.png",
+    "bytes": 118964,
+    "sha256": "b5a07f0d48a533ce9e08428c40495b81366906c0ab127d06467238687f9689c5"
+  },
+  {
+    "fixture_screenshot": "after/fixture-booking-empty-submit.png",
+    "bytes": 67619,
+    "sha256": "3937daa5fca390a54f9d260423d4d6354db7c3170cca3b05ccb77b9e62d61493"
+  },
+  {
+    "fixture_screenshot": "after/fixture-booking-empty-top.png",
+    "bytes": 118964,
+    "sha256": "b5a07f0d48a533ce9e08428c40495b81366906c0ab127d06467238687f9689c5"
+  }
+]

@@ -1,5 +1,23 @@
 # QA Gate Phase 07 menuju Phase 08
 
+Pembaruan 13 November 2026: acceptance keseluruhan **BLOCKED**. Audit 12-13
+November memperbaiki QA-14/15/16 dan memperluas regresi. Status per perintah,
+hash source working tree dan CI source yang dipublikasikan ada pada
+[REGRESSION_RESULTS](REGRESSION_RESULTS.md); pemetaan fitur ada pada
+[FUNCTIONAL_BUG_MATRIX](FUNCTIONAL_BUG_MATRIX.md).
+
+Gate otomatis source audit PASS pada CI `728deb4`, run 43353103019:
+140 Flutter/39 Firebase, format dan analyze bersih. Working tree lokal:
+142 Flutter/40 Firebase dan APK debug PASS. Perbedaan berasal dari perubahan
+lokal sebelumnya yang dipertahankan tetapi tidak dipublikasikan.
+
+Perangkat Infinix tidak terhubung pada sesi ini. AND-01..11 sesi ini NOT RUN;
+hasil 6 November tetap historis dan tidak dibatalkan. UAT nyata, native iOS,
+print/share dan offline/reconnect tetap memerlukan eksekusi. QA-13 native belum
+ditutup. Gap admin kendaraan F-02 perlu keputusan scope; katalog admin QA-01
+tetap ACCEPTED LIMITATION. Tidak ada deploy atau smoke production baru.
+Perbaikan otomatis yang lulus boleh dipush; acceptance Phase 08 belum diberikan.
+
 Pembaruan 6 November. Gate tetap BLOCKED. Pengujian Infinix sudah berjalan,
 AND-01/02/08/11 PASS pada cakupan laporan perangkat. AND-03..07/09/10 masih
 NOT RUN atau baru diuji sebagian. UAT pengguna nyata NOT RUN. QA-01 diterima

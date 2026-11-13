@@ -1,5 +1,18 @@
 # Phase 07: QA, data emulator, keamanan dan acceptance
 
+Pembaruan 13 November 2026. Audit lanjutan pada base `828fc59` menutup tiga bug
+runtime: submit saat katalog berubah, dialog booking ganda dan batas periode
+laporan. Perubahan tetap pada main; pekerjaan lokal sebelumnya dilindungi dan
+tidak digabung ke commit audit. Empat laporan baru:
+[audit penuh](FULL_APP_AUDIT_REPORT.md), [matriks fungsi](FUNCTIONAL_BUG_MATRIX.md),
+[refinement UI](UI_UX_REFINEMENT_REPORT.md), [regresi](REGRESSION_RESULTS.md).
+Source audit `728deb4` lolos CI 43353103019: 140 Flutter/39 Firebase,
+format/analyze bersih. Working tree lokal 142 Flutter/40 Firebase dan APK PASS.
+Evidence mencakup reproduksi red/green, emulator dan screenshot fixture
+before/after. Screenshot tersebut bukan hasil perangkat/UAT.
+QA Gate tetap BLOCKED; Infinix sesi ini dan UAT NOT RUN, Phase 08 tidak dimulai.
+Hasil 5-6 November di bawah dipertahankan sebagai riwayat.
+
 Pembaruan 6 November 2026. Infinix X6833B telah diuji dengan data emulator.
 Login tiga role, pemilihan layanan, booking/cancel, checklist teknisi,
 pause/resume, laporan dan lifecycle berhasil pada cakupan yang dicatat.

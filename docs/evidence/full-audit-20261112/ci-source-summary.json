@@ -1,0 +1,24 @@
+{
+  "verified_date": "2026-11-13 Asia/Jakarta",
+  "head_sha": "728deb4f04b49f1911e76202bdff76de78d740cf",
+  "run_id": 43353103019,
+  "url": "https://github.com/Freddy47588/Aplikasi-Bengkel/actions/runs/43353103019",
+  "status": "completed",
+  "conclusion": "success",
+  "flutter": {
+    "job_id": 131648615199,
+    "tests_passed": 140,
+    "formatted_files": 96,
+    "format_changed": 0,
+    "analysis": "No issues found! (ran in 16.8s)"
+  },
+  "firebase": {
+    "job_id": 131648615467,
+    "tests": 39,
+    "pass": 39,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 25114.591468
+  },
+  "note": "Exact published source; excludes preserved local user changes. APK was built locally, not by CI."
+}
