@@ -9,12 +9,37 @@ enum BookingStatus {
   bool get isActive => this == pending || this == confirmed;
 }
 
+enum VehicleKind {
+  motorcycle('Motor'),
+  car('Mobil');
+
+  const VehicleKind(this.label);
+  final String label;
+
+  static VehicleKind? parse(Object? value) => switch (value) {
+    'motorcycle' => motorcycle,
+    'car' => car,
+    _ => null,
+  };
+}
+
 class Vehicle {
-  const Vehicle(this.id, this.name, this.plate, {this.ownerId = ''});
+  const Vehicle(
+    this.id,
+    this.name,
+    this.plate, {
+    this.ownerId = '',
+    this.kind,
+    this.notes = '',
+    this.active = true,
+  });
   final String id;
   final String name;
   final String plate;
   final String ownerId;
+  final VehicleKind? kind;
+  final String notes;
+  final bool active;
 }
 
 const serviceHours = [9, 10, 11, 13, 14, 15, 16];

@@ -101,6 +101,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sinta'), findsOneWidget);
       expect(find.text('Raka'), findsNothing);
+      await reveal(tester, find.text('Sinta'));
       await tester.tap(find.text('Sinta'));
       await tester.pumpAndSettle();
       expect(find.byType(TechnicianEditor), findsOneWidget);

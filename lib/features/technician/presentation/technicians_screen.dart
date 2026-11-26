@@ -119,11 +119,17 @@ class _TechniciansState extends ConsumerState<TechniciansScreen> {
               ],
             ),
       body: WorkshopBody(
-        showWave: !widget.select,
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
+            if (!widget.select) ...[
+              AdminFlowTabs(
+                selected: 'technicians',
+                onSelected: (tab) => context.go('/admin/$tab'),
+              ),
+              const SizedBox(height: 14),
+            ],
             if (!widget.select) ...[
               const TechnicianFormIntro(
                 art: WorkshopArt.technician,

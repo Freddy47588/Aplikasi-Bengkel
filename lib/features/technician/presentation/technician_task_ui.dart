@@ -41,26 +41,22 @@ class TechnicianTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 8),
+    margin: const EdgeInsets.only(bottom: 10),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
-      side: const BorderSide(color: AppColors.blueBorder),
+      side: const BorderSide(color: AppColors.border),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 10),
-              child: Icon(
-                Icons.directions_car_outlined,
-                size: 30,
-                color: AppColors.secondary,
-              ),
+            UniversalVehicleThumb(
+              vehicleName: order.text('vehicleName'),
+              size: 46,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -68,12 +64,21 @@ class TechnicianTaskCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TechnicianOrderHeading(order: order),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${order.text('vehiclePlate')} · ${order.text('vehicleName')}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColors.primary),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      IndonesianPlateBadge(plate: order.text('vehiclePlate')),
+                      Text(
+                        order.text('vehicleName'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 5),
                   Row(

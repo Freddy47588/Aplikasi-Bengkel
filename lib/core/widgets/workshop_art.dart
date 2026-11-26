@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 
 enum WorkshopArt {
-  vehicles,
-  garage,
   technician,
   booking,
   checklist,
   spareparts,
   oil,
-  verification,
-  password,
   report,
   completion,
-  ledger,
-  lock;
+  ledger;
 
   String get asset => 'assets/illustrations/$name.png';
 }
@@ -40,13 +35,5 @@ class WorkshopWave extends StatelessWidget {
   const WorkshopWave({super.key});
 
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: Image.asset(
-      'assets/illustrations/wave.png',
-      height: 32,
-      width: double.infinity,
-      fit: BoxFit.fill,
-      cacheHeight: (32 * MediaQuery.devicePixelRatioOf(context)).ceil(),
-    ),
-  );
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

@@ -1,203 +1,201 @@
-import 'dart:math' as math;
+import 'package:bengkel_kendaraan/app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class SessionSplash extends StatelessWidget {
   const SessionSplash({super.key});
 
   @override
-  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
-    value: const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFF369BEF),
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-    child: Scaffold(
-      backgroundColor: const Color(0xFF174B96),
-      body: Semantics(
-        label: 'BengkelKu. Aplikasi Manajemen Bengkel. Memuat akun.',
-        liveRegion: true,
-        child: const ExcludeSemantics(child: SplashArtwork()),
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'BengkelKu. Aplikasi Manajemen Bengkel. Memuat akun.',
+      child: Scaffold(
+        backgroundColor: AppColors.splashBg,
+        body: SizedBox.expand(
+          child: const ExcludeSemantics(child: SplashArtwork()),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-/// Shared composition for the session screen and native launch exports.
 class SplashArtwork extends StatelessWidget {
   const SplashArtwork({super.key});
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final height = constraints.maxHeight;
-      final width = math.min(constraints.maxWidth, height * .55);
-      final left = (constraints.maxWidth - width) / 2;
-      final emblemSize = width * .34;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  Color(0xFF16478C),
-                  Color(0xFF1B5AB6),
-                  Color(0xFF329DF5),
-                ],
-                stops: [0, .53, 1],
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.height < 640;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: AppColors.splashBg),
+        Positioned(
+          top: -size.height * 0.14,
+          left: -size.width * 0.12,
+          right: -size.width * 0.12,
+          height: size.height * 0.56,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.2),
+                  radius: 0.9,
+                  colors: [
+                    AppColors.secondary.withValues(alpha: 0.24),
+                    AppColors.secondary.withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
-          Positioned.fill(child: CustomPaint(painter: _SplashBackdrop())),
-          Positioned(
-            left: left + (width - emblemSize) / 2,
-            top: height * .279 - emblemSize / 2,
-            width: emblemSize,
-            height: emblemSize,
-            child: ColorFiltered(
-              // Preserve the new mark's silhouette; its white wrench becomes
-              // transparent so the inverse version reads on the blue field.
-              colorFilter: const ColorFilter.matrix([
-                0,
-                0,
-                0,
-                0,
-                255,
-                0,
-                0,
-                0,
-                0,
-                255,
-                0,
-                0,
-                0,
-                0,
-                255,
-                -.75,
-                -.75,
-                0,
-                1.5,
-                0,
-              ]),
-              child: Image.asset(
-                'assets/branding/emblem-mockup.png',
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-                cacheWidth:
-                    (emblemSize * MediaQuery.devicePixelRatioOf(context))
-                        .ceil(),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: (size.height * 0.34).clamp(110.0, 260.0),
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0.34,
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (rect) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Color(0xB8000000),
+                    Colors.black,
+                  ],
+                  stops: [0.0, 0.42, 1.0],
+                ).createShader(rect),
+                child: Image.asset(
+                  'assets/illustrations/splash_everyday.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
-          Positioned(
-            top: height * .345,
-            left: left + width * .04,
-            width: width * .92,
+        ),
+        SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: compact ? 16 : 28,
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'BengkelKu',
-                  textScaler: TextScaler.noScaling,
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    color: Colors.white,
-                    fontSize: width * .12,
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
-                    letterSpacing: -.6,
+                const Spacer(flex: 2),
+                Container(
+                  width: compact ? 74 : 88,
+                  height: compact ? 74 : 88,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.carbonElevated,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.42),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.secondary.withValues(alpha: 0.22),
+                        blurRadius: 28,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.asset(
+                      'assets/branding/logo_v2.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                SizedBox(height: width * .014),
-                Text(
-                  'Aplikasi Manajemen Bengkel',
+                SizedBox(height: compact ? 14 : 20),
+                const Text(
+                  'BengkelKu',
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'Roboto',
                     color: Colors.white,
-                    fontSize: width * .049,
-                    height: 1.2,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Smart Workshop Management',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFB4BCC8),
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.15,
+                  ),
+                ),
+                const Spacer(flex: 3),
+                SizedBox(
+                  width: 148,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 5,
+                              width: double.infinity,
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: 0.62,
+                              child: Container(
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.secondary,
+                                      AppColors.accentLight,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Memuat sesi bengkel...',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Color(0xFF8F9AA9),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          Positioned(
-            left: left + width * .025,
-            top: height * .57,
-            width: width * .95,
-            height: width * .95 / 1.75,
-            child: Image.asset(
-              'assets/illustrations/splash-vehicles.png',
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              cacheWidth: (width * .95 * MediaQuery.devicePixelRatioOf(context))
-                  .ceil(),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-class _SplashBackdrop extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final radius = math.min(w, h * .55) * .33;
-    final center = Offset(w / 2 + math.min(w, h * .55) * .52, h * .235);
-    final gear = Path()..fillType = PathFillType.evenOdd;
-    for (var i = 0; i < 64; i++) {
-      final angle = i * math.pi / 32 - math.pi / 2;
-      final r = radius * (i % 8 >= 2 && i % 8 <= 5 ? 1 : .79);
-      final point = center + Offset(math.cos(angle), math.sin(angle)) * r;
-      if (i == 0) {
-        gear.moveTo(point.dx, point.dy);
-      } else {
-        gear.lineTo(point.dx, point.dy);
-      }
-    }
-    gear.close();
-    gear.addOval(Rect.fromCircle(center: center, radius: radius * .45));
-    canvas.drawPath(gear, Paint()..color = const Color(0x10FFFFFF));
-
-    final back = Path()
-      ..moveTo(0, h * .754)
-      ..cubicTo(w * .36, h * .754, w * .58, h * .80, w, h * .79)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(back, Paint()..color = const Color(0xFFE6F3FF));
-    final middle = Path()
-      ..moveTo(0, h * .82)
-      ..cubicTo(w * .33, h * .805, w * .53, h * .925, w, h * .872)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(middle, Paint()..color = const Color(0xFFCAE5FF));
-    final front = Path()
-      ..moveTo(0, h * .862)
-      ..cubicTo(w * .29, h * .855, w * .47, h * .96, w, h * .899)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(
-      front,
-      Paint()
-        ..shader = const LinearGradient(
-          colors: [Color(0xFF329AF0), Color(0xFF71B8F7)],
-        ).createShader(Offset.zero & size),
+        ),
+      ],
     );
   }
-
-  @override
-  bool shouldRepaint(_SplashBackdrop oldDelegate) => false;
 }

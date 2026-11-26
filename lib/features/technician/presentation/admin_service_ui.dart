@@ -32,28 +32,28 @@ class AdminRecordCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.blueBorder),
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: enabled ? onTap : null,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.blueSurface,
-                child: Icon(icon, color: AppColors.secondary, size: 28),
+                radius: 20,
+                backgroundColor: AppColors.accentSoft,
+                child: Icon(icon, color: AppColors.secondary, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (wide)
+                    if (wide && title.length <= 10)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

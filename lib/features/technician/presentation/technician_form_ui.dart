@@ -37,35 +37,34 @@ class TaskVehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-      side: const BorderSide(color: AppColors.blueBorder),
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: AppColors.border),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            const Icon(
-              Icons.directions_car_outlined,
-              color: AppColors.secondary,
-              size: 30,
+            UniversalVehicleThumb(
+              vehicleName: order.text('vehicleName'),
+              size: 46,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  IndonesianPlateBadge(plate: order.text('vehiclePlate')),
+                  const SizedBox(height: 4),
                   Text(
-                    order.text('vehiclePlate'),
+                    order.text('vehicleName'),
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(order.text('vehicleName')),
                 ],
               ),
             ),

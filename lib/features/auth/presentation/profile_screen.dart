@@ -1,16 +1,17 @@
+import 'package:bengkel_kendaraan/app/theme/app_colors.dart';
+import 'package:bengkel_kendaraan/core/widgets/logout_button.dart';
+import 'package:bengkel_kendaraan/core/widgets/mobile_navigation.dart';
+import 'package:bengkel_kendaraan/core/widgets/status_chip.dart';
+import 'package:bengkel_kendaraan/core/widgets/workshop_ui.dart';
+import 'package:bengkel_kendaraan/features/auth/data/auth_repository.dart';
+import 'package:bengkel_kendaraan/features/auth/presentation/account_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../data/auth_repository.dart';
-import '../../../app/theme/app_colors.dart';
-import '../../../core/widgets/logout_button.dart';
-import '../../../core/widgets/mobile_navigation.dart';
-import '../../../core/widgets/status_chip.dart';
-import '../../../core/widgets/workshop_ui.dart';
-import 'account_ui.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
+
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileState();
 }
@@ -27,7 +28,7 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
     });
     try {
       await action();
-      if (mounted) setState(() => message = success);
+      if (mounted && success != null) setState(() => message = success);
     } catch (e) {
       if (mounted) setState(() => message = authError(e));
     } finally {
@@ -38,180 +39,245 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authSessionProvider);
-    if (!session.isAuthenticated) return const SizedBox.shrink();
-    final role = session.role!;
+    final role = session.role;
+    if (role == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final repo = ref.read(authRepositoryProvider);
-    final largeText =
-        MediaQuery.textScalerOf(context).scale(1) > 1.1 ||
-        MediaQuery.sizeOf(context).width < 380;
+    final email = session.email ?? 'Pengguna BengkelKu';
     final verification = StatusChip(
-      label: session.verified ? 'Terverifikasi' : 'Belum terverifikasi',
-      tone: session.verified ? StatusChipTone.success : StatusChipTone.warning,
+      label: session.verified ? 'Email Terverifikasi' : 'Belum Terverifikasi',
+      tone: session.verified
+          ? StatusChipTone.success
+          : StatusChipTone.warning,
     );
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text('Profil Saya'),
+        title: const Text('Profil Akun'),
         leading: IconButton(
-          tooltip: 'Kembali ke dashboard',
+          tooltip: 'Kembali',
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go('/${role.name}/home'),
-          icon: const Icon(Icons.arrow_back),
         ),
       ),
       bottomNavigationBar: MobileNavigation(role: role.name),
       body: WorkshopBody(
-        showWave: true,
         child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
             AccountProfileHeader(
               label: 'Akun ${role.label}',
-              email: session.email ?? 'Email tidak tersedia',
+              email: email,
+              badge: verification,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: AppColors.blueBorder),
+            const SizedBox(height: 16),
+            Material(
+              color: AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Informasi Akun',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        ExpansionTile(
-                          title: const Text('Informasi Akun'),
-                          leading: const Icon(Icons.person_outline),
-                          childrenPadding: const EdgeInsets.fromLTRB(
-                            16,
-                            0,
-                            16,
-                            16,
-                          ),
-                          expandedCrossAxisAlignment:
-                              CrossAxisAlignment.stretch,
-                          children: [
-                            SelectableText(
-                              session.email ?? 'Email tidak tersedia',
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Peran: ${role.label}'),
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: StatusChip(
-                                label: session.active
-                                    ? 'Akun aktif'
-                                    : 'Akun nonaktif',
-                                tone: session.active
-                                    ? StatusChipTone.success
-                                    : StatusChipTone.danger,
+                    const SizedBox(height: 12),
+                    _ProfileRow(
+                      icon: Icons.badge_outlined,
+                      label: 'Peran Sistem',
+                      value: 'Peran: ${role.label}',
+                    ),
+                    const Divider(height: 22),
+                    _ProfileRow(
+                      icon: Icons.alternate_email_rounded,
+                      label: 'Email Terdaftar',
+                      value: email,
+                    ),
+                    const Divider(height: 22),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.lock_reset_rounded),
+                      title: const Text('Ubah Password'),
+                      subtitle: const Text(
+                        'Kirim tautan pembaruan kata sandi ke email akun Anda.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: busy || session.email == null
+                          ? null
+                          : () => run(
+                                () => repo.resetPassword(session.email!),
+                                'Tautan ubah password dikirim ke ${session.email}.',
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Perubahan peran atau status aktif dikelola pengelola bengkel.',
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 1, indent: 16, endIndent: 16),
-                        ListTile(
-                          leading: const Icon(Icons.key_outlined),
-                          title: Text(busy ? 'Memproses…' : 'Ubah Password'),
-                          subtitle: const Text('Tautan reset melalui email'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: busy || session.email == null
-                              ? null
-                              : () => run(
-                                  () => repo.resetPassword(session.email!),
-                                  'Jika email terdaftar, tautan reset akan dikirim. Periksa inbox dan spam.',
-                                ),
-                        ),
-                        const Divider(height: 1, indent: 16, endIndent: 16),
-                        ExpansionTile(
-                          title: const Text('Verifikasi Email'),
-                          leading: const Icon(Icons.mail_outline),
-                          subtitle: largeText ? verification : null,
-                          trailing: largeText
-                              ? null
-                              : Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    verification,
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.expand_more),
-                                  ],
-                                ),
-                          childrenPadding: const EdgeInsets.fromLTRB(
-                            16,
-                            0,
-                            16,
-                            16,
+                    ),
+                    const Divider(height: 22),
+                    Text(
+                      'Verifikasi Email',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          expandedCrossAxisAlignment:
-                              CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              session.verified
-                                  ? 'Alamat email akun ini sudah terverifikasi.'
-                                  : 'Verifikasi email diperlukan untuk mengakses akun.',
-                            ),
-                            OutlinedButton(
-                              onPressed: busy ? null : () => run(repo.refresh),
-                              child: const Text('Periksa ulang status akun'),
-                            ),
-                          ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      session.verified
+                          ? 'Email akun sudah terverifikasi.'
+                          : 'Buka tautan verifikasi pada email lalu muat ulang status akun.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: [
+                        if (!session.verified)
+                          FilledButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () => run(
+                                      repo.sendVerification,
+                                      'Email verifikasi dikirim.',
+                                    ),
+                            icon: const Icon(Icons.mark_email_read_outlined),
+                            label: const Text('Kirim Verifikasi'),
+                          ),
+                        OutlinedButton(
+                          onPressed: busy ? null : () => run(repo.refresh),
+                          child: const Text('Periksa ulang status akun'),
                         ),
                       ],
                     ),
-                  ),
-                  if (message != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Semantics(liveRegion: true, child: Text(message!)),
-                    ),
-                  if (busy)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: LinearProgressIndicator(),
-                    ),
-                  if (role.name == 'customer') ...[
-                    const SizedBox(height: 16),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: AppColors.blueBorder),
-                      ),
-                      child: ExpansionTile(
-                        title: const Text('Garasi & dokumen'),
-                        leading: const Icon(Icons.folder_outlined),
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.directions_car_outlined),
-                            title: const Text('Kendaraan Saya'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => context.go('/customer/vehicles'),
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.receipt_long_outlined),
-                            title: const Text('Invoice Saya'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => context.go('/customer/invoices'),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
-                  const SizedBox(height: 28),
-                  const LogoutButton(outlined: true, label: 'Keluar Akun'),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
+            if (message != null) ...[
+              const SizedBox(height: 12),
+              Semantics(
+                liveRegion: true,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.accentBorder),
+                  ),
+                  child: Text(
+                    message!,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (busy) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
+            if (role.name == 'customer') ...[
+              const SizedBox(height: 16),
+              Material(
+                color: AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Garasi & dokumen',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.directions_car_outlined),
+                        title: const Text('Kendaraan Saya'),
+                        subtitle:
+                            const Text('Kelola daftar motor dan mobil Anda'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.go('/customer/vehicles'),
+                      ),
+                      const Divider(height: 16),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.receipt_long_outlined),
+                        title: const Text('Invoice Saya'),
+                        subtitle: const Text('Riwayat pembayaran dan nota PDF'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.go('/customer/invoices'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            const LogoutButton(outlined: true, label: 'Keluar Akun'),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileRow extends StatelessWidget {
+  const _ProfileRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.muted),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

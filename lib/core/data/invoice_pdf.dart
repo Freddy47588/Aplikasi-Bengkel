@@ -15,7 +15,7 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
   );
   final emblem = pw.MemoryImage(
     (await rootBundle.load(
-      'assets/branding/emblem-mockup.png',
+      'assets/branding/logo_v2.png',
     )).buffer.asUint8List(),
   );
   pdf.addPage(
@@ -23,7 +23,7 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
       build: (_) => [
         pw.Container(
           padding: const pw.EdgeInsets.all(16),
-          color: PdfColor.fromHex('#1E3A5F'),
+          color: PdfColor.fromHex('#111827'),
           child: pw.Row(
             children: [
               pw.Image(emblem, width: 64, height: 64),

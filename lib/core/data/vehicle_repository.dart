@@ -14,8 +14,15 @@ String normalizePlate(String value) {
 }
 
 abstract class VehicleRepository {
-  Stream<List<Vehicle>> watch(String uid);
-  Future<void> save(String uid, String name, String plate, {String? id});
+  Stream<List<Vehicle>> watch(String uid, {bool includeArchived = false});
+  Future<void> save(
+    String uid,
+    String name,
+    String plate, {
+    String? id,
+    VehicleKind? kind,
+    String? notes,
+  });
   Future<void> delete(String uid, String id);
 }
 
@@ -23,36 +30,53 @@ class FirestoreVehicleRepository implements VehicleRepository {
   FirestoreVehicleRepository(this.db);
   final FirebaseFirestore db;
   @override
-  Stream<List<Vehicle>> watch(String uid) => db
-      .collection('vehicles')
-      .where('ownerId', isEqualTo: uid)
-      .where('active', isEqualTo: true)
-      .limit(50)
-      .snapshots()
-      .map(
-        (s) => s.docs
-            .map(
-              (d) => Vehicle(
-                d.id,
-                d['name'] as String,
-                d['plate'] as String,
-                ownerId: d['ownerId'] as String,
-              ),
-            )
-            .toList(),
-      );
+  Stream<List<Vehicle>> watch(String uid, {bool includeArchived = false}) {
+    var query = db.collection('vehicles').where('ownerId', isEqualTo: uid);
+    if (!includeArchived) query = query.where('active', isEqualTo: true);
+    return query
+        .limit(50)
+        .snapshots()
+        .map(
+          (s) => s.docs
+              .map(
+                (d) => Vehicle(
+                  d.id,
+                  d['name'] as String,
+                  d['plate'] as String,
+                  ownerId: d['ownerId'] as String,
+                  kind: VehicleKind.parse(d.data()['kind']),
+                  notes: d.data()['notes'] as String? ?? '',
+                  active: d['active'] as bool,
+                ),
+              )
+              .toList(),
+        );
+  }
+
   @override
-  Future<void> save(String uid, String name, String plate, {String? id}) async {
+  Future<void> save(
+    String uid,
+    String name,
+    String plate, {
+    String? id,
+    VehicleKind? kind,
+    String? notes,
+  }) async {
     if (name.trim().isEmpty || name.trim().length > 80) {
       throw ArgumentError('Nama kendaraan harus 1–80 karakter.');
     }
     final normalized = normalizePlate(plate);
+    if (notes != null && notes.trim().length > 500) {
+      throw ArgumentError('Catatan maksimal 500 karakter.');
+    }
     final doc = db.collection('vehicles').doc(id);
     if (id == null) {
       await doc.set({
         'ownerId': uid,
         'name': name.trim(),
         'plate': normalized,
+        if (kind != null) 'kind': kind.name,
+        if (notes != null) 'notes': notes.trim(),
         'active': true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -70,6 +94,14 @@ class FirestoreVehicleRepository implements VehicleRepository {
         'ownerId': uid,
         'name': name.trim(),
         'plate': normalized,
+        if (kind != null)
+          'kind': kind.name
+        else if (before.data()!.containsKey('kind'))
+          'kind': before['kind'],
+        if (notes != null)
+          'notes': notes.trim()
+        else if (before.data()!.containsKey('notes'))
+          'notes': before['notes'],
         'active': true,
         'createdAt': before.exists
             ? before['createdAt']
@@ -103,4 +135,14 @@ final vehiclesProvider = StreamProvider<List<Vehicle>>((ref) {
     return Stream.value([]);
   }
   return ref.watch(vehicleRepositoryProvider).watch(session.userId);
+});
+
+final allVehiclesProvider = StreamProvider<List<Vehicle>>((ref) {
+  final session = ref.watch(authSessionProvider);
+  if (!session.isAuthenticated || session.role?.name != 'customer') {
+    return Stream.value([]);
+  }
+  return ref
+      .watch(vehicleRepositoryProvider)
+      .watch(session.userId, includeArchived: true);
 });

@@ -1,3 +1,4 @@
+import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/workshop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,7 +130,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
         context.go('/customer/bookings/${result.id}');
       }
     } catch (e) {
-      if (mounted) setState(() => error = 'Booking gagal: $e');
+      if (mounted) setState(() => error = friendlyWorkshopError(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -159,15 +160,30 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
               padding: const EdgeInsets.all(20),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
-                const PageIntro(
-                  showTitle: false,
-                  art: WorkshopArt.booking,
-                  title: 'Buat booking servis',
-                  description:
-                      'Pilih kendaraan, layanan, dan jadwal kunjungan Anda.',
-                ),
-                const Text(
-                  'Pilih kendaraan Anda • jadwal 09:00–16:00 WIB • maksimal 90 hari',
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Buat Booking Servis',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Pilih kendaraan, layanan, dan slot kunjungan (09:00–16:00 WIB • maks. 90 hari).',
+                        style: TextStyle(color: AppColors.muted),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (vehicles.isLoading || services.isLoading)

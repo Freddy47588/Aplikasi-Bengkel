@@ -73,7 +73,7 @@ void main() {
           );
           final brand = tester.getRect(find.text('BengkelKu'));
           final subtitle = tester.getRect(
-            find.text('Aplikasi Manajemen Bengkel'),
+            find.text('Smart Workshop Management'),
           );
           final vehicles = tester.getRect(
             find.byWidgetPredicate((widget) {
@@ -82,7 +82,7 @@ void main() {
                   ? (widget.image as ResizeImage).imageProvider
                   : widget.image;
               return provider is AssetImage &&
-                  provider.assetName.endsWith('splash-vehicles.png');
+                  provider.assetName.endsWith('splash_everyday.jpg');
             }),
           );
           expect(subtitle.top, greaterThan(brand.bottom));

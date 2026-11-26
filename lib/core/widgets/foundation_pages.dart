@@ -1,3 +1,4 @@
+import '../../app/theme/app_colors.dart';
 import 'workshop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,6 +63,17 @@ class BookingListPage extends StatelessWidget {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(20),
         children: [
+          if (customer)
+            CustomerFlowTabs(
+              selected: 'orders',
+              onSelected: (tab) => context.go('/customer/$tab'),
+            )
+          else
+            AdminFlowTabs(
+              selected: 'bookings',
+              onSelected: (tab) => context.go('/admin/$tab'),
+            ),
+          const SizedBox(height: 14),
           PageIntro(
             showTitle: false,
             art: WorkshopArt.booking,
@@ -198,7 +210,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengubah status: $error')),
+          SnackBar(content: Text(friendlyWorkshopError(error))),
         );
       }
     } finally {
@@ -264,13 +276,30 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                         Text(bookingSchedule(b.draft.scheduledAt)),
                       ],
                     ),
-                    ExpansionTile(
-                      title: const Text('Referensi booking'),
-                      children: [
-                        SelectableText('Nomor booking: ${b.id}'),
-                        if (!customer)
-                          SelectableText('ID pelanggan: ${b.customerId}'),
-                      ],
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Referensi Booking',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text('Nomor booking: ${b.id}'),
+                          if (!customer)
+                            Text('ID pelanggan: ${b.customerId}'),
+                        ],
+                      ),
                     ),
                     ContentSection(
                       title: 'Keluhan kendaraan',
@@ -313,7 +342,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'Gagal membuat Service Order: $e',
+                                          friendlyWorkshopError(e),
                                         ),
                                       ),
                                     );

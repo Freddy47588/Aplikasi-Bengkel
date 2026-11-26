@@ -6,21 +6,23 @@ import 'app_tokens.dart';
 ThemeData buildAppTheme() {
   final base = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-      primary: AppColors.secondary,
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.carbonElevated,
+      onPrimaryContainer: Colors.white,
       secondary: AppColors.secondary,
       onSecondary: Colors.white,
-      secondaryContainer: const Color(0xFFDBEAFE),
+      secondaryContainer: AppColors.accentSoft,
       onSecondaryContainer: AppColors.primary,
       tertiary: AppColors.warning,
       error: AppColors.danger,
+      onError: Colors.white,
+      surface: AppColors.surface,
       onSurface: AppColors.primary,
       onSurfaceVariant: AppColors.onMuted,
-      outline: AppColors.muted,
+      outline: AppColors.controlBorder,
       outlineVariant: AppColors.border,
-      surface: AppColors.surface,
     ),
     scaffoldBackgroundColor: AppColors.background,
     fontFamily: 'Roboto',
@@ -31,10 +33,11 @@ ThemeData buildAppTheme() {
       filled: true,
       helperMaxLines: 4,
       errorMaxLines: 4,
-      fillColor: AppColors.surface,
+      fillColor: AppColors.background,
       contentPadding: const EdgeInsets.all(AppSpace.lg),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
+        borderSide: const BorderSide(color: AppColors.controlBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
@@ -42,51 +45,78 @@ ThemeData buildAppTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderSide: const BorderSide(color: AppColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         minimumSize: const Size(48, 52),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.control),
         ),
+        textStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         side: const BorderSide(color: AppColors.controlBorder),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.control),
         ),
+        textStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w600,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.secondary,
+        minimumSize: const Size(48, 48),
+        textStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.hero),
       ),
     ),
-    snackBarTheme: const SnackBarThemeData(
+    snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.primary,
-      contentTextStyle: TextStyle(color: Colors.white),
+      contentTextStyle: const TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: AppColors.secondary,
     ),
     listTileTheme: const ListTileThemeData(
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      iconColor: AppColors.secondary,
+      iconColor: AppColors.primary,
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.background,
@@ -95,7 +125,7 @@ ThemeData buildAppTheme() {
       scrolledUnderElevation: 0,
       centerTitle: true,
       titleTextStyle: base.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.primary,
       ),
     ),
@@ -111,9 +141,9 @@ ThemeData buildAppTheme() {
     dividerColor: AppColors.border,
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surface,
-      indicatorColor: const Color(0xFFDBEAFE),
+      indicatorColor: AppColors.accentSoft,
       labelTextStyle: WidgetStatePropertyAll(
-        base.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+        base.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
       ),
     ),
     textTheme: base.textTheme.copyWith(
@@ -122,11 +152,12 @@ ThemeData buildAppTheme() {
         color: AppColors.primary,
       ),
       titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.primary,
       ),
       titleMedium: base.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
+        color: AppColors.primary,
       ),
       bodyLarge: base.textTheme.bodyLarge?.copyWith(color: AppColors.primary),
       bodyMedium: base.textTheme.bodyMedium?.copyWith(color: AppColors.onMuted),

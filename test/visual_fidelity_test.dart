@@ -48,7 +48,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
   testWidgets(
-    'auth keyboard controls and reset feedback work; vehicle dialog closes with Escape',
+    'auth keyboard controls and reset feedback work; vehicle page closes with Escape',
     (tester) async {
       viewport(tester, 390);
       final container = testContainer(database: await fixtureDatabase());
@@ -114,10 +114,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Tambah kendaraan'));
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(TextFormField), findsNWidgets(3));
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(TextFormField), findsNothing);
       await tester.pumpWidget(const SizedBox());
     },
   );
@@ -138,38 +138,24 @@ void main() {
       testAuth(container).signIn(role);
       final links = <String, String>{
         if (role == UserRole.customer) ...{
-          'Buat Booking': 'booking',
-          'Kendaraan Saya': 'vehicles',
-          'Booking Saya': 'bookings',
+          'Booking Servis': 'booking',
+          'Garasi': 'vehicles',
+          'Booking Aktif': 'bookings',
+          'Semua Riwayat': 'history',
         },
         if (role == UserRole.admin) ...{
-          'Kelola Booking': 'bookings',
-          'Inventory Sparepart': 'inventory',
-          'Manajemen Teknisi': 'technicians',
+          'Kelola Service Order': 'orders',
+          'Kasir & Laporan': 'invoices',
+          'Semua Booking': 'bookings',
+          'Buka Inventori': 'inventory',
         },
-        if (role == UserRole.technician) 'Tugas Saya': 'jobs',
-        'Progres Servis': 'orders',
-        if (role == UserRole.technician)
-          'Riwayat Pekerjaan': 'history'
-        else
-          'Riwayat Servis': 'history',
-        if (role != UserRole.technician) 'Invoice & Pembayaran': 'invoices',
+        if (role == UserRole.technician) 'Daftar Tugas Servis': 'jobs',
       };
       for (final link in links.entries) {
         router.go('/${role.name}/home');
         await tester.pumpAndSettle();
-        if (role == UserRole.customer &&
-            [
-              'Booking Saya',
-              'Progres Servis',
-              'Invoice & Pembayaran',
-            ].contains(link.key)) {
-          await reveal(tester, find.text('Menu lainnya'));
-          await tester.tap(find.text('Menu lainnya'));
-          await tester.pumpAndSettle();
-        }
-        await reveal(tester, find.text(link.key));
-        await tester.tap(find.text(link.key));
+        await reveal(tester, find.text(link.key).first);
+        await tester.tap(find.text(link.key).first);
         await tester.pumpAndSettle();
         expect(
           router.routeInformationProvider.value.uri.path,
@@ -228,8 +214,7 @@ void main() {
                 expect(find.byType(WorkshopWave), findsNothing);
               }
               if (path == 'inventory') {
-                expect(find.byType(WorkshopWave), findsOneWidget);
-                expect(tester.getSize(find.byType(WorkshopWave)).height, 32);
+                expect(find.byType(WorkshopWave), findsNothing);
               }
             }
           }

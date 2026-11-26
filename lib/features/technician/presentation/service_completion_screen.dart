@@ -58,8 +58,7 @@ class _CompletionState extends ConsumerState<ServiceCompletionScreen> {
       if (mounted) {
         setState(() {
           busy = false;
-          error =
-              'Gagal mengajukan: $e. Periksa status terbaru sebelum mencoba lagi.';
+          error = 'Gagal mengajukan: ${friendlyWorkshopError(e)}';
         });
         ScaffoldMessenger.of(
           context,

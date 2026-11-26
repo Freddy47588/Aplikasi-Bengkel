@@ -148,17 +148,43 @@ void main() {
       await vehicles.save('a', 'Honda', 'b1234xyz');
       final first = (await vehicles.watch('a').first).single;
       expect(first.plate, 'B 1234 XYZ');
+      expect(first.kind, isNull);
+      expect(first.notes, isEmpty);
       await expectLater(
         vehicles.save('b', 'Stolen', 'B 9 A', id: first.id),
         throwsStateError,
       );
       await expectLater(vehicles.delete('b', first.id), throwsStateError);
+      await vehicles.save(
+        'a',
+        'Toyota',
+        'AB 22 CD',
+        id: first.id,
+        kind: VehicleKind.car,
+        notes: ' Putih ',
+      );
       await vehicles.save('a', 'Toyota', 'AB 22 CD', id: first.id);
       expect((await vehicles.watch('a').first).single.name, 'Toyota');
+      expect((await vehicles.watch('a').first).single.kind, VehicleKind.car);
+      expect((await vehicles.watch('a').first).single.notes, 'Putih');
+      await expectLater(
+        vehicles.save(
+          'a',
+          'Toyota',
+          'AB 22 CD',
+          id: first.id,
+          notes: 'x' * 501,
+        ),
+        throwsArgumentError,
+      );
       final restarted = FirestoreVehicleRepository(db);
       expect((await restarted.watch('a').first).single.id, first.id);
       await restarted.delete('a', first.id);
       expect(await restarted.watch('a').first, isEmpty);
+      final archived =
+          (await restarted.watch('a', includeArchived: true).first).single;
+      expect(archived.active, false);
+      expect(archived.notes, 'Putih');
       await expectLater(
         restarted.save('a', 'Again', 'B 9 A', id: first.id),
         throwsStateError,

@@ -181,28 +181,52 @@ void main() {
       await tester.tap(find.text('Tambah kendaraan'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).first, 'Honda Brio');
-      await tester.enterText(find.byType(TextFormField).last, 'invalid');
-      await tester.tap(find.text('Simpan'));
+      await tester.enterText(find.byKey(const Key('vehicle-plate')), 'invalid');
+      await tester.ensureVisible(find.text('Simpan Kendaraan'));
+      await tester.tap(find.text('Simpan Kendaraan'));
       await tester.pumpAndSettle();
       expect(find.text('Plat harus seperti B 1234 XYZ.'), findsOneWidget);
-      await tester.enterText(find.byType(TextFormField).last, 'b1234xyz');
-      await tester.tap(find.text('Simpan'));
+      await tester.enterText(
+        find.byKey(const Key('vehicle-plate')),
+        'b1234xyz',
+      );
+      await tester.ensureVisible(find.text('Mobil'));
+      await tester.tap(find.text('Mobil'));
+      await tester.enterText(
+        find.byKey(const Key('vehicle-notes')),
+        'Putih, tahun 2023',
+      );
+      await tester.ensureVisible(find.text('Simpan Kendaraan'));
+      await tester.tap(find.text('Simpan Kendaraan'));
       await tester.pumpAndSettle();
       expect(find.text('B 1234 XYZ'), findsOneWidget);
       await tester.tap(find.text('Honda Brio'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).first, 'Honda Brio RS');
-      await tester.tap(find.text('Simpan'));
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('vehicle-notes')))
+            .controller!
+            .text,
+        'Putih, tahun 2023',
+      );
+      await tester.ensureVisible(find.text('Simpan Kendaraan'));
+      await tester.tap(find.text('Simpan Kendaraan'));
       await tester.pumpAndSettle();
       expect(find.text('Honda Brio RS'), findsOneWidget);
+      await tester.tap(find.text('Honda Brio RS'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hapus'));
       await tester.pumpAndSettle();
-      expect(find.text('Honda Brio RS'), findsNothing);
+      expect(find.text('Honda Brio RS'), findsOneWidget);
+      expect(find.text('Nonaktif'), findsOneWidget);
       final saved = (await database.collection('vehicles').get()).docs.single;
       expect(saved['active'], false);
       expect(saved['ownerId'], 'customer-demo');
+      expect(saved['kind'], 'car');
+      expect(saved['notes'], 'Putih, tahun 2023');
       await tester.pumpWidget(const SizedBox());
     },
   );

@@ -93,11 +93,15 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
       ),
       bottomNavigationBar: const MobileNavigation(role: 'admin'),
       body: WorkshopBody(
-        showWave: true,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
+            AdminFlowTabs(
+              selected: 'orders',
+              onSelected: (tab) => context.go('/admin/$tab'),
+            ),
+            const SizedBox(height: 14),
             const TechnicianFormIntro(
               art: WorkshopArt.checklist,
               description:
@@ -391,6 +395,11 @@ class _OrdersState extends ConsumerState<ServiceOrdersScreen> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(20),
                 children: [
+                  CustomerFlowTabs(
+                    selected: 'orders',
+                    onSelected: (tab) => context.go('/customer/$tab'),
+                  ),
+                  const SizedBox(height: 14),
                   PageIntro(
                     showTitle: false,
                     art: WorkshopArt.checklist,
@@ -491,7 +500,7 @@ class _OrderDetailState extends ConsumerState<ServiceOrderDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Permintaan gagal: $e')));
+        ).showSnackBar(SnackBar(content: Text(friendlyWorkshopError(e))));
       }
     } finally {
       if (mounted) setState(() => busy = false);

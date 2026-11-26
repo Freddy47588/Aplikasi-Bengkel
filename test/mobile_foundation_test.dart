@@ -5,6 +5,7 @@ import 'package:bengkel_kendaraan/app/app.dart';
 import 'package:bengkel_kendaraan/app/router/app_router.dart';
 import 'package:bengkel_kendaraan/core/constants/user_role.dart';
 import 'package:bengkel_kendaraan/core/data/booking_repository.dart';
+import 'package:bengkel_kendaraan/core/widgets/mobile_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,18 +31,13 @@ void main() {
           router.routeInformationProvider.value.uri.path,
           '/${role.name}/home',
         );
-        router.go(
-          role == UserRole.admin
-              ? '/admin/technicians'
-              : '/${role.name}/${role == UserRole.customer ? 'booking' : 'jobs'}',
-        );
+        final navPath = role == UserRole.admin
+            ? '/admin/technicians'
+            : '/${role.name}/${role == UserRole.customer ? 'booking' : 'jobs'}';
+        router.go(navPath);
         await tester.pumpAndSettle();
-        expect(
-          tester
-              .widget<NavigationBar>(find.byType(NavigationBar))
-              .selectedIndex,
-          role == UserRole.admin ? 2 : 1,
-        );
+        expect(find.byType(MobileNavigation), findsOneWidget);
+        expect(navigationIndex(role.name, navPath), 1);
         router.go(
           role == UserRole.customer ? '/admin/bookings' : '/customer/booking',
         );
@@ -305,10 +301,8 @@ void main() {
       testAuth(container).signIn(role);
       router.go('/${role.name}/bookings/missing');
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        1,
-      );
+      expect(find.byType(MobileNavigation), findsOneWidget);
+      expect(navigationIndex(role.name, '/${role.name}/bookings/missing'), 1);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(

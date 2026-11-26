@@ -1,3 +1,4 @@
+import '../../../app/theme/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -103,6 +104,13 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            if (role == 'customer') ...[
+              CustomerFlowTabs(
+                selected: 'history',
+                onSelected: (tab) => context.go('/customer/$tab'),
+              ),
+              const SizedBox(height: 14),
+            ],
             WorkspaceLinks(role: role),
             const SizedBox(height: 16),
             const Text(
@@ -244,13 +252,67 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
                           icon: Icons.history,
                         ),
                       for (final order in page.items)
-                        WorkshopRecordCard(
-                          icon: Icons.history,
-                          title:
-                              '${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
-                          description:
-                              '${order.text('serviceName')}\nSelesai: ${historyDate(order.date('completedAt'))}',
-                          onTap: () => context.go('/$role/history/${order.id}'),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Material(
+                            color: AppColors.surface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              side: const BorderSide(color: AppColors.border),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () =>
+                                  context.go('/$role/history/${order.id}'),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  children: [
+                                    UniversalVehicleThumb(
+                                      vehicleName: order.text('vehicleName'),
+                                      size: 46,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${order.text('vehicleName')} • ${order.text('vehiclePlate')}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${order.text('serviceName')} • Selesai ${historyDate(order.date('completedAt'))}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: AppColors.muted,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          IndonesianPlateBadge(
+                                            plate: order.text('vehiclePlate'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppColors.muted,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       PageButtons(
                         page: cursors.length,

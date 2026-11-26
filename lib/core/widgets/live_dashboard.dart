@@ -1,443 +1,575 @@
+import 'package:bengkel_kendaraan/app/theme/app_colors.dart';
+import 'package:bengkel_kendaraan/core/data/booking_repository.dart';
+import 'package:bengkel_kendaraan/core/data/inventory_repository.dart';
+import 'package:bengkel_kendaraan/core/models/booking.dart';
+import 'package:bengkel_kendaraan/core/models/service_order.dart';
+import 'package:bengkel_kendaraan/core/widgets/empty_state.dart';
+import 'package:bengkel_kendaraan/core/widgets/foundation_pages.dart';
+import 'package:bengkel_kendaraan/core/widgets/mobile_navigation.dart';
+import 'package:bengkel_kendaraan/core/widgets/status_chip.dart';
+import 'package:bengkel_kendaraan/core/widgets/workshop_ui.dart';
+import 'package:bengkel_kendaraan/features/auth/data/auth_repository.dart';
+import 'package:bengkel_kendaraan/features/customer/presentation/customer_dashboard_screen.dart';
+import 'package:bengkel_kendaraan/features/technician/presentation/service_orders_screen.dart';
+import 'package:bengkel_kendaraan/features/technician/presentation/technician_overview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../app/theme/app_colors.dart';
-import '../../features/auth/data/auth_repository.dart';
-import '../../features/customer/presentation/customer_dashboard_screen.dart';
-import '../../features/technician/presentation/service_orders_screen.dart';
-import '../../features/technician/presentation/technician_overview.dart';
-import '../data/booking_repository.dart';
-import '../data/inventory_repository.dart';
-import '../data/service_history_repository.dart';
-import '../data/vehicle_repository.dart';
-import '../models/service_history.dart';
-import '../models/service_order.dart';
-import 'dashboard_stat_card.dart';
-import 'empty_state.dart';
-import 'foundation_pages.dart';
-import 'logout_button.dart';
-import 'mobile_navigation.dart';
-import 'quick_action_card.dart';
-import 'section_header.dart';
-import 'service_timeline.dart';
-import 'status_chip.dart';
-import 'workshop_ui.dart';
 
 class LiveDashboard extends ConsumerWidget {
   const LiveDashboard({
     super.key,
-    required this.customer,
+    this.customer = true,
     this.technician = false,
   });
-  final bool customer, technician;
+
+  final bool customer;
+  final bool technician;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (technician) return const TechnicianOverview();
-    if (customer) return const CustomerDashboardScreen();
     final session = ref.watch(authSessionProvider);
-    final role = customer
-        ? 'customer'
-        : technician
-        ? 'technician'
-        : 'admin';
-    final orders = ref.watch(ordersPageProvider(null));
-    final identity = session.email?.split('@').first;
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-    final actions = <(String, IconData, String)>[
-      if (customer) ...[
-        ('Booking Servis', Icons.event_available_outlined, '/customer/booking'),
-        ('Kendaraan Saya', Icons.directions_car_outlined, '/customer/vehicles'),
-        ('Booking Saya', Icons.event_note_outlined, '/customer/bookings'),
-      ] else if (technician) ...[
-        ('Pekerjaan Saya', Icons.build_outlined, '/technician/jobs'),
-      ] else ...[
-        ('Kelola Booking', Icons.event_available_outlined, '/admin/bookings'),
-        ('Inventory Sparepart', Icons.inventory_2_outlined, '/admin/inventory'),
-        ('Manajemen Teknisi', Icons.engineering_outlined, '/admin/technicians'),
-      ],
-      ('Progres Servis', Icons.car_repair_outlined, '/$role/orders'),
-      ('Riwayat Servis', Icons.history, '/$role/history'),
-      if (!technician)
-        (
-          'Invoice & Pembayaran',
-          Icons.receipt_long_outlined,
-          '/$role/invoices',
+    final role = session.role;
+    if (role == null) return const LoadingState();
+    if (role.name == 'technician' || (!customer && technician)) {
+      return const TechnicianOverview();
+    }
+    if (role.name == 'customer' || (customer && !technician)) {
+      return const CustomerDashboardScreen();
+    }
+
+    final ordersAsync = ref.watch(ordersPageProvider(null));
+    final bookingsAsync = ref.watch(bookingsProvider);
+    final lowStockAsync = ref.watch(
+      inventoryPageProvider((
+        cursor: null,
+        search: '',
+        category: '',
+        active: true,
+        lowOnly: true,
+      )),
+    );
+
+    final orders = ordersAsync.asData?.value.items ?? const <ServiceOrder>[];
+    final bookings = bookingsAsync.asData?.value ?? const <Booking>[];
+    final lowParts = lowStockAsync.asData?.value.items ?? const [];
+
+    final awaitingApproval = orders
+        .where((o) => o.status == ServiceOrderStatus.awaitingApproval)
+        .toList();
+    final activeOrders = orders.where((o) => !o.status.terminal).toList();
+    final pendingBookings = bookings
+        .where((b) => b.status == BookingStatus.pending)
+        .toList();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: const Row(
+          children: [
+            BrandEmblem(size: 32),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'BengkelKu Admin',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
-    ];
-    final bookingSummary = !technician
-        ? ref
-              .watch(bookingsProvider)
-              .when(
-                loading: () => const LoadingState(),
-                error: (_, _) =>
-                    LoadError(onRetry: () => ref.invalidate(bookingsProvider)),
-                data: (items) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AdaptiveCards(
-                      minWidth: largeText ? 240 : 128,
-                      children: [
-                        DashboardStatCard(
-                          compact: true,
-                          label: customer
-                              ? 'Booking aktif'
-                              : 'Menunggu konfirmasi',
-                          value:
-                              '${items.where((b) => customer ? b.status.isActive : b.status.name == 'pending').length}',
-                          icon: Icons.event_available_outlined,
-                          color: AppColors.warning,
+        actions: [
+          IconButton(
+            tooltip: 'Muat ulang',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () {
+              ref.invalidate(ordersPageProvider(null));
+              ref.invalidate(bookingsProvider);
+              ref.invalidate(inventoryPageProvider);
+            },
+          ),
+          IconButton(
+            tooltip: 'Profil',
+            icon: const Icon(Icons.person_outline_rounded),
+            onPressed: () => context.go('/admin/profile'),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const MobileNavigation(role: 'admin'),
+      body: WorkshopBody(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          children: [
+            Text(
+              'Halo, Admin Bengkel',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Pantau antrean booking, penugasan teknisi, persetujuan servis, dan stok sparepart.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            CarbonSpotlightCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'RINGKASAN OPERASIONAL',
+                    style: TextStyle(
+                      color: AppColors.accentLight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stacked =
+                          constraints.maxWidth < 260 ||
+                          MediaQuery.textScalerOf(context).scale(1) > 1.3;
+                      final cards = [
+                        _CarbonKpi(
+                          label: 'SO Aktif',
+                          value: '${activeOrders.length}',
+                          highlight: true,
                         ),
-                        DashboardStatCard(
-                          compact: true,
-                          label: 'Booking dikonfirmasi',
-                          value:
-                              '${items.where((b) => b.status.name == 'confirmed').length}',
-                          icon: Icons.fact_check_outlined,
+                        _CarbonKpi(
+                          label: 'Booking Pending',
+                          value: '${pendingBookings.length}',
+                        ),
+                        _CarbonKpi(
+                          label: 'Persetujuan',
+                          value: '${awaitingApproval.length}',
+                        ),
+                        _CarbonKpi(
+                          label: 'Stok Menipis',
+                          value: '${lowParts.length}',
+                        ),
+                      ];
+                      if (stacked) {
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final card in cards)
+                              SizedBox(
+                                width: constraints.maxWidth,
+                                child: card,
+                              ),
+                          ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: cards[0]),
+                              const SizedBox(width: 10),
+                              Expanded(child: cards[1]),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(child: cards[2]),
+                              const SizedBox(width: 10),
+                              Expanded(child: cards[3]),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () => context.go('/admin/orders'),
+                        icon: const Icon(Icons.assignment_outlined, size: 18),
+                        label: const Text('Kelola Service Order'),
+                      ),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        onPressed: () => context.go('/admin/invoices'),
+                        child: const Text('Kasir & Laporan'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (awaitingApproval.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Material(
+                color: AppColors.accentSoft,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: const BorderSide(color: AppColors.accentBorder),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.verified_outlined,
+                            color: AppColors.secondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${awaitingApproval.length} Servis Menunggu Persetujuan Admin',
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Periksa checklist teknisi, diagnosis, dan catatan pemakaian part sebelum menyelesaikan order.',
+                        style: TextStyle(color: AppColors.muted, fontSize: 12.5),
+                      ),
+                      const SizedBox(height: 10),
+                      for (final o in awaitingApproval.take(2))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: UniversalVehicleThumb(
+                            vehicleName: o.text('vehicleName'),
+                            size: 40,
+                          ),
+                          title: Text(
+                            '${o.text('vehiclePlate')} · ${o.text('vehicleName')}',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: Text(o.text('serviceName')),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => context.go('/admin/orders/${o.id}'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            _AdminHeading(
+              title: 'Booking Masuk',
+              actionLabel: 'Semua Booking',
+              onTap: () => context.go('/admin/bookings'),
+            ),
+            const SizedBox(height: 8),
+            bookingsAsync.when(
+              loading: () => const LoadingState(),
+              error: (_, _) =>
+                  LoadError(onRetry: () => ref.invalidate(bookingsProvider)),
+              data: (items) {
+                final queue = items.take(3).toList();
+                if (queue.isEmpty) {
+                  return const EmptyState(
+                    title: 'Belum ada booking masuk',
+                    description: 'Permintaan booking pelanggan akan tampil di sini.',
+                    icon: Icons.event_note_outlined,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final b in queue)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Material(
+                          color: AppColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: const BorderSide(color: AppColors.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => context.go('/admin/bookings/${b.id}'),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                children: [
+                                  UniversalVehicleThumb(
+                                    vehicleName: b.vehicle.name,
+                                    size: 44,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          b.vehicle.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${b.draft.service} • ${bookingSchedule(b.draft.scheduledAt)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: AppColors.muted,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 6,
+                                          children: [
+                                            IndonesianPlateBadge(
+                                              plate: b.vehicle.plate,
+                                            ),
+                                            StatusChip(
+                                              label: b.status.label,
+                                              tone: b.status ==
+                                                      BookingStatus.confirmed
+                                                  ? StatusChipTone.success
+                                                  : b.status ==
+                                                          BookingStatus.pending
+                                                      ? StatusChipTone.warning
+                                                      : StatusChipTone.neutral,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: AppColors.muted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _AdminHeading(
+              title: 'Perhatian Stok Sparepart',
+              actionLabel: 'Buka Inventori',
+              onTap: () => context.go('/admin/inventory'),
+            ),
+            const SizedBox(height: 8),
+            lowStockAsync.when(
+              loading: () => const LoadingState(),
+              error: (_, _) => LoadError(
+                onRetry: () => ref.invalidate(inventoryPageProvider),
+              ),
+              data: (page) {
+                if (page.items.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline_rounded,
                           color: AppColors.success,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Semua sparepart aktif berada di atas batas minimum.',
+                          ),
                         ),
                       ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        'Ringkasan dari maksimal 100 booking terbaru.',
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final part in page.items.take(3))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Material(
+                          color: AppColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(color: AppColors.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.accentSoft,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.inventory_2_outlined,
+                                color: AppColors.secondary,
+                              ),
+                            ),
+                            title: Text(
+                              part.text('name'),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: Text(
+                              'SKU ${part.text('sku')} • Sisa ${part.stock} ${part.text('unit')}',
+                            ),
+                            trailing: StatusChip(
+                              label: part.stock == 0 ? 'Habis' : 'Minimum',
+                              tone: part.stock == 0
+                                  ? StatusChipTone.danger
+                                  : StatusChipTone.warning,
+                            ),
+                            onTap: () => context.go('/admin/inventory'),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
-                ),
-              )
-        : const SizedBox.shrink();
-    final orderSummary = orders.when(
-      loading: () => const LoadingState(),
-      error: (_, _) =>
-          LoadError(onRetry: () => ref.invalidate(ordersPageProvider(null))),
-      data: (page) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CarbonKpi extends StatelessWidget {
+  const _CarbonKpi({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
+
+  final String label;
+  final String value;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: highlight
+            ? AppColors.secondary.withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: highlight
+              ? AppColors.secondary.withValues(alpha: 0.45)
+              : Colors.white.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdaptiveCards(
-            minWidth: largeText ? 240 : 128,
-            children: [
-              DashboardStatCard(
-                compact: true,
-                label: technician
-                    ? 'Tugas aktif pada halaman ini'
-                    : 'Servis aktif pada halaman ini',
-                value: '${page.items.where((o) => !o.status.terminal).length}',
-                icon: Icons.car_repair_outlined,
-                color: AppColors.info,
-              ),
-              DashboardStatCard(
-                compact: true,
-                label: 'Selesai pada halaman ini',
-                value:
-                    '${page.items.where((o) => o.status == ServiceOrderStatus.completed).length}',
-                icon: Icons.task_alt,
-                color: AppColors.success,
-              ),
-            ],
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'Maksimal 20 Service Order terbaru; bukan total seluruh bengkel.',
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFD1D5DB),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
       ),
     );
-    final progress = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(
-          title: technician ? 'Pekerjaan aktif' : 'Progres kendaraan',
-          actionLabel: 'Lihat semua',
-          onPressed: () => context.go('/$role/orders'),
-        ),
-        const SizedBox(height: 12),
-        orders.when(
-          loading: () => const LoadingState(),
-          error: (_, _) => LoadError(
-            onRetry: () => ref.invalidate(ordersPageProvider(null)),
-          ),
-          data: (page) {
-            final active = page.items
-                .where((o) => !o.status.terminal)
-                .take(3)
-                .toList();
-            if (active.isEmpty) {
-              return const EmptyState(
-                title: 'Tidak ada servis aktif pada halaman ini',
-                description:
-                    'Buka daftar untuk melihat seluruh halaman pekerjaan.',
-                icon: Icons.car_repair_outlined,
-              );
-            }
-            return Column(
-              children: [
-                for (final order in active)
-                  ContentSection(
-                    title: order.text('vehicleName'),
-                    children: [
-                      Text(
-                        '${order.text('vehiclePlate')} • ${order.text('serviceName')}',
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: StatusChip(
-                          label: order.status.label,
-                          tone: orderStatusTone(order.status),
-                        ),
-                      ),
-                      if (customer) ServiceTimeline(order: order),
-                      TextButton.icon(
-                        onPressed: () =>
-                            context.go('/$role/orders/${order.id}'),
-                        icon: const Icon(Icons.chevron_right),
-                        label: Text(
-                          technician
-                              ? 'Buka tugas & tindakan berikutnya'
-                              : 'Detail progres',
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-    final quickActions = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SectionHeader(title: 'Akses cepat'),
-        const SizedBox(height: 12),
-        AdaptiveCards(
-          minWidth: largeText ? 240 : 140,
-          children: [
-            for (final action in actions.skip(1))
-              QuickActionCard(
-                title: action.$1,
-                icon: action.$2,
-                color: AppColors.secondary,
-                onTap: () => context.go(action.$3),
+  }
+}
+
+class _AdminHeading extends StatelessWidget {
+  const _AdminHeading({
+    required this.title,
+    required this.actionLabel,
+    required this.onTap,
+  });
+
+  final String title;
+  final String actionLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow =
+            constraints.maxWidth < 300 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.3;
+        if (narrow) {
+          return Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-          ],
-        ),
-      ],
-    );
-    final bookings = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(
-          title: customer ? 'Booking terbaru' : 'Antrean booking',
-          actionLabel: 'Lihat semua',
-          onPressed: () => context.go('/$role/bookings'),
-        ),
-        const SizedBox(height: 12),
-        BookingListContent(customer: customer, limit: 3),
-      ],
-    );
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('BengkelKu'),
-        actions: const [LogoutButton(icon: true)],
-      ),
-      bottomNavigationBar: MobileNavigation(role: role),
-      body: WorkshopBody(
-        showWave: customer,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+              TextButton(onPressed: onTap, child: Text(actionLabel)),
+            ],
+          );
+        }
+        return Row(
           children: [
-            WorkshopHero(
-              compact: !customer,
-              art: customer
-                  ? WorkshopArt.vehicles
-                  : technician
-                  ? WorkshopArt.technician
-                  : WorkshopArt.garage,
-              eyebrow: customer
-                  ? 'Garasi pelanggan'
-                  : technician
-                  ? 'Ruang teknisi'
-                  : 'Kendali bengkel',
-              title: identity == null || identity.isEmpty
-                  ? (technician
-                        ? 'Pekerjaan teknisi'
-                        : 'Selamat datang di BengkelKu')
-                  : 'Halo, $identity',
-              description: customer
-                  ? 'Booking dan riwayat servis kendaraan Anda.'
-                  : technician
-                  ? 'Lihat tugas dan catat hasil pemeriksaan kendaraan.'
-                  : 'Kelola booking dan pekerjaan bengkel.',
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () => context.go(actions.first.$3),
-              icon: Icon(actions.first.$2),
-              label: Text(actions.first.$1),
-            ),
-            const SizedBox(height: 24),
-            if (technician) ...[
-              progress,
-              const SizedBox(height: 24),
-              const SectionHeader(title: 'Ringkasan aktivitas'),
-              const SizedBox(height: 12),
-              orderSummary,
-              const SizedBox(height: 24),
-              quickActions,
-            ] else ...[
-              const SectionHeader(title: 'Ringkasan aktivitas'),
-              const SizedBox(height: 12),
-              bookingSummary,
-              if (!customer) ...[
-                const SizedBox(height: 24),
-                bookings,
-                const SizedBox(height: 24),
-                orderSummary,
-              ] else ...[
-                const SizedBox(height: 16),
-                quickActions,
-              ],
-              const SizedBox(height: 24),
-              progress,
-              if (customer) ...[const SizedBox(height: 24), orderSummary],
-            ],
-            if (!customer && !technician) ...[
-              const SizedBox(height: 24),
-              ref
-                  .watch(
-                    inventoryPageProvider((
-                      cursor: null,
-                      search: '',
-                      category: '',
-                      active: true,
-                      lowOnly: true,
-                    )),
-                  )
-                  .when(
-                    loading: () => const LoadingState(),
-                    error: (_, _) => LoadError(
-                      onRetry: () => ref.invalidate(inventoryPageProvider),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
-                    data: (page) => ContentSection(
-                      title: 'Perhatian stok',
-                      children: [
-                        Text(
-                          '${page.items.length}${page.hasMore ? '+' : ''} sparepart aktif perlu diperiksa pada hasil ini.',
-                        ),
-                        for (final part in page.items.take(3))
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(
-                              Icons.inventory_2_outlined,
-                              color: AppColors.warning,
-                            ),
-                            title: Text(part.text('name')),
-                            subtitle: Text(
-                              'Stok ${part.stock} ${part.text('unit')} • batas ${part.number('minimumStock')}',
-                            ),
-                            onTap: () => context.go('/admin/inventory'),
-                          ),
-                        const Text(
-                          'Hasil terbatas per halaman. Buka inventory untuk memeriksa seluruh stok rendah.',
-                        ),
-                      ],
-                    ),
-                  ),
-              const SizedBox(height: 24),
-              quickActions,
-            ],
-            if (customer) ...[
-              const SizedBox(height: 24),
-              SectionHeader(
-                title: 'Kendaraan terdaftar',
-                actionLabel: 'Kelola',
-                onPressed: () => context.go('/customer/vehicles'),
               ),
-              ref
-                  .watch(vehiclesProvider)
-                  .when(
-                    loading: () => const LoadingState(),
-                    error: (_, _) => LoadError(
-                      onRetry: () => ref.invalidate(vehiclesProvider),
-                    ),
-                    data: (vehicles) => vehicles.isEmpty
-                        ? const EmptyState(
-                            title: 'Garasi Anda masih kosong',
-                            description:
-                                'Tambahkan kendaraan untuk mulai booking servis.',
-                            icon: Icons.directions_car_outlined,
-                          )
-                        : ContentSection(
-                            title:
-                                '${vehicles.length} kendaraan aktif • maks. 50',
-                            children: [
-                              for (final v in vehicles.take(3))
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: const Icon(
-                                    Icons.directions_car_outlined,
-                                  ),
-                                  title: Text(v.name),
-                                  subtitle: Text(v.plate),
-                                  onTap: () => context.go('/customer/vehicles'),
-                                ),
-                            ],
-                          ),
-                  ),
-              const SizedBox(height: 24),
-              bookings,
-            ],
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: 'Riwayat servis terbaru',
-              actionLabel: 'Lihat semua',
-              onPressed: () => context.go('/$role/history'),
             ),
-            ref
-                .watch(historyPageProvider(const HistoryFilter()))
-                .when(
-                  loading: () => const LoadingState(),
-                  error: (_, _) => LoadError(
-                    onRetry: () => ref.invalidate(historyPageProvider),
-                  ),
-                  data: (page) => ContentSection(
-                    title: 'Servis selesai',
-                    children: [
-                      if (page.fromCache)
-                        const Text(
-                          'Offline/cache: riwayat mungkin belum lengkap.',
-                        ),
-                      if (page.items.isEmpty)
-                        const Text(
-                          'Belum ada riwayat servis pada halaman ini.',
-                        ),
-                      for (final o in page.items.take(3))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(
-                            Icons.task_alt,
-                            color: AppColors.success,
-                          ),
-                          title: Text(
-                            '${o.text('vehicleName')} • ${o.text('vehiclePlate')}',
-                          ),
-                          subtitle: Text(
-                            '${o.text('serviceName')}\n${historyDate(o.date('completedAt'))}',
-                          ),
-                          onTap: () => context.go('/$role/history/${o.id}'),
-                        ),
-                    ],
-                  ),
-                ),
-            const SizedBox(height: 24),
+            TextButton(onPressed: onTap, child: Text(actionLabel)),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

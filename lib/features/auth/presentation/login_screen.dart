@@ -1,11 +1,14 @@
+import 'package:bengkel_kendaraan/app/theme/app_colors.dart';
+import 'package:bengkel_kendaraan/core/widgets/logout_button.dart';
+import 'package:bengkel_kendaraan/core/widgets/session_splash.dart';
+import 'package:bengkel_kendaraan/features/auth/data/auth_repository.dart';
+import 'package:bengkel_kendaraan/features/auth/presentation/account_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/auth_repository.dart';
-import '../../../core/widgets/workshop_ui.dart';
-import 'account_ui.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
+
   @override
   ConsumerState<LoginScreen> createState() => _LoginState();
 }
@@ -19,6 +22,8 @@ class _LoginState extends ConsumerState<LoginScreen> {
   bool busy = false;
   bool obscure = true;
   String? message;
+  bool messageSuccess = false;
+
   @override
   void dispose() {
     email.dispose();
@@ -27,20 +32,22 @@ class _LoginState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> submit({bool reset = false}) async {
-    if (busy || !form.currentState!.validate()) return;
+    if (busy || !(form.currentState?.validate() ?? false)) return;
     setState(() {
       busy = true;
       message = null;
+      messageSuccess = false;
     });
     try {
       final repo = ref.read(authRepositoryProvider);
       if (reset) {
         await repo.resetPassword(email.text);
         if (mounted) {
-          setState(
-            () => message =
-                'Jika email terdaftar, tautan reset akan dikirim. Periksa inbox dan spam.',
-          );
+          setState(() {
+            messageSuccess = true;
+            message =
+                'Jika email terdaftar, tautan reset kata sandi telah dikirim.';
+          });
         }
       } else if (register) {
         await repo.register(email.text, password.text);
@@ -48,212 +55,280 @@ class _LoginState extends ConsumerState<LoginScreen> {
         await repo.login(email.text, password.text);
       }
     } catch (e) {
-      if (mounted) setState(() => message = authError(e));
+      if (mounted) {
+        setState(() {
+          messageSuccess = false;
+          message = authError(e);
+        });
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
-  void leaveRecovery() => setState(() {
-    resetMode = false;
-    message = null;
-  });
+  String get _title {
+    if (resetMode) return 'Reset Kata Sandi';
+    if (register) return 'Daftar Akun Pelanggan';
+    return 'Masuk ke Akun Anda';
+  }
+
+  String get _subtitle {
+    if (resetMode) {
+      return 'Masukkan email akun BengkelKu Anda untuk menerima tautan pemulihan.';
+    }
+    if (register) {
+      return 'Buat akun pelanggan untuk booking servis, pantau progres, dan lihat invoice digital.';
+    }
+    return 'Kelola jadwal booking, progres pengerjaan kendaraan, stok suku cadang, dan pembayaran.';
+  }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !resetMode,
-    onPopInvokedWithResult: (didPop, _) {
-      if (!didPop && resetMode && !busy) leaveRecovery();
-    },
-    child: Scaffold(
-      appBar: AppBar(
-        backgroundColor: resetMode ? Colors.white : null,
-        leading: resetMode
-            ? IconButton(
-                tooltip: 'Kembali ke Login',
-                onPressed: busy ? null : leaveRecovery,
-                icon: const Icon(Icons.arrow_back),
-              )
-            : null,
-      ),
-      body: WorkshopBody(
-        showWave: true,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: ListView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              children: [
-                if (resetMode)
-                  const AccountIntro(
-                    art: WorkshopArt.password,
-                    title: 'Lupa Password?',
-                    description:
-                        'Masukkan email akun Anda untuk menerima tautan pengaturan ulang password.',
-                  )
-                else ...[
-                  const BrandLockup(),
-                  const SizedBox(height: 16),
-                  Text(
-                    register ? 'Buat Akun Baru' : 'Masuk ke Akun Anda',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    register
-                        ? 'Daftar untuk mengelola kendaraan dan booking servis.'
-                        : 'Silakan masuk untuk melanjutkan.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Form(
-                  key: form,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: email,
-                        enabled: !busy,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.mail_outline),
-                        ),
-                        validator: (v) =>
-                            RegExp(
-                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                            ).hasMatch(v?.trim() ?? '')
-                            ? null
-                            : resetMode
-                            ? 'Isi email yang valid untuk reset kata sandi.'
-                            : 'Email tidak valid.',
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && (register || resetMode)) {
+          setState(() {
+            register = false;
+            resetMode = false;
+            message = null;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AccountIntro(
+                      title: _title,
+                      description: _subtitle,
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.border),
                       ),
-                      const SizedBox(height: 16),
-                      if (!resetMode)
-                        TextFormField(
-                          controller: password,
-                          enabled: !busy,
-                          obscureText: obscure,
-                          autofillHints: [
-                            register
-                                ? AutofillHints.newPassword
-                                : AutofillHints.password,
-                          ],
-                          decoration: InputDecoration(
-                            labelText: 'Kata sandi',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              tooltip: obscure
-                                  ? 'Tampilkan kata sandi'
-                                  : 'Sembunyikan kata sandi',
-                              onPressed: () =>
-                                  setState(() => obscure = !obscure),
-                              icon: Icon(
-                                obscure
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
+                      child: Form(
+                        key: form,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: email,
+                              enabled: !busy,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: resetMode
+                                  ? TextInputAction.done
+                                  : TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                hintText: 'nama@bengkelku.id',
+                                prefixIcon: Icon(Icons.alternate_email_rounded),
                               ),
-                            ),
-                          ),
-                          validator: (v) =>
-                              (v?.length ?? 0) < (register ? 8 : 1)
-                              ? (register
-                                    ? 'Minimal 8 karakter.'
-                                    : 'Isi kata sandi.')
-                              : null,
-                        ),
-                      if (!register && !resetMode)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: busy
-                                ? null
-                                : () => setState(() {
-                                    resetMode = true;
-                                    message = null;
-                                  }),
-                            child: const Text('Lupa kata sandi'),
-                          ),
-                        ),
-                      const SizedBox(height: 20),
-                      if (message != null)
-                        Semantics(
-                          liveRegion: true,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              message!,
-                              key: const Key('auth-message'),
-                            ),
-                          ),
-                        ),
-                      if (busy)
-                        const Center(child: CircularProgressIndicator()),
-                      if (resetMode)
-                        FilledButton.icon(
-                          onPressed: busy ? null : () => submit(reset: true),
-                          icon: const Icon(Icons.send_outlined),
-                          label: const Text('Kirim Tautan'),
-                        )
-                      else
-                        FilledButton(
-                          onPressed: busy
-                              ? null
-                              : () => submit(reset: resetMode),
-                          child: Text(
-                            resetMode
-                                ? 'Kirim Tautan'
-                                : register
-                                ? 'Daftar'
-                                : 'Masuk dengan Email',
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      if (resetMode)
-                        TextButton(
-                          onPressed: busy ? null : leaveRecovery,
-                          child: const Text('Kembali ke Login'),
-                        )
-                      else
-                        OutlinedButton(
-                          onPressed: busy
-                              ? null
-                              : () => setState(() {
-                                  if (resetMode) {
-                                    resetMode = false;
-                                  } else {
-                                    register = !register;
+                              validator: (v) {
+                                final value = v?.trim() ?? '';
+                                if (resetMode) {
+                                  if (value.isEmpty ||
+                                      !value.contains('@') ||
+                                      !value.split('@').last.contains('.')) {
+                                    return 'Isi email yang valid untuk reset kata sandi.';
                                   }
-                                  message = null;
-                                }),
-                          child: Text(
-                            resetMode
-                                ? 'Kembali ke Login'
-                                : register
-                                ? 'Sudah punya akun? Masuk'
-                                : 'Daftar akun pelanggan',
-                          ),
+                                  return null;
+                                }
+                                if (value.isEmpty || !value.contains('@')) {
+                                  return 'Email tidak valid.';
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                if (resetMode) {
+                                  submit(reset: true);
+                                }
+                              },
+                            ),
+                            if (!resetMode) ...[
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: password,
+                                enabled: !busy,
+                                obscureText: obscure,
+                                textInputAction: TextInputAction.done,
+                                autofillHints: [
+                                  register
+                                      ? AutofillHints.newPassword
+                                      : AutofillHints.password,
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: 'Kata Sandi',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    tooltip: obscure
+                                        ? 'Tampilkan kata sandi'
+                                        : 'Sembunyikan kata sandi',
+                                    onPressed: () =>
+                                        setState(() => obscure = !obscure),
+                                    icon: Icon(
+                                      obscure
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                    ),
+                                  ),
+                                ),
+                                validator: (v) {
+                                  if ((v ?? '').length < 6) {
+                                    return 'Kata sandi minimal 6 karakter';
+                                  }
+                                  return null;
+                                },
+                                onFieldSubmitted: (_) => submit(),
+                              ),
+                            ],
+                            if (!register && !resetMode) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: busy
+                                      ? null
+                                      : () => setState(() {
+                                            resetMode = true;
+                                            message = null;
+                                          }),
+                                  child: const Text('Lupa kata sandi'),
+                                ),
+                              ),
+                            ] else
+                              const SizedBox(height: 16),
+                            if (message != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: messageSuccess
+                                      ? const Color(0xFFECFDF5)
+                                      : const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: messageSuccess
+                                        ? AppColors.success
+                                            .withValues(alpha: 0.3)
+                                        : AppColors.danger
+                                            .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    message!,
+                                    key: const Key('auth-message'),
+                                    style: TextStyle(
+                                      color: messageSuccess
+                                          ? AppColors.success
+                                          : AppColors.danger,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+                            if (resetMode)
+                              FilledButton.icon(
+                                onPressed:
+                                    busy ? null : () => submit(reset: true),
+                                icon: busy
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.send_rounded),
+                                label: const Text('Kirim Tautan'),
+                              )
+                            else
+                              FilledButton(
+                                onPressed: busy ? null : () => submit(),
+                                child: busy
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(
+                                        register
+                                            ? 'Daftar'
+                                            : 'Masuk dengan Email',
+                                      ),
+                              ),
+                            const SizedBox(height: 12),
+                            if (resetMode)
+                              OutlinedButton(
+                                onPressed: busy
+                                    ? null
+                                    : () => setState(() {
+                                          resetMode = false;
+                                          message = null;
+                                        }),
+                                child: const Text('Kembali ke Login'),
+                              )
+                            else
+                              TextButton(
+                                onPressed: busy
+                                    ? null
+                                    : () => setState(() {
+                                          register = !register;
+                                          message = null;
+                                        }),
+                                child: Text(
+                                  register
+                                      ? 'Sudah punya akun? Masuk'
+                                      : 'Daftar akun pelanggan',
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const AccountNotice(
+                      icon: Icons.verified_user_outlined,
+                      title: 'Akses sesuai peran bengkel',
+                      description:
+                          'Peran Admin dan Teknisi diatur oleh pengelola bengkel; pendaftar baru otomatis menjadi akun Pelanggan.',
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
+
   @override
   ConsumerState<AccountScreen> createState() => _AccountState();
 }
@@ -262,6 +337,7 @@ class _AccountState extends ConsumerState<AccountScreen>
     with WidgetsBindingObserver {
   bool busy = false;
   String? message;
+
   @override
   void initState() {
     super.initState();
@@ -276,7 +352,7 @@ class _AccountState extends ConsumerState<AccountScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !busy) {
+    if (state == AppLifecycleState.resumed) {
       run(() => ref.read(authRepositoryProvider).refresh());
     }
   }
@@ -289,7 +365,7 @@ class _AccountState extends ConsumerState<AccountScreen>
     });
     try {
       await action();
-      if (mounted) setState(() => message = success);
+      if (mounted && success != null) setState(() => message = success);
     } catch (e) {
       if (mounted) setState(() => message = authError(e));
     } finally {
@@ -303,78 +379,95 @@ class _AccountState extends ConsumerState<AccountScreen>
     final repo = ref.read(authRepositoryProvider);
     if (s.loading) return const SessionSplash();
     final verification = s.role != null && !s.verified && s.active;
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: verification ? null : const Text('Status Akun'),
-      ),
-      body: WorkshopBody(
-        showWave: true,
-        child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(24),
-          children: [
-            AccountIntro(
-              art: verification ? WorkshopArt.verification : WorkshopArt.lock,
-              title: verification ? 'Verifikasi Email' : 'Status akun Anda',
-              description: verification
-                  ? 'Verifikasi alamat email akun Anda untuk melanjutkan ke BengkelKu.'
-                  : 'Periksa status akun untuk melanjutkan ke BengkelKu.',
-            ),
-            const SizedBox(height: 24),
-            if (s.loading || busy)
-              const Center(child: CircularProgressIndicator()),
-            if (s.email != null)
-              SelectableText(s.email!, textAlign: TextAlign.center),
-            if (s.error != null)
-              Semantics(liveRegion: true, child: Text(s.error!)),
-            if (s.uid != null && !s.loading) ...[
-              if (!s.active && s.role != null)
-                const Text('Akun dinonaktifkan. Hubungi pengelola bengkel.'),
-              if (!s.verified && s.role != null && s.active) ...[
-                const SizedBox(height: 20),
-                const AccountNotice(
-                  title: 'Periksa Kotak Masuk',
-                  description:
-                      'Buka tautan verifikasi pada email BengkelKu. Periksa juga folder spam.',
-                ),
-                const SizedBox(height: 12),
-                const AccountNotice(
-                  title: 'Tidak menerima email?',
-                  description: 'Kirim ulang tautan, lalu periksa status akun.',
-                  icon: Icons.info_outline,
-                  tinted: true,
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: busy
-                      ? null
-                      : () => run(
-                          repo.sendVerification,
-                          'Email verifikasi dikirim.',
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AccountIntro(
+                    title: verification
+                        ? 'Verifikasi Email Anda'
+                        : !s.active
+                            ? 'Akses Akun Dinonaktifkan'
+                            : 'Menyiapkan Profil Akun',
+                    description: verification
+                        ? 'Kami perlu memastikan email ${s.email ?? '-'} aktif sebelum membuka dashboard ${s.role?.label ?? 'BengkelKu'}.'
+                        : !s.active
+                            ? 'Akun dinonaktifkan. Hubungi pengelola bengkel.'
+                            : 'Data profil Anda belum lengkap. Tekan muat ulang atau lengkapi profil.',
+                  ),
+                  const SizedBox(height: 18),
+                  if (!s.active && s.role != null)
+                    const AccountNotice(
+                      icon: Icons.block_rounded,
+                      title: 'Akun Nonaktif',
+                      description:
+                          'Akses dashboard ditutup sementara hingga akun diaktifkan kembali oleh admin.',
+                      tinted: true,
+                    ),
+                  if (!s.verified && s.role != null && s.active) ...[
+                    const AccountNotice(
+                      icon: Icons.mark_email_unread_outlined,
+                      title: 'Email belum terverifikasi',
+                      description:
+                          'Buka tautan verifikasi di kotak masuk atau folder spam email Anda, lalu periksa ulang status akun.',
+                      tinted: true,
+                    ),
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => run(
+                                repo.sendVerification,
+                                'Email verifikasi dikirim ke ${s.email ?? 'alamat Anda'}.',
+                              ),
+                      icon: const Icon(Icons.mark_email_read_outlined),
+                      label: const Text('Kirim Ulang'),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (s.role == null) ...[
+                    OutlinedButton(
+                      onPressed: busy ? null : () => run(repo.completeProfile),
+                      child: const Text('Lengkapi Profil'),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  OutlinedButton(
+                    onPressed: busy ? null : () => run(repo.refresh),
+                    child: const Text('Periksa ulang status akun'),
+                  ),
+                  if (message != null) ...[
+                    const SizedBox(height: 14),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        message!,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
                         ),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Kirim Ulang'),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (s.role == null)
-                OutlinedButton(
-                  onPressed: busy ? null : () => run(repo.completeProfile),
-                  child: const Text('Lengkapi profil pelanggan'),
-                ),
-              OutlinedButton(
-                onPressed: busy ? null : () => run(repo.refresh),
-                child: const Text('Periksa ulang status akun'),
+                      ),
+                    ),
+                  ],
+                  if (busy) ...[
+                    const SizedBox(height: 12),
+                    const LinearProgressIndicator(),
+                  ],
+                  const SizedBox(height: 16),
+                  const LogoutButton(outlined: true),
+                ],
               ),
-            ],
-            if (message != null)
-              Semantics(liveRegion: true, child: Text(message!)),
-            TextButton(
-              onPressed: busy ? null : () => run(repo.signOut),
-              child: const Text('Keluar'),
             ),
-          ],
+          ),
         ),
       ),
     );

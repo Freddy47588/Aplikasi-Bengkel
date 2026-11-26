@@ -35,7 +35,7 @@ class QuickActionCard extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.control),
                   ),
                   child: Icon(icon, color: color),
                 ),
@@ -44,7 +44,7 @@ class QuickActionCard extends StatelessWidget {
                   title,
                   textAlign: TextAlign.start,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.primary,
                   ),
                 ),

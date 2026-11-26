@@ -64,6 +64,9 @@ test('issue requires admin, completed SO, canonical invoice number, integer tota
   await assertFails(deleteDoc(doc(db('admin'),'invoices/so')));
 });
 test('customer reads own invoice/audit, never writes payments or reads other invoices/admin report data', async () => {
+  await assertSucceeds(getDoc(doc(db('customer'),'invoices/so')));
+  await assertFails(getDoc(doc(db('other'),'invoices/so')));
+  await assertFails(getDoc(doc(db('customer'),'invoices/unknown-order-id')));
   await issue(db('admin'));
   await assertSucceeds(getDoc(doc(db('customer'),'invoices/so')));
   await assertSucceeds(getDocs(query(collection(db('customer'),'invoices'),where('customerId','==','customer'),limit(20))));

@@ -114,6 +114,21 @@ test('vehicles CRUD validates plate and immutable ownership; delete archives and
   await assertSucceeds(getDocs(query(collection(a, 'vehicles'), where('ownerId', '==', 'a'), where('active', '==', true), limit(50))));
 });
 
+test('vehicle kind and notes support legacy data without allowing invalid fields or cross-owner edits', async () => {
+  const a = db('a'); const v = doc(a, 'vehicles', 'extended');
+  await assertSucceeds(setDoc(v, { ...vehicle('a'), kind: 'motorcycle', notes: 'Hitam, tahun 2023' }));
+  await assertSucceeds(updateDoc(v, { kind: 'car', notes: '', updatedAt: serverTimestamp() }));
+  for (const fields of [{ kind: 'truck' }, { kind: 1 }, { notes: 1 }, { notes: 'x'.repeat(501) }]) {
+    await assertFails(updateDoc(v, { ...fields, updatedAt: serverTimestamp() }));
+  }
+  await assertFails(updateDoc(doc(db('b'), 'vehicles', 'extended'), { notes: 'Hijacked', updatedAt: serverTimestamp() }));
+  const legacy = doc(a, 'vehicles', 'legacy');
+  await assertSucceeds(setDoc(legacy, vehicle('a')));
+  await assertSucceeds(updateDoc(legacy, { kind: 'motorcycle', notes: 'x'.repeat(500), updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(legacy, { active: false, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(legacy, { notes: 'Changed after archive', updatedAt: serverTimestamp() }));
+});
+
 test('catalog is customer read and admin write; technician cannot mutate it', async () => {
   const ref = doc(db('admin'), 'services', 'new');
   await assertFails(setDoc(doc(db('a'), 'services', 'new'), service()));

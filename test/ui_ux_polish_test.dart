@@ -89,7 +89,7 @@ Future<void> captureFixture(
   if (!const bool.fromEnvironment('CAPTURE_UI')) return;
   await tester.runAsync(
     () => precacheImage(
-      const AssetImage('assets/branding/emblem-mockup.png'),
+      const AssetImage('assets/branding/logo_v2.png'),
       key.currentContext!,
     ),
   );
@@ -459,7 +459,7 @@ void main() {
     );
     await tester.pump();
     expect(find.text('BengkelKu'), findsOneWidget);
-    expect(find.text('Aplikasi Manajemen Bengkel'), findsOneWidget);
+    expect(find.text('Smart Workshop Management'), findsOneWidget);
     expect(
       find.textContaining(RegExp('freddy|zaki|edition', caseSensitive: false)),
       findsNothing,
@@ -475,10 +475,11 @@ void main() {
     final scheme = Theme.of(
       tester.element(find.byType(BrandLockup)),
     ).colorScheme;
-    expect(scheme.primary, AppColors.secondary);
-    expect(AppColors.primary, const Color(0xFF1E3A5F));
-    expect(AppColors.secondary, const Color(0xFF2563EB));
-    expect(AppColors.accent, const Color(0xFFF59E0B));
+    expect(scheme.primary, AppColors.primary);
+    expect(scheme.secondary, AppColors.secondary);
+    expect(AppColors.primary, const Color(0xFF111827));
+    expect(AppColors.secondary, const Color(0xFFEA580C));
+    expect(AppColors.accent, const Color(0xFFEA580C));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
@@ -550,17 +551,15 @@ void main() {
           expect(
             find.text(
               role == UserRole.customer
-                  ? 'pelanggan@example.test'
-                  : 'Halo, pelanggan',
+                  ? 'Halo, Pelanggan'
+                  : role == UserRole.admin
+                  ? 'Halo, Admin Bengkel'
+                  : 'Halo, Teknisi',
             ),
             findsOneWidget,
           );
-          expect(
-            tester
-                .widget<NavigationBar>(find.byType(NavigationBar))
-                .selectedIndex,
-            0,
-          );
+          expect(find.byType(MobileNavigation), findsOneWidget);
+          expect(navigationIndex(role.name, '/${role.name}/home'), 0);
           if (width == 390) {
             await captureFixture(
               tester,
@@ -569,32 +568,21 @@ void main() {
             );
           }
           final action = role == UserRole.customer
-              ? 'Buat Booking'
+              ? 'Booking Servis'
               : role == UserRole.admin
-              ? 'Kelola Booking'
-              : 'Tugas Saya';
-          await tester.scrollUntilVisible(
-            find.text(action),
-            200,
-            scrollable: find.byType(Scrollable).first,
-          );
+              ? 'Semua Booking'
+              : 'Daftar Tugas Servis';
+          await reveal(tester, find.text(action).first);
+          await tester.tap(find.text(action).first);
           await tester.pumpAndSettle();
-          await tester.tap(find.text(action));
-          await tester.pumpAndSettle();
-          expect(
-            router.routeInformationProvider.value.uri.path,
-            '/${role.name}/${role == UserRole.customer
-                ? 'booking'
-                : role == UserRole.admin
-                ? 'bookings'
-                : 'jobs'}',
-          );
-          expect(
-            tester
-                .widget<NavigationBar>(find.byType(NavigationBar))
-                .selectedIndex,
-            1,
-          );
+          final expectedPath =
+              '/${role.name}/${role == UserRole.customer
+                  ? 'booking'
+                  : role == UserRole.admin
+                  ? 'bookings'
+                  : 'jobs'}';
+          expect(router.routeInformationProvider.value.uri.path, expectedPath);
+          expect(navigationIndex(role.name, expectedPath), 1);
           expect(tester.takeException(), isNull);
           router.go('/${role.name}/home');
           await tester.pumpAndSettle();
@@ -630,24 +618,27 @@ void main() {
             ),
           );
           final routes = <String, int>{
-            'profile': 3,
-            'history': role == UserRole.admin ? 2 : 2,
-            'orders': role == UserRole.admin
-                ? 2
-                : role == UserRole.customer
-                ? 2
-                : 1,
+            'profile': role == UserRole.admin ? 4 : 3,
+            'history': role == UserRole.admin ? 1 : 2,
+            'orders': role == UserRole.customer ? 2 : 1,
             if (role == UserRole.customer) ...{'vehicles': 3, 'bookings': 1},
-            if (role != UserRole.technician) 'invoices': 2,
-            if (role == UserRole.admin) ...{'inventory': 2, 'technicians': 2},
+            if (role == UserRole.customer) 'invoices': 2,
+            if (role == UserRole.admin) ...{
+              'inventory': 2,
+              'invoices': 3,
+              'technicians': 1,
+            },
           };
           for (final entry in routes.entries) {
             router.go('/${role.name}/${entry.key}');
             await tester.pumpAndSettle();
             expect(
-              tester
-                  .widget<NavigationBar>(find.byType(NavigationBar))
-                  .selectedIndex,
+              find.byType(MobileNavigation),
+              findsOneWidget,
+              reason: '${role.name}/${entry.key}',
+            );
+            expect(
+              navigationIndex(role.name, '/${role.name}/${entry.key}'),
               entry.value,
               reason: '${role.name}/${entry.key}',
             );
@@ -740,13 +731,12 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     expect(container.read(bookingsProvider).requireValue.length, 1);
-    await reveal(tester, find.text('Ringkasan booking'));
-    await tester.tap(find.text('Ringkasan booking'));
-    await tester.pumpAndSettle();
-    expect(find.text('Booking aktif: 1'), findsOneWidget);
+    expect(find.text('Booking Aktif'), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
     source.add([]);
     await tester.pumpAndSettle();
-    expect(find.text('Booking aktif: 0'), findsOneWidget);
+    expect(find.text('Booking Aktif'), findsOneWidget);
+    expect(find.text('0'), findsWidgets);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -831,7 +821,7 @@ void main() {
     expect(navigationIndex('customer', '/customer/orders/a'), 2);
     expect(navigationIndex('customer', '/customer/vehicles'), 3);
     expect(navigationIndex('admin', '/admin/inventory'), 2);
-    expect(navigationIndex('admin', '/admin/invoices/a'), 2);
+    expect(navigationIndex('admin', '/admin/invoices/a'), 3);
     expect(navigationIndex('technician', '/technician/orders/a'), 1);
   });
 }

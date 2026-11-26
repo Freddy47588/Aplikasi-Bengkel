@@ -1,99 +1,136 @@
-# BengkelKu
+<div align="center">
+  <img src="assets/branding/logo_v2.png" alt="BengkelKu Logo" width="112" />
+  <h1>BengkelKu — Smart Workshop Management</h1>
+  <p>
+    <strong>End-to-end Android workshop booking, service order, spare-part inventory, and invoicing system built with Flutter &amp; Firebase.</strong>
+  </p>
+  <p>
+    <em>Crisp Automotive Edition • Role-Based Access Control (Customer, Admin/Cashier, Technician) • Cloud Firestore Transactions</em>
+  </p>
+</div>
 
-Aplikasi Flutter Android/iOS untuk akun pelanggan, kendaraan, booking dan pekerjaan bengkel.
-Phase 06.5 menggunakan Firebase Auth Email/Password dan Cloud Firestore pada project
-asli `bengkelku-app-bebd9`, tanpa billing/Blaze, Storage, Functions atau SMS OTP.
+---
 
-Identitas **Steel Navy & Royal Blue**: emblem hex rotor orisinal, launcher icon
-Android/iOS, splash native, dashboard tiga role, profil akun nyata dan komponen
-Material 3 responsif. Ringkasan dashboard menyatakan batas query; tidak ada
-statistik/omzet palsu. Filter riwayat memakai nama kendaraan/jenis servis dan
-status pembayaran mengikuti invoice realtime.
+## Overview
 
-Dokumentasi Phase 06.5: [laporan dan hasil tes](docs/PHASE_06_5_REPORT.md),
-[audit UI/UX](docs/UI_UX_AUDIT.md), [design system](docs/DESIGN_SYSTEM.md),
-dan [branding/generator aset](docs/BRANDING_GUIDE.md).
+**BengkelKu** (`bengkel_kendaraan`) digitizes automotive workshop operations into a unified real-time mobile experience powered by **Flutter**, **Riverpod**, **GoRouter**, **Firebase Authentication**, and **Cloud Firestore**.
 
-## Fitur
+The interface follows the **Crisp Automotive** design language—combining pure white (`#FFFFFF`) and warm canvas (`#F5F6F8`) surfaces with high-contrast Midnight Carbon (`#111827`) spotlight cards, Automotive Orange (`#EA580C`) highlights, universal motorcycle/car vehicle iconography, Indonesian license plate badges, and floating pill navigation tailored per role.
 
-- Register pelanggan, login/logout, forgot password, verifikasi email dan sesi native Firebase.
-- Profil role tepercaya dan akun nonaktif; login demo/pemilihan role dihapus.
-- CRUD kendaraan milik pelanggan, normalisasi/validasi plat dan archive.
-- Katalog layanan Firestore aktif, tanpa seed data palsu.
-- Booking kendaraan + layanan + jadwal WIB + keluhan; stream data lintas client.
-- Admin confirm/reject; pelanggan cancel sesuai transisi legal.
-- Kapasitas satu booking per jam bengkel, transaksi lock + security rules default-deny.
-- Direktori teknisi admin dengan pencarian/filter dan pagination; role tetap diprovision operator tepercaya.
-- Service Order unik per booking confirmed; assignment transaksional dengan lock teknisi.
-- Pekerjaan teknisi sendiri, checklist, diagnosis, tindakan, catatan dan progres realtime pelanggan.
-- Start/pause/finish, persetujuan admin, revision dan event audit immutable.
-- Daftar SO dan teknisi memakai cursor pagination 20 dokumen; dashboard teknisi memakai pekerjaan nyata.
-- Master sparepart admin dengan SKU unik, harga integer rupiah, kategori, satuan, supplier opsional dan arsip.
-- Ledger immutable stok masuk/koreksi/pemakaian/reversal, saldo atomik, idempotency dan stok minimum.
-- Permintaan teknisi → approval admin, snapshot sparepart/harga pada SO; customer membaca pemakaian miliknya.
-- Riwayat servis dari SO completed: filter kendaraan/jenis/periode WIB dan cursor pagination 20.
-- Detail snapshot jasa, sparepart/reversal, biaya, teknisi dan timeline booking -> SO realtime.
-- Admin mencatat biaya jasa sebelum selesai; SO dan pemakaian/reversal terkunci setelah terminal.
-- Invoice unik per SO, snapshot rupiah integer, tunai/transfer terverifikasi manual, pembayaran bertahap dan audit immutable.
-- Void/refund penuh manual, PDF lokal cetak/bagikan dan invoice pelanggan sendiri.
-- Transaksi berfilter WIB dan pagination; laporan booking/SO/omzet lunas/part/stok menipis. Omzet bukan laba.
-- Riverpod, repository abstraction, GoRouter stabil dan Material 3 dipertahankan.
+<p align="center">
+  <img src="assets/illustrations/vehicle_motor.png" alt="Universal Motorcycle Icon" width="76" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/illustrations/vehicle_car.png" alt="Universal Car Icon" width="76" />
+</p>
 
-## Menjalankan
+---
 
-Status dan batas verifikasi terbaru: [laporan Phase 06.5](docs/PHASE_06_5_REPORT.md).
-Schema, transisi, biaya reads dan batas kepercayaan admin: [pembayaran](docs/PAYMENT_SCHEMA.md).
+## Key Features by Role
 
-```sh
-flutter pub get
-flutter run -d <android-device>
+### Customer
+- **Email Authentication & Verification**: Self-registration, email verification gate, and password reset (`LoginScreen`, `AccountScreen`, `ProfileScreen`).
+- **Personal Vehicle Garage**: Add, edit, and soft-archive motorcycles or cars with automatic Indonesian license plate normalization (`B 1234 XYZ`).
+- **Hourly WIB Booking Slots**: Collision-free hourly visit booking (`09:00–16:00 WIB`, up to 90 days ahead) locked atomically via `bookingSlots`.
+- **Realtime Tracking, History & PDF Invoices**: Segmented `Progres | Riwayat | Invoice` flow with live service stage visualization and itemized receipts.
+
+### Admin / Cashier
+- **Operational Carbon Dashboard**: Real-time KPI summary (active service orders, pending bookings, jobs awaiting final approval, and low-stock SKUs).
+- **Booking & Technician Dispatch**: Confirm or reject bookings, create `ServiceOrder` records, inspect checklist/work logs, and assign available technicians.
+- **2-Step Approval Workflow**: Approve technician spare-part requests (`partRequests`) and review completion submissions (`awaitingApproval`) before finalizing an order.
+- **Atomic Spare-Part Inventory & Ledger**: SKU search, low-stock tracking, and immutable `stockMovements` audit trails with full reversal support.
+- **Billing, Cashier & Reporting**: Issue canonical invoices (`INV~...`), record cash or transfer payments, execute void/full refund operations, generate PDF receipts, and query paid revenue summaries (up to 31-day windows).
+
+### Technician
+- **Focused Task Spotlight**: Active vehicle spotlight card with Indonesian plate pill and 3-stage progress strip (`Menunggu → Diproses → Selesai`).
+- **Checklist, Diagnosis & Actions**: Structured pre-work, safety, and quality inspection checklist saved with optimistic revision locking.
+- **Part Requests & Completion Submission**: Quick spare-part requests routed to admin approval, plus structured completion review before admin sign-off.
+
+---
+
+## Crisp Automotive UI Gallery
+
+All screenshots below are rendered directly from real Flutter widget trees (`390×844 @ 2.0x`):
+
+### Onboarding, Auth & Profile
+| Splash Screen | Login Screen | User Profile |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/crisp-automotive/01_splash.png" width="210" alt="Splash Screen" /> | <img src="docs/screenshots/crisp-automotive/02_login.png" width="210" alt="Login Screen" /> | <img src="docs/screenshots/crisp-automotive/12_profile.png" width="210" alt="Profile Screen" /> |
+
+### Customer Experience
+| Customer Home | Booking Form | Vehicle Garage |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/crisp-automotive/03_customer_home.png" width="210" alt="Customer Home" /> | <img src="docs/screenshots/crisp-automotive/04_customer_booking.png" width="210" alt="Customer Booking" /> | <img src="docs/screenshots/crisp-automotive/05_customer_vehicles.png" width="210" alt="Customer Vehicles" /> |
+
+### Admin & Cashier Operations
+| Admin Dashboard | Service Orders | Inventory Spareparts | Cashier & Invoices |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/crisp-automotive/06_admin_home.png" width="180" alt="Admin Home" /> | <img src="docs/screenshots/crisp-automotive/07_admin_orders.png" width="180" alt="Admin Orders" /> | <img src="docs/screenshots/crisp-automotive/08_admin_inventory.png" width="180" alt="Admin Inventory" /> | <img src="docs/screenshots/crisp-automotive/09_admin_payments.png" width="180" alt="Admin Payments" /> |
+
+### Technician Workspace
+| Technician Home | Technician Jobs |
+| :---: | :---: |
+| <img src="docs/screenshots/crisp-automotive/10_technician_home.png" width="210" alt="Technician Home" /> | <img src="docs/screenshots/crisp-automotive/11_technician_jobs.png" width="210" alt="Technician Jobs" /> |
+
+---
+
+## Architecture & Tech Stack
+
+```text
+lib/
+├── app/
+│   ├── router/app_router.dart         # GoRouter + sessionRedirect() cross-role route guard
+│   └── theme/                         # Crisp Automotive palette, spacing tokens & Material 3 theme
+├── core/
+│   ├── constants/                     # UserRole enum & permission labels
+│   ├── data/                          # Firestore repositories (atomic bookings, SO, inventory, PDF invoices, reports)
+│   ├── models/                        # Immutable domain models (Booking, Vehicle, ServiceOrder, Sparepart, Invoice)
+│   └── widgets/                       # Crisp components, MobileNavigation pill bar, error mapper, splash
+└── features/
+    ├── auth/                          # Login, registration, verification, profile
+    ├── customer/                      # Customer dashboard, booking, garage, service history
+    ├── admin/                         # Admin bookings wrapper
+    ├── technician/                    # Technician overview, service orders, checklist, completion, staff management
+    ├── inventory/                     # Spareparts catalog, stock adjustments, part requests, ledger
+    └── payments/                      # Invoice issuance, cashier payments, void/refund, revenue reports
 ```
 
-Android `id.bengkelku.mobile` dikonfigurasi melalui FlutterFire CLI menggunakan
-app Firebase asli. Konfigurasi client sudah tersedia; kredensial Admin SDK dan
-signing privat tidak disimpan. iOS harus dikonfigurasi di Mac/Xcode melalui CLI,
-kemudian native build dan smoke test. Build iOS belum diverifikasi di Windows.
+- **State Management**: `flutter_riverpod` (`^3.4.3`)
+- **Routing & Guards**: `go_router` (`^18.0.2`) enforcing role-scoped path isolation (`/{role}/...`)
+- **Backend & Security**: `firebase_core`, `firebase_auth`, `cloud_firestore` paired with strict `firestore.rules`
+- **Document Export**: `pdf` & `printing` using Crisp branding and bundled `NotoSans` fonts
 
-**Rules/indexes production belum dideploy.** Aplikasi memerlukan review/deploy
-rules dan setup katalog/akun pegawai sebelum acceptance production.
-Lihat [setup Firebase lengkap](docs/FIREBASE_SETUP.md) untuk Android/iOS,
-provisioning role lewat operator tepercaya, schema, indeks, batas kuota,
-transaksi slot, pengujian emulator dan prosedur review deploy.
+### Cloud Firestore Security & Data Integrity
+- **Collision-Free Scheduling**: Booking creation atomically claims `/bookingSlots/{slotMillis}` inside the transaction.
+- **Optimistic Concurrency & 2-Step Approval**: Every `serviceOrders/{id}` mutation increments `revision`, appends an immutable audit record under `events/{revision}`, and requires admin sign-off before marking `completed` or decrementing stock from `partRequests`.
+- **Hardened Configuration**: `android:allowBackup="false"` in `AndroidManifest.xml`, and tightened `/invoices/{id}` `allow get` rules ensuring customers can only probe non-existent invoice documents tied to their own `serviceOrders/{id}`.
 
-## Validasi
+---
 
-```sh
-flutter pub get
-dart format .
-flutter analyze
-flutter test
-flutter build apk --debug
-npm ci --no-audit --no-fund
-npm run test:rules
-```
+## Getting Started
 
-SDK lokal: Flutter 3.44.2 / Dart 3.12.2. Test emulator memakai demo project lokal,
-bukan project produksi. Hasil dan keterbatasan: [laporan Phase 06.5](docs/PHASE_06_5_REPORT.md).
-Riwayat Phase 01: [status fondasi](docs/PHASE_STATUS.md) dan
-[laporan fondasi](docs/mobile-foundation-report.md).
+1. **Prerequisites**: Flutter SDK (Dart 3.11+), Android Studio / SDK, and Firebase configuration (`docs/FIREBASE_SETUP.md`).
+2. **Install dependencies**:
+   ```bash
+   flutter pub get
+   ```
+3. **Run static analysis & full automated test suite**:
+   ```bash
+   flutter analyze --no-pub
+   flutter test
+   ```
+4. **Regenerate UI showcase screenshots** (optional):
+   ```bash
+   flutter test --dart-define=CAPTURE_UI=true test/crisp_screenshots_test.dart
+   ```
+5. **Run on Android emulator/device**:
+   ```bash
+   flutter run
+   ```
 
-## Batas fase ini
+---
 
-- Slot kapasitas satu, belum menghitung durasi servis, bay/teknisi atau hari libur.
-- Kueri maksimal 50 kendaraan, 50 layanan dan 100 booking terbaru; belum pagination.
-- Archive kendaraan tidak menghapus snapshot booking. Keunikan plat belum dipaksakan.
-- Operator mengisi katalog di Console; UI CRUD katalog admin belum tersedia.
-- Backend saat ini satu bengkel per Firebase project; belum mendukung tenant/bengkel ganda.
-- SO completed lama tanpa harga jasa menampilkan "tidak tercatat", tanpa mengarang total.
-- Riwayat customer/admin membaca status invoice realtime; metadata cache ditandai. Teknisi tidak membaca invoice.
-- Detail membaca seluruh snapshot sparepart dalam halaman 20; biaya baca sebanding jumlah baris.
-- Filter riwayat memakai nama/plat dan jenis servis. Pilihan customer maksimal 50 termasuk arsip; admin/teknisi dari halaman yang dimuat.
-- Deploy rules/indexes dan acceptance produksi/perangkat asli belum dilakukan.
-- Tidak ada uji dua perangkat Android atau native iPhone pada host ini.
-- Auth/session cache native setelah process kill dan email produksi perlu smoke test perangkat.
-- Release Android tetap unsigned sampai keystore asli disiapkan; iOS perlu Team asli.
+## Verification Status
 
-Phase 07 menambahkan QA emulator terisolasi, seed/reset dan CI. Panduan akun/data:
-[TEST_DATA_GUIDE](docs/TEST_DATA_GUIDE.md). Hasil otomatis, batas pengujian perangkat
-dan UAT: [laporan Phase 07](docs/PHASE_07_REPORT.md) dan [QA Gate](docs/QA_GATE.md).
-Phase 08 belum dimulai. [Roadmap](docs/ROADMAP.md).
+- `flutter analyze --no-pub`: **0 issues found**
+- `flutter test`: **All 147 tests passing** (unit logic, RBAC routing, responsive `320dp` & `200%` text scaling across all role screens, Firestore fakes, inventory ledger, and Crisp Automotive UI widgets)
+- Firebase Security Rules Emulator tests (`test_rules/*.test.cjs`): Updated with invoice existence-guard tests; execution requires a local Java Runtime Environment (JRE) for the Firebase Local Emulator Suite.

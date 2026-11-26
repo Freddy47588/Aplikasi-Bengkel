@@ -58,7 +58,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyWorkshopError(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -77,9 +77,16 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20),
           children: [
+            if (!admin) ...[
+              CustomerFlowTabs(
+                selected: 'invoices',
+                onSelected: (tab) => context.go('/customer/$tab'),
+              ),
+              const SizedBox(height: 14),
+            ],
             const PageIntro(
               showTitle: false,
-              art: WorkshopArt.checklist,
+              art: WorkshopArt.report,
               title: 'Invoice servis',
               description:
                   'Lihat tagihan dan status pembayaran pada periode yang dipilih.',
@@ -257,14 +264,67 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                       icon: Icons.receipt_long_outlined,
                     ),
                   for (final i in p.items)
-                    WorkshopRecordCard(
-                      icon: Icons.receipt_long_outlined,
-                      title: i.text('invoiceNo'),
-                      description:
-                          '${i.text('vehiclePlate')} • ${i.text('serviceName')}\n${rupiah(i.number('grandTotal'))}',
-                      status: PaymentBadge(status: i.text('status')),
-                      onTap: () => context.push(
-                        '/${admin ? 'admin' : 'customer'}/invoices/${i.id}',
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () => context.push(
+                          '/${admin ? 'admin' : 'customer'}/invoices/${i.id}',
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      i.text('invoiceNo'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                  PaymentBadge(status: i.text('status')),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                i.text('serviceName'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: AppColors.muted),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  IndonesianPlateBadge(
+                                    plate: i.text('vehiclePlate'),
+                                  ),
+                                  Text(
+                                    rupiah(i.number('grandTotal')),
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   if (p.hasMore)
@@ -320,7 +380,7 @@ class _InvoiceDetailState extends ConsumerState<InvoiceDetailScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyWorkshopError(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }

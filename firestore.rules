@@ -28,9 +28,11 @@ service cloud.firestore {
     match /vehicles/{id} {
       function valid(d) {
         return d.keys().hasAll(['ownerId', 'name', 'plate', 'active', 'createdAt', 'updatedAt'])
-          && d.keys().hasOnly(['ownerId', 'name', 'plate', 'active', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['ownerId', 'name', 'plate', 'kind', 'notes', 'active', 'createdAt', 'updatedAt'])
           && d.ownerId == request.auth.uid && d.name is string && d.name.size() > 0 && d.name.size() <= 80
           && d.plate is string && d.plate.matches('^[A-Z]{1,2} [0-9]{1,4}( [A-Z]{1,3})?$')
+          && (!('kind' in d) || d.kind in ['motorcycle', 'car'])
+          && (!('notes' in d) || (d.notes is string && d.notes.size() <= 500))
           && d.active is bool && d.createdAt is timestamp && d.updatedAt == request.time;
       }
       allow get: if customer() && resource.data.ownerId == request.auth.uid;
@@ -39,7 +41,7 @@ service cloud.firestore {
         && request.resource.data.active == true && request.resource.data.createdAt == request.time;
       allow update: if customer() && resource.data.ownerId == request.auth.uid && resource.data.active == true
         && valid(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'plate', 'active', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'plate', 'kind', 'notes', 'active', 'updatedAt']);
       allow delete: if false;
     }
 
@@ -487,7 +489,7 @@ service cloud.firestore {
           && e.recordedBy == d.recordedBy && e.notes == d.notes && e.method == d.method && e.paidAt == request.time
           && (paid(d, old, e) || cancelled(d, old, e));
       }
-      allow get: if admin() || (customer() && (!exists(invoicePath(id)) || resource.data.customerId == request.auth.uid));
+      allow get: if admin() || (customer() && ((exists(invoicePath(id)) && resource.data.customerId == request.auth.uid) || (!exists(invoicePath(id)) && exists(orderPath(id)) && get(orderPath(id)).data.customerId == request.auth.uid)));
       allow list: if bounded(20) && invoiceReadable(resource.data);
       allow create: if admin() && valid(request.resource.data) && issued(request.resource.data);
       allow update: if admin() && valid(request.resource.data) && changed(request.resource.data, resource.data);

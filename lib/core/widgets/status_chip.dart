@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
+import '../../app/theme/app_tokens.dart';
 
 enum StatusChipTone { success, warning, neutral, danger, info }
 
@@ -16,25 +17,27 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (tone) {
-      StatusChipTone.success => AppColors.success,
-      StatusChipTone.warning => AppColors.warning,
-      StatusChipTone.danger => AppColors.danger,
-      StatusChipTone.info => AppColors.info,
-      StatusChipTone.neutral => AppColors.onMuted,
+    final (fg, bg) = switch (tone) {
+      StatusChipTone.success => (AppColors.success, const Color(0xFFECFDF5)),
+      StatusChipTone.warning => (AppColors.warning, const Color(0xFFFFFBEB)),
+      StatusChipTone.danger => (AppColors.danger, const Color(0xFFFEF2F2)),
+      StatusChipTone.info => (AppColors.secondary, AppColors.accentSoft),
+      StatusChipTone.neutral => (AppColors.onMuted, AppColors.background),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
+          color: fg,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

@@ -4,6 +4,8 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_tokens.dart';
 import 'status_chip.dart';
 import 'workshop_art.dart';
+export 'crisp_components.dart';
+export 'error_messages.dart';
 export 'workshop_art.dart';
 export 'session_splash.dart';
 
@@ -42,18 +44,10 @@ class WorkshopBody extends StatelessWidget {
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppSpace.pageWidth),
-        child: Column(
-          children: [
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: child,
-              ),
-            ),
-            if (showWave && MediaQuery.viewInsetsOf(context).bottom == 0)
-              const WorkshopWave(),
-          ],
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: child,
         ),
       ),
     ),
@@ -111,12 +105,16 @@ class BrandEmblem extends StatelessWidget {
   const BrandEmblem({super.key, this.size = 56});
   final double size;
   @override
-  Widget build(BuildContext context) => Image.asset(
-    'assets/branding/emblem-mockup.png',
-    width: size,
-    height: size,
-    cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
-    semanticLabel: 'Logo roda gigi dan kunci pas BengkelKu',
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(size * 0.25),
+    child: Image.asset(
+      'assets/branding/logo_v2.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
+      semanticLabel: 'Logo roda gigi dan kunci pas BengkelKu',
+    ),
   );
 }
 
@@ -142,10 +140,13 @@ class BrandLockup extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         const SizedBox(height: AppSpace.xs),
-        const Text(
-          'Aplikasi Manajemen Bengkel',
+        Text(
+          'Smart Workshop Management',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.primary),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.onMuted,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     ),
@@ -183,7 +184,7 @@ class WorkshopRecordCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpace.sm),
               decoration: BoxDecoration(
-                color: AppColors.blueSurface,
+                color: AppColors.accentSoft,
                 borderRadius: BorderRadius.circular(AppRadius.control),
               ),
               child: Icon(icon, color: AppColors.secondary),
@@ -270,9 +271,9 @@ class WorkshopHero extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(AppSpace.xl),
     decoration: BoxDecoration(
-      color: AppColors.blueSurface,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(AppRadius.hero),
-      border: Border.all(color: AppColors.blueBorder),
+      border: Border.all(color: AppColors.border),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
