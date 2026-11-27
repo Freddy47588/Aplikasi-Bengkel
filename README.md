@@ -1,17 +1,25 @@
 <div align="center">
   <img src="assets/branding/logo_v2.png" alt="BengkelKu Logo" width="112" />
-  <h1>BengkelKu — Smart Workshop Management</h1>
+  <h1>🔧 BengkelKu — Smart Workshop Management</h1>
   <p>
     <strong>End-to-end Android workshop booking, service order, spare-part inventory, and invoicing system built with Flutter &amp; Firebase.</strong>
   </p>
   <p>
     <em>Crisp Automotive Edition • Role-Based Access Control (Customer, Admin/Cashier, Technician) • Cloud Firestore Transactions</em>
   </p>
+  <p>
+    <img src="https://img.shields.io/badge/Flutter-3.44.2-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
+    <img src="https://img.shields.io/badge/Dart-3.12.2-0175C2?style=flat-square&logo=dart&logoColor=white" alt="Dart" />
+    <img src="https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-FFCA28?style=flat-square&logo=firebase&logoColor=black" alt="Firebase" />
+    <img src="https://img.shields.io/badge/Android-APK%20v1.0.0-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android APK v1.0.0" />
+    <img src="https://img.shields.io/badge/Tests-150%2F150%20Passing-059669?style=flat-square&logo=checkmarx&logoColor=white" alt="Tests 150/150 Passing" />
+    <img src="https://img.shields.io/badge/Theme-Crisp%20Automotive-EA580C?style=flat-square" alt="Crisp Automotive" />
+  </p>
 </div>
 
 ---
 
-## Overview
+## 📌 Overview
 
 **BengkelKu** (`bengkel_kendaraan`) digitizes automotive workshop operations into a unified real-time mobile experience powered by **Flutter**, **Riverpod**, **GoRouter**, **Firebase Authentication**, and **Cloud Firestore**.
 
@@ -25,29 +33,29 @@ The interface follows the **Crisp Automotive** design language—combining pure 
 
 ---
 
-## Key Features by Role
+## ✨ Key Features by Role
 
-### Customer
-- **Email Authentication & Verification**: Self-registration, email verification gate, and password reset (`LoginScreen`, `AccountScreen`, `ProfileScreen`).
-- **Personal Vehicle Garage**: Add, edit, and soft-archive motorcycles or cars with automatic Indonesian license plate normalization (`B 1234 XYZ`).
-- **Hourly WIB Booking Slots**: Collision-free hourly visit booking (`09:00–16:00 WIB`, up to 90 days ahead) locked atomically via `bookingSlots`.
-- **Realtime Tracking, History & PDF Invoices**: Segmented `Progres | Riwayat | Invoice` flow with live service stage visualization and itemized receipts.
+### 🚗 Customer
+- 🔐 **Email Authentication & Verification**: Self-registration, email verification gate, and password reset (`LoginScreen`, `AccountScreen`, `ProfileScreen`).
+- 🏍️ **Personal Vehicle Garage**: Add, edit, and permanently delete motorcycles or cars with automatic Indonesian license plate normalization (`B 1234 XYZ`), while preserving historical service snapshots.
+- 📅 **Hourly WIB Booking Slots**: Collision-free hourly visit booking (`09:00–11:00` and `13:00–16:00 WIB`, up to 90 days ahead, filtering expired same-day hours) locked atomically via `bookingSlots`.
+- 📜 **Realtime Tracking, History & PDF Invoices**: Segmented `Progres | Riwayat | Invoice` flow with live service stage visualization and itemized receipts.
 
-### Admin / Cashier
-- **Operational Carbon Dashboard**: Real-time KPI summary (active service orders, pending bookings, jobs awaiting final approval, and low-stock SKUs).
-- **Booking & Technician Dispatch**: Confirm or reject bookings, create `ServiceOrder` records, inspect checklist/work logs, and assign available technicians.
-- **2-Step Approval Workflow**: Approve technician spare-part requests (`partRequests`) and review completion submissions (`awaitingApproval`) before finalizing an order.
-- **Atomic Spare-Part Inventory & Ledger**: SKU search, low-stock tracking, and immutable `stockMovements` audit trails with full reversal support.
-- **Billing, Cashier & Reporting**: Issue canonical invoices (`INV~...`), record cash or transfer payments, execute void/full refund operations, generate PDF receipts, and query paid revenue summaries (up to 31-day windows).
+### 🛠️ Admin / Cashier
+- 📊 **Operational Carbon Dashboard**: Real-time KPI summary (active service orders, pending bookings, jobs awaiting final approval, and low-stock SKUs).
+- 📋 **Booking & Technician Dispatch**: Confirm or reject bookings, create `ServiceOrder` records, inspect checklist/work logs, assign available technicians, and permanently remove idle technician records.
+- ✅ **2-Step Approval Workflow**: Approve technician spare-part requests (`partRequests`) and review completion submissions (`awaitingApproval`) before finalizing an order.
+- 📦 **Atomic Spare-Part Inventory & Ledger**: SKU search, low-stock tracking, permanent master SKU deletion, and immutable `stockMovements` audit trails with full reversal support.
+- 🧾 **Billing, Cashier & Reporting**: Issue canonical invoices (`INV~...`), record cash or transfer payments, execute void/full refund operations, generate PDF receipts, and query paid revenue summaries (up to 31-day windows).
 
-### Technician
-- **Focused Task Spotlight**: Active vehicle spotlight card with Indonesian plate pill and 3-stage progress strip (`Menunggu → Diproses → Selesai`).
-- **Checklist, Diagnosis & Actions**: Structured pre-work, safety, and quality inspection checklist saved with optimistic revision locking.
-- **Part Requests & Completion Submission**: Quick spare-part requests routed to admin approval, plus structured completion review before admin sign-off.
+### 👨‍🔧 Technician
+- 🎯 **Focused Task Spotlight**: Active vehicle spotlight card with Indonesian plate pill and 3-stage progress strip (`Menunggu → Diproses → Selesai`).
+- 🩺 **Checklist, Diagnosis & Actions**: Structured pre-work, safety, and quality inspection checklist saved with optimistic revision locking.
+- 🔩 **Part Requests & Completion Submission**: Quick spare-part requests routed to admin approval, plus structured completion review before admin sign-off.
 
 ---
 
-## Crisp Automotive UI Gallery
+## 📱 Crisp Automotive UI Gallery
 
 All screenshots below are rendered directly from real Flutter widget trees (`390×844 @ 2.0x`):
 
@@ -73,7 +81,7 @@ All screenshots below are rendered directly from real Flutter widget trees (`390
 
 ---
 
-## Architecture & Tech Stack
+## 🏗️ Architecture & Tech Stack
 
 ```text
 lib/
@@ -99,14 +107,14 @@ lib/
 - **Backend & Security**: `firebase_core`, `firebase_auth`, `cloud_firestore` paired with strict `firestore.rules`
 - **Document Export**: `pdf` & `printing` using Crisp branding and bundled `NotoSans` fonts
 
-### Cloud Firestore Security & Data Integrity
-- **Collision-Free Scheduling**: Booking creation atomically claims `/bookingSlots/{slotMillis}` inside the transaction.
-- **Optimistic Concurrency & 2-Step Approval**: Every `serviceOrders/{id}` mutation increments `revision`, appends an immutable audit record under `events/{revision}`, and requires admin sign-off before marking `completed` or decrementing stock from `partRequests`.
-- **Hardened Configuration**: `android:allowBackup="false"` in `AndroidManifest.xml`, and tightened `/invoices/{id}` `allow get` rules ensuring customers can only probe non-existent invoice documents tied to their own `serviceOrders/{id}`.
+### 🛡️ Cloud Firestore Security & Data Integrity
+- ⏱️ **Collision-Free Scheduling**: Booking creation atomically claims `/bookingSlots/{slotMillis}` inside the transaction.
+- 🔒 **Optimistic Concurrency & 2-Step Approval**: Every `serviceOrders/{id}` mutation increments `revision`, appends an immutable audit record under `events/{revision}`, and requires admin sign-off before marking `completed` or decrementing stock from `partRequests`.
+- 🛡️ **Hardened Configuration**: `android:allowBackup="false"` in `AndroidManifest.xml`, and tightened `/invoices/{id}` `allow get` rules ensuring customers can only probe non-existent invoice documents tied to their own `serviceOrders/{id}`.
 
 ---
 
-## Getting Started
+## 💻 Getting Started
 
 1. **Prerequisites**: Flutter SDK (Dart 3.11+), Android Studio / SDK, and Firebase configuration (`docs/FIREBASE_SETUP.md`).
 2. **Install dependencies**:
@@ -129,7 +137,7 @@ lib/
 
 ---
 
-## Release Build & GitHub Distribution
+## 🚀 Release Build & GitHub Distribution
 
 1. **Configure private Android signing** (already excluded in `.gitignore` via `*.jks` and `/android/key.properties`):
    ```properties
@@ -151,9 +159,9 @@ lib/
 
 ---
 
-## Verification Status
+## ✅ Verification Status
 
-- `dart format --output=none --set-exit-if-changed .`: **Clean**
-- `flutter analyze --no-pub`: **0 issues found**
-- `flutter test`: **All 150 tests passing** (unit logic, RBAC routing, hard delete for master entities, responsive `320dp` & `200%` text scaling across all role screens, Firestore fakes, inventory ledger, and Crisp Automotive UI widgets)
-- Firebase Security Rules Emulator tests (`test_rules/*.test.cjs`): Updated with invoice existence-guard and master-entity delete tests; validated on GitHub Actions (`qa.yml`) with Java 21 + Firebase Local Emulator Suite.
+- ✅ `dart format --output=none --set-exit-if-changed .`: **Clean**
+- ✅ `flutter analyze --no-pub`: **0 issues found**
+- ✅ `flutter test`: **All 150 tests passing** (unit logic, RBAC routing, hard delete for master entities, responsive `320dp` & `200%` text scaling across all role screens, Firestore fakes, inventory ledger, and Crisp Automotive UI widgets)
+- ✅ Firebase Security Rules Emulator tests (`test_rules/*.test.cjs`): Updated with invoice existence-guard and master-entity delete tests; validated on GitHub Actions (`qa.yml`) with Java 21 + Firebase Local Emulator Suite.
