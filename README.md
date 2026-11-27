@@ -129,8 +129,31 @@ lib/
 
 ---
 
+## Release Build & GitHub Distribution
+
+1. **Configure private Android signing** (already excluded in `.gitignore` via `*.jks` and `/android/key.properties`):
+   ```properties
+   # android/key.properties
+   storePassword=<keystore-password>
+   keyPassword=<key-password>
+   keyAlias=bengkelku
+   storeFile=bengkelku-release.jks
+   ```
+2. **Build a signed release APK**:
+   ```bash
+   flutter build apk --release
+   ```
+   Output artifact: `build/app/outputs/flutter-apk/app-release.apk`.
+3. **Publish on GitHub Releases**:
+   ```bash
+   gh release create v1.0.0 build/app/outputs/flutter-apk/app-release.apk --title "BengkelKu v1.0.0" --generate-notes
+   ```
+
+---
+
 ## Verification Status
 
+- `dart format --output=none --set-exit-if-changed .`: **Clean**
 - `flutter analyze --no-pub`: **0 issues found**
-- `flutter test`: **All 147 tests passing** (unit logic, RBAC routing, responsive `320dp` & `200%` text scaling across all role screens, Firestore fakes, inventory ledger, and Crisp Automotive UI widgets)
-- Firebase Security Rules Emulator tests (`test_rules/*.test.cjs`): Updated with invoice existence-guard tests; execution requires a local Java Runtime Environment (JRE) for the Firebase Local Emulator Suite.
+- `flutter test`: **All 150 tests passing** (unit logic, RBAC routing, hard delete for master entities, responsive `320dp` & `200%` text scaling across all role screens, Firestore fakes, inventory ledger, and Crisp Automotive UI widgets)
+- Firebase Security Rules Emulator tests (`test_rules/*.test.cjs`): Updated with invoice existence-guard and master-entity delete tests; validated on GitHub Actions (`qa.yml`) with Java 21 + Firebase Local Emulator Suite.

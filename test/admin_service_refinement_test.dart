@@ -355,4 +355,30 @@ void main() {
     }
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'admin technician editor permanently deletes idle technician and rejects busy technician',
+    (tester) async {
+      final db = await adminFixture();
+      final container = await openAdmin(tester, db, '/admin/technicians');
+      await reveal(tester, find.text('Sinta'));
+      await tester.tap(find.text('Sinta'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus teknisi?'), findsOneWidget);
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      expect((await db.doc('technicians/available-tech').get()).exists, false);
+      await expectLater(
+        container
+            .read(serviceOrderRepositoryProvider)
+            .deleteTechnician('technician-demo'),
+        throwsStateError,
+      );
+      expect((await db.doc('technicians/technician-demo').get()).exists, true);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 }

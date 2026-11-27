@@ -65,11 +65,7 @@ class SplashArtwork extends StatelessWidget {
                 shaderCallback: (rect) => const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Color(0xB8000000),
-                    Colors.black,
-                  ],
+                  colors: [Colors.transparent, Color(0xB8000000), Colors.black],
                   stops: [0.0, 0.42, 1.0],
                 ).createShader(rect),
                 child: Image.asset(

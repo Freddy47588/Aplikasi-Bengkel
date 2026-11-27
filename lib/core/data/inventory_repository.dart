@@ -11,6 +11,7 @@ abstract class InventoryRepository {
   Future<RecordPage<Sparepart>> list(InventoryFilter filter);
   Future<Sparepart?> get(String sku);
   Future<void> save(SparepartDraft draft, {int? expectedVersion});
+  Future<void> delete(String sku);
   Future<StockMovement> post(MovementCommand command);
   Future<StockMovement> reverse(String movementId, String reason);
   Future<RecordPage<StockMovement>> ledger(LedgerFilter filter);
@@ -108,6 +109,19 @@ class FirestoreInventoryRepository implements InventoryRepository {
           'createdBy': uid,
         });
       }
+    });
+  }
+
+  @override
+  Future<void> delete(String sku) async {
+    adminOnly();
+    final key = canonicalSku(sku);
+    if (!validSku(key)) throw ArgumentError('SKU tidak valid.');
+    final ref = db.collection('spareparts').doc(key);
+    await db.runTransaction((tx) async {
+      final old = await tx.get(ref);
+      if (!old.exists) throw StateError('SKU tidak ditemukan.');
+      tx.delete(ref);
     });
   }
 

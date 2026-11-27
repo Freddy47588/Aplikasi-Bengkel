@@ -118,11 +118,7 @@ class FirestoreVehicleRepository implements VehicleRepository {
     if (!before.exists || before['ownerId'] != uid) {
       throw StateError('Kendaraan bukan milik Anda.');
     }
-    // Keep booking snapshots/history valid after deleting a vehicle.
-    tx.update(doc, {
-      'active': false,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    tx.delete(doc);
   });
 }
 

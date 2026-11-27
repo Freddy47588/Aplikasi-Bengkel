@@ -156,7 +156,7 @@ void main() {
   );
 
   testWidgets(
-    'customer vehicles UI creates, edits and archives through the Firestore repository',
+    'customer vehicles UI creates, edits and permanently deletes through the Firestore repository',
     (tester) async {
       final database = FakeFirebaseFirestore();
       final fake = FakeAuthRepository();
@@ -220,13 +220,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hapus'));
       await tester.pumpAndSettle();
-      expect(find.text('Honda Brio RS'), findsOneWidget);
-      expect(find.text('Nonaktif'), findsOneWidget);
-      final saved = (await database.collection('vehicles').get()).docs.single;
-      expect(saved['active'], false);
-      expect(saved['ownerId'], 'customer-demo');
-      expect(saved['kind'], 'car');
-      expect(saved['notes'], 'Putih, tahun 2023');
+      expect(find.text('Honda Brio RS'), findsNothing);
+      expect((await database.collection('vehicles').get()).docs, isEmpty);
       await tester.pumpWidget(const SizedBox());
     },
   );

@@ -48,7 +48,7 @@ void main() {
   });
 
   testWidgets(
-    'legacy vehicle requires an explicit kind; archive remains readable and cannot be edited',
+    'legacy vehicle requires an explicit kind; delete removes vehicle permanently',
     (tester) async {
       viewport(tester, 320);
       final db = FakeFirebaseFirestore();
@@ -104,16 +104,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hapus'));
       await tester.pumpAndSettle();
-      expect(find.text('Nonaktif'), findsOneWidget);
-      await reveal(tester, find.text('Honda Lama'));
-      await tester.tap(find.text('Honda Lama'));
-      await tester.pumpAndSettle();
-      expect(find.text('Simpan Kendaraan'), findsNothing);
-      for (final field in tester.widgetList<TextFormField>(
-        find.byType(TextFormField),
-      )) {
-        expect(field.enabled, false);
-      }
+      expect(find.text('Honda Lama'), findsNothing);
+      expect((await db.doc('vehicles/legacy').get()).exists, false);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

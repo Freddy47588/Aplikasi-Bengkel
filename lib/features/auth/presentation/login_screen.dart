@@ -106,10 +106,7 @@ class _LoginState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AccountIntro(
-                      title: _title,
-                      description: _subtitle,
-                    ),
+                    AccountIntro(title: _title, description: _subtitle),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -204,9 +201,9 @@ class _LoginState extends ConsumerState<LoginScreen> {
                                   onPressed: busy
                                       ? null
                                       : () => setState(() {
-                                            resetMode = true;
-                                            message = null;
-                                          }),
+                                          resetMode = true;
+                                          message = null;
+                                        }),
                                   child: const Text('Lupa kata sandi'),
                                 ),
                               ),
@@ -222,10 +219,12 @@ class _LoginState extends ConsumerState<LoginScreen> {
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
                                     color: messageSuccess
-                                        ? AppColors.success
-                                            .withValues(alpha: 0.3)
-                                        : AppColors.danger
-                                            .withValues(alpha: 0.3),
+                                        ? AppColors.success.withValues(
+                                            alpha: 0.3,
+                                          )
+                                        : AppColors.danger.withValues(
+                                            alpha: 0.3,
+                                          ),
                                   ),
                                 ),
                                 child: Semantics(
@@ -247,8 +246,9 @@ class _LoginState extends ConsumerState<LoginScreen> {
                             ],
                             if (resetMode)
                               FilledButton.icon(
-                                onPressed:
-                                    busy ? null : () => submit(reset: true),
+                                onPressed: busy
+                                    ? null
+                                    : () => submit(reset: true),
                                 icon: busy
                                     ? const SizedBox(
                                         width: 18,
@@ -285,9 +285,9 @@ class _LoginState extends ConsumerState<LoginScreen> {
                                 onPressed: busy
                                     ? null
                                     : () => setState(() {
-                                          resetMode = false;
-                                          message = null;
-                                        }),
+                                        resetMode = false;
+                                        message = null;
+                                      }),
                                 child: const Text('Kembali ke Login'),
                               )
                             else
@@ -295,9 +295,9 @@ class _LoginState extends ConsumerState<LoginScreen> {
                                 onPressed: busy
                                     ? null
                                     : () => setState(() {
-                                          register = !register;
-                                          message = null;
-                                        }),
+                                        register = !register;
+                                        message = null;
+                                      }),
                                 child: Text(
                                   register
                                       ? 'Sudah punya akun? Masuk'
@@ -395,13 +395,13 @@ class _AccountState extends ConsumerState<AccountScreen>
                     title: verification
                         ? 'Verifikasi Email Anda'
                         : !s.active
-                            ? 'Akses Akun Dinonaktifkan'
-                            : 'Menyiapkan Profil Akun',
+                        ? 'Akses Akun Dinonaktifkan'
+                        : 'Menyiapkan Profil Akun',
                     description: verification
                         ? 'Kami perlu memastikan email ${s.email ?? '-'} aktif sebelum membuka dashboard ${s.role?.label ?? 'BengkelKu'}.'
                         : !s.active
-                            ? 'Akun dinonaktifkan. Hubungi pengelola bengkel.'
-                            : 'Data profil Anda belum lengkap. Tekan muat ulang atau lengkapi profil.',
+                        ? 'Akun dinonaktifkan. Hubungi pengelola bengkel.'
+                        : 'Data profil Anda belum lengkap. Tekan muat ulang atau lengkapi profil.',
                   ),
                   const SizedBox(height: 18),
                   if (!s.active && s.role != null)
@@ -425,9 +425,9 @@ class _AccountState extends ConsumerState<AccountScreen>
                       onPressed: busy
                           ? null
                           : () => run(
-                                repo.sendVerification,
-                                'Email verifikasi dikirim ke ${s.email ?? 'alamat Anda'}.',
-                              ),
+                              repo.sendVerification,
+                              'Email verifikasi dikirim ke ${s.email ?? 'alamat Anda'}.',
+                            ),
                       icon: const Icon(Icons.mark_email_read_outlined),
                       label: const Text('Kirim Ulang'),
                     ),

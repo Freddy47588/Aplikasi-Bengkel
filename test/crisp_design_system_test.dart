@@ -191,15 +191,16 @@ void main() {
                   ),
                   const SizedBox(height: 12),
                   StatefulBuilder(
-                    builder: (context, setState) => WorkshopSegmentedTabs<String>(
-                      items: const [
-                        ('progres', 'Progres'),
-                        ('riwayat', 'Riwayat'),
-                        ('invoice', 'Invoice'),
-                      ],
-                      selected: selected,
-                      onSelected: (v) => setState(() => selected = v),
-                    ),
+                    builder: (context, setState) =>
+                        WorkshopSegmentedTabs<String>(
+                          items: const [
+                            ('progres', 'Progres'),
+                            ('riwayat', 'Riwayat'),
+                            ('invoice', 'Invoice'),
+                          ],
+                          selected: selected,
+                          onSelected: (v) => setState(() => selected = v),
+                        ),
                   ),
                 ],
               ),

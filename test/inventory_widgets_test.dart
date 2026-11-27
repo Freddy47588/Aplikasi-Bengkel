@@ -68,16 +68,61 @@ void main() {
       await tester.tap(find.text('Simpan master'));
       await tester.tap(find.text('Simpan master'), warnIfMissed: false);
       await tester.pumpAndSettle();
-      expect(find.text('Arsipkan sparepart?'), findsOneWidget);
+      expect(find.text('Nonaktifkan sparepart?'), findsOneWidget);
       expect((await repo.get('OIL'))!.active, true);
       await tester.tap(find.text('Kembali'));
       await tester.pumpAndSettle();
       expect((await repo.get('OIL'))!.active, true);
       await tester.tap(find.text('Simpan master'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Arsipkan'));
+      await tester.tap(find.text('Nonaktifkan'));
       await tester.pumpAndSettle();
       expect((await repo.get('OIL'))!.active, false);
+      expect(find.text('Buka master'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'sparepart permanent delete removes master after confirmation and cancels cleanly',
+    (tester) async {
+      final db = FakeFirebaseFirestore();
+      final repo = FirestoreInventoryRepository(db, 'admin', UserRole.admin);
+      await repo.save(draft());
+      final part = (await repo.get('OIL'))!;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [inventoryRepositoryProvider.overrideWithValue(repo)],
+          child: MaterialApp(
+            theme: buildAppTheme(),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SparepartEditor(part: part),
+                    ),
+                  ),
+                  child: const Text('Buka master'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Buka master'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus sparepart?'), findsOneWidget);
+      await tester.tap(find.text('Kembali'));
+      await tester.pumpAndSettle();
+      expect(await repo.get('OIL'), isNotNull);
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      expect(await repo.get('OIL'), isNull);
       expect(find.text('Buka master'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

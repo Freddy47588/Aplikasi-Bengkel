@@ -47,9 +47,7 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
     final email = session.email ?? 'Pengguna BengkelKu';
     final verification = StatusChip(
       label: session.verified ? 'Email Terverifikasi' : 'Belum Terverifikasi',
-      tone: session.verified
-          ? StatusChipTone.success
-          : StatusChipTone.warning,
+      tone: session.verified ? StatusChipTone.success : StatusChipTone.warning,
     );
 
     return Scaffold(
@@ -113,25 +111,25 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
                       onTap: busy || session.email == null
                           ? null
                           : () => run(
-                                () => repo.resetPassword(session.email!),
-                                'Tautan ubah password dikirim ke ${session.email}.',
-                              ),
+                              () => repo.resetPassword(session.email!),
+                              'Tautan ubah password dikirim ke ${session.email}.',
+                            ),
                     ),
                     const Divider(height: 22),
                     Text(
                       'Verifikasi Email',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       session.verified
                           ? 'Email akun sudah terverifikasi.'
                           : 'Buka tautan verifikasi pada email lalu muat ulang status akun.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -143,9 +141,9 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
                             onPressed: busy
                                 ? null
                                 : () => run(
-                                      repo.sendVerification,
-                                      'Email verifikasi dikirim.',
-                                    ),
+                                    repo.sendVerification,
+                                    'Email verifikasi dikirim.',
+                                  ),
                             icon: const Icon(Icons.mark_email_read_outlined),
                             label: const Text('Kirim Verifikasi'),
                           ),
@@ -208,8 +206,9 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.directions_car_outlined),
                         title: const Text('Kendaraan Saya'),
-                        subtitle:
-                            const Text('Kelola daftar motor dan mobil Anda'),
+                        subtitle: const Text(
+                          'Kelola daftar motor dan mobil Anda',
+                        ),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => context.go('/customer/vehicles'),
                       ),

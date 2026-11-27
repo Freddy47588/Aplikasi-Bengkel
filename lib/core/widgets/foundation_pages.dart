@@ -209,9 +209,9 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyWorkshopError(error))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyWorkshopError(error))));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -296,8 +296,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                           ),
                           const SizedBox(height: 6),
                           Text('Nomor booking: ${b.id}'),
-                          if (!customer)
-                            Text('ID pelanggan: ${b.customerId}'),
+                          if (!customer) Text('ID pelanggan: ${b.customerId}'),
                         ],
                       ),
                     ),
@@ -341,9 +340,7 @@ class _BookingDetailState extends ConsumerState<BookingDetailPage> {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(
-                                          friendlyWorkshopError(e),
-                                        ),
+                                        content: Text(friendlyWorkshopError(e)),
                                       ),
                                     );
                                   }

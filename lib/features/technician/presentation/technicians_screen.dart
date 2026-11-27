@@ -301,9 +301,46 @@ class _TechnicianEditorState extends ConsumerState<TechnicianEditor> {
     super.dispose();
   }
 
+  Future<void> remove() async {
+    final approved = await confirmWorkshopAction(
+      context,
+      'Hapus data operasional teknisi ini secara permanen? Riwayat service order yang sudah ada tetap tersimpan.',
+      title: 'Hapus teknisi?',
+      confirmLabel: 'Hapus',
+    );
+    if (!approved || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await ref
+          .read(serviceOrderRepositoryProvider)
+          .deleteTechnician(widget.technician!.id);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          busy = false;
+          error = 'Gagal menghapus: $e';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Profil operasional teknisi')),
+    appBar: AppBar(
+      title: const Text('Profil operasional teknisi'),
+      actions: [
+        if (widget.technician != null)
+          IconButton(
+            tooltip: 'Hapus teknisi',
+            onPressed: busy ? null : remove,
+            icon: const Icon(Icons.delete_outline),
+          ),
+      ],
+    ),
     body: WorkshopBody(
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,

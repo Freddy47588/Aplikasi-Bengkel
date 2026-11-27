@@ -51,12 +51,12 @@ class TechnicianOverview extends ConsumerWidget {
   }
 
   int _progressStep(ServiceOrderStatus status) => switch (status) {
-        ServiceOrderStatus.queued || ServiceOrderStatus.assigned => 0,
-        ServiceOrderStatus.inProgress ||
-        ServiceOrderStatus.paused ||
-        ServiceOrderStatus.awaitingApproval => 1,
-        ServiceOrderStatus.completed || ServiceOrderStatus.cancelled => 2,
-      };
+    ServiceOrderStatus.queued || ServiceOrderStatus.assigned => 0,
+    ServiceOrderStatus.inProgress ||
+    ServiceOrderStatus.paused ||
+    ServiceOrderStatus.awaitingApproval => 1,
+    ServiceOrderStatus.completed || ServiceOrderStatus.cancelled => 2,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -101,16 +101,16 @@ class TechnicianOverview extends ConsumerWidget {
             Text(
               'Halo, Teknisi',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Pantau tugas aktif, perbarui checklist, dan ajukan kebutuhan sparepart.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
             orders.when(
@@ -269,8 +269,8 @@ class TechnicianOverview extends ConsumerWidget {
                     Text(
                       'Aksi Cepat Teknisi',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TechnicianShortcut(
@@ -298,20 +298,19 @@ class TechnicianOverview extends ConsumerWidget {
                       onTap: lead == null
                           ? null
                           : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ServiceCompletionScreen(orderId: lead.id),
-                                ),
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ServiceCompletionScreen(orderId: lead.id),
                               ),
+                            ),
                     ),
                     if (own.any((o) => !o.status.terminal)) ...[
                       const SizedBox(height: 14),
                       Text(
                         'Antrean Tugas Anda',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 10),
                       for (final task
@@ -510,16 +509,16 @@ class TechnicianShortcut extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: enabled ? AppColors.primary : AppColors.muted,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: enabled ? AppColors.primary : AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                     ),
                   ],
                 ),

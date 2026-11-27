@@ -78,6 +78,25 @@ void main() {
     },
   );
   test(
+    'master SKU hard delete removes document while preserving historical ledger and enforcing admin access',
+    () async {
+      await admin.post(command('receipt'));
+      await expectLater(tech.delete('OIL'), throwsStateError);
+      await expectLater(customer.delete('OIL'), throwsStateError);
+      await expectLater(admin.delete('MISSING'), throwsStateError);
+      await admin.delete('oil');
+      expect(await admin.get('OIL'), isNull);
+      expect(
+        (await admin.ledger((
+          cursor: null,
+          sku: 'OIL',
+          serviceOrderId: '',
+        ))).items.length,
+        1,
+      );
+    },
+  );
+  test(
     '5 - usage 2 = 3 plus ledger and sales snapshot; same operation retry never decrements twice',
     () async {
       await admin.post(command('receipt'));

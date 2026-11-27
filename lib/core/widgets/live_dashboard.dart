@@ -104,16 +104,16 @@ class LiveDashboard extends ConsumerWidget {
             Text(
               'Halo, Admin Bengkel',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Pantau antrean booking, penugasan teknisi, persetujuan servis, dan stok sparepart.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
             CarbonSpotlightCard(
@@ -248,7 +248,10 @@ class LiveDashboard extends ConsumerWidget {
                       const SizedBox(height: 6),
                       const Text(
                         'Periksa checklist teknisi, diagnosis, dan catatan pemakaian part sebelum menyelesaikan order.',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12.5),
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12.5,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       for (final o in awaitingApproval.take(2))
@@ -287,7 +290,8 @@ class LiveDashboard extends ConsumerWidget {
                 if (queue.isEmpty) {
                   return const EmptyState(
                     title: 'Belum ada booking masuk',
-                    description: 'Permintaan booking pelanggan akan tampil di sini.',
+                    description:
+                        'Permintaan booking pelanggan akan tampil di sini.',
                     icon: Icons.event_note_outlined,
                   );
                 }
@@ -348,13 +352,14 @@ class LiveDashboard extends ConsumerWidget {
                                             ),
                                             StatusChip(
                                               label: b.status.label,
-                                              tone: b.status ==
+                                              tone:
+                                                  b.status ==
                                                       BookingStatus.confirmed
                                                   ? StatusChipTone.success
                                                   : b.status ==
-                                                          BookingStatus.pending
-                                                      ? StatusChipTone.warning
-                                                      : StatusChipTone.neutral,
+                                                        BookingStatus.pending
+                                                  ? StatusChipTone.warning
+                                                  : StatusChipTone.neutral,
                                             ),
                                           ],
                                         ),
@@ -439,7 +444,9 @@ class LiveDashboard extends ConsumerWidget {
                             ),
                             title: Text(
                               part.text('name'),
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             subtitle: Text(
                               'SKU ${part.text('sku')} • Sisa ${part.stock} ${part.text('unit')}',
@@ -546,9 +553,9 @@ class _AdminHeading extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               TextButton(onPressed: onTap, child: Text(actionLabel)),
             ],
@@ -561,9 +568,9 @@ class _AdminHeading extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             TextButton(onPressed: onTap, child: Text(actionLabel)),

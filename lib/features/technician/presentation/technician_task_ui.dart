@@ -74,9 +74,9 @@ class TechnicianTaskCard extends StatelessWidget {
                       Text(
                         order.text('vehicleName'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),

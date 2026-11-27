@@ -50,7 +50,8 @@ test('master canonical unique SKU, integer prices/stock, low-stock invariant and
   await assertFails(setDoc(doc(db, 'spareparts', 'OIL'), part()));
   await assertSucceeds(updateDoc(doc(db, 'spareparts', 'OIL'), { name: 'Oli baru', supplier: 'Supplier', active: false, version: 1, updatedAt: now(), updatedBy: 'admin' }));
   await assertFails(post(db, 'inactive'));
-  await assertFails(deleteDoc(doc(db, 'spareparts', 'OIL')));
+  await assertFails(deleteDoc(doc(client('customer'), 'spareparts', 'NEW')));
+  await assertSucceeds(deleteDoc(doc(db, 'spareparts', 'NEW')));
 });
 
 test('stock 5 minus usage 2 equals 3 with immutable snapshot, prices and ledger; retry is a no-op', async () => {

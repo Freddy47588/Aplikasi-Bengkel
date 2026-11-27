@@ -99,7 +99,7 @@ test('customer A cannot read, query or change customer B profiles, vehicles or b
   await assertFails(getDocs(query(collection(a, 'bookingSlots'), limit(100))));
 });
 
-test('vehicles CRUD validates plate and immutable ownership; delete archives and cannot reactivate', async () => {
+test('vehicles CRUD validates plate and immutable ownership; owner can permanently delete vehicle', async () => {
   const a = db('a'); const v = doc(a, 'vehicles', 'created');
   await assertFails(setDoc(v, vehicle('b')));
   await assertFails(setDoc(v, { ...vehicle('a'), plate: 'INVALID' }));
@@ -110,7 +110,8 @@ test('vehicles CRUD validates plate and immutable ownership; delete archives and
   await assertFails(updateDoc(v, { role: 'admin', updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(v, { active: false, updatedAt: serverTimestamp() }));
   await assertFails(updateDoc(v, { active: true, updatedAt: serverTimestamp() }));
-  await assertFails(deleteDoc(v));
+  await assertFails(deleteDoc(doc(db('b'), 'vehicles', 'created')));
+  await assertSucceeds(deleteDoc(v));
   await assertSucceeds(getDocs(query(collection(a, 'vehicles'), where('ownerId', '==', 'a'), where('active', '==', true), limit(50))));
 });
 

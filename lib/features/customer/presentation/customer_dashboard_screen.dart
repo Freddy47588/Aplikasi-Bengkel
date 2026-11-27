@@ -76,16 +76,16 @@ class CustomerDashboardScreen extends ConsumerWidget {
             Text(
               'Halo, Pelanggan',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Pantau servis aktif, kelola garasi, dan pesan jadwal kunjungan bengkel.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
             _CustomerSpotlight(
@@ -301,8 +301,8 @@ class CustomerDashboardScreen extends ConsumerWidget {
                     tone: b.status == BookingStatus.confirmed
                         ? StatusChipTone.success
                         : b.status == BookingStatus.pending
-                            ? StatusChipTone.warning
-                            : StatusChipTone.neutral,
+                        ? StatusChipTone.warning
+                        : StatusChipTone.neutral,
                   ),
                   onTap: () => context.go('/customer/bookings/${b.id}'),
                 ),
@@ -342,12 +342,12 @@ class _CustomerSpotlight extends StatelessWidget {
   final VoidCallback onCreateBooking;
 
   int _orderStep(ServiceOrderStatus status) => switch (status) {
-        ServiceOrderStatus.queued || ServiceOrderStatus.assigned => 0,
-        ServiceOrderStatus.inProgress ||
-        ServiceOrderStatus.paused ||
-        ServiceOrderStatus.awaitingApproval => 1,
-        ServiceOrderStatus.completed || ServiceOrderStatus.cancelled => 2,
-      };
+    ServiceOrderStatus.queued || ServiceOrderStatus.assigned => 0,
+    ServiceOrderStatus.inProgress ||
+    ServiceOrderStatus.paused ||
+    ServiceOrderStatus.awaitingApproval => 1,
+    ServiceOrderStatus.completed || ServiceOrderStatus.cancelled => 2,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -650,14 +650,11 @@ class _SectionHeading extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
-              TextButton(
-                onPressed: onAction,
-                child: Text(actionLabel),
-              ),
+              TextButton(onPressed: onAction, child: Text(actionLabel)),
             ],
           );
         }
@@ -668,15 +665,12 @@ class _SectionHeading extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
-            TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+            TextButton(onPressed: onAction, child: Text(actionLabel)),
           ],
         );
       },
@@ -760,16 +754,16 @@ class _EmptyCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: 12),
           OutlinedButton(onPressed: onTap, child: Text(cta)),
@@ -823,16 +817,14 @@ class _ActivityCard extends StatelessWidget {
                         children: [
                           Text(
                             vehicleName,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             subtitle,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.muted,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
                           ),
                         ],
                       ),

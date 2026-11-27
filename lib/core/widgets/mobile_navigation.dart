@@ -78,8 +78,7 @@ class MobileNavigation extends StatelessWidget {
                         label: destinations[i].$2,
                         icon: destinations[i].$3,
                         selected: i == selectedIndex,
-                        onTap: () =>
-                            context.go('/$role/${destinations[i].$1}'),
+                        onTap: () => context.go('/$role/${destinations[i].$1}'),
                       ),
                     ),
                 ],

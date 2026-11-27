@@ -238,10 +238,10 @@ class _VehicleFormState extends ConsumerState<VehicleFormScreen> {
     }
   }
 
-  Future<void> archive() async {
+  Future<void> remove() async {
     final approved = await confirmWorkshopAction(
       context,
-      'Kendaraan menjadi nonaktif dan tidak bisa dipilih untuk booking baru. Riwayat booking tetap tersimpan.',
+      'Hapus kendaraan ini secara permanen? Data kendaraan akan dihapus, sedangkan riwayat booking dan servis yang sudah ada tetap tersimpan.',
       title: 'Hapus kendaraan?',
       confirmLabel: 'Hapus',
     );
@@ -294,7 +294,7 @@ class _VehicleFormState extends ConsumerState<VehicleFormScreen> {
               if (widget.vehicle != null && !archived)
                 IconButton(
                   tooltip: 'Hapus kendaraan',
-                  onPressed: busy ? null : archive,
+                  onPressed: busy ? null : remove,
                   icon: const Icon(Icons.delete_outline),
                 ),
             ],

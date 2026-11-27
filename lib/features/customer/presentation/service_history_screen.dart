@@ -67,7 +67,7 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
         labelText: 'Kendaraan',
         helperText: currentPage
             ? 'Pilihan dari kendaraan pada halaman ini.'
-            : 'Termasuk kendaraan yang sudah diarsipkan.',
+            : 'Mencakup kendaraan terdaftar dan riwayat servis.',
       ),
       items: [
         for (final entry in choices.entries)
@@ -125,7 +125,16 @@ class _HistoryState extends ConsumerState<ServiceHistoryScreen> {
                     error: (_, _) => LoadError(
                       onRetry: () => ref.invalidate(historyVehiclesProvider),
                     ),
-                    data: (vehicles) => vehiclePicker(vehicles),
+                    data: (vehicles) => vehiclePicker({
+                      for (final o
+                          in ref.watch(provider).asData?.value.items ??
+                              <ServiceOrder>[])
+                        if (o.text('vehicleId').isNotEmpty)
+                          o.text(
+                            'vehicleId',
+                          ): '${o.text('vehicleName')} • ${o.text('vehiclePlate')}',
+                      ...vehicles,
+                    }),
                   )
             else
               vehiclePicker({

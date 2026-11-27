@@ -292,10 +292,43 @@ class _SparepartEditorState extends ConsumerState<SparepartEditor> {
     super.dispose();
   }
 
+  Future<void> remove() async {
+    final approved = await confirmWorkshopAction(
+      context,
+      'Hapus sparepart ini secara permanen? Data master akan dihapus, sedangkan catatan buku besar mutasi stok historis tetap tersimpan.',
+      title: 'Hapus sparepart?',
+      confirmLabel: 'Hapus',
+    );
+    if (!approved || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await ref.read(inventoryRepositoryProvider).delete(widget.part!.id);
+      if (mounted) Navigator.pop(context, 'deleted');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          busy = false;
+          error = 'Gagal menghapus: $e';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(widget.part == null ? 'Tambah sparepart' : 'Edit sparepart'),
+      actions: [
+        if (widget.part != null)
+          IconButton(
+            tooltip: 'Hapus sparepart',
+            onPressed: busy ? null : remove,
+            icon: const Icon(Icons.delete_outline),
+          ),
+      ],
     ),
     body: WorkshopBody(
       child: Form(
@@ -344,7 +377,7 @@ class _SparepartEditorState extends ConsumerState<SparepartEditor> {
             SwitchListTile(
               title: const Text('Aktif'),
               subtitle: const Text(
-                'Nonaktif mengarsipkan SKU; ledger tetap disimpan.',
+                'Nonaktif menghentikan transaksi stok baru sementara; gunakan ikon hapus untuk menghapus master.',
               ),
               value: active,
               onChanged: busy ? null : (v) => setState(() => active = v),
@@ -359,9 +392,9 @@ class _SparepartEditorState extends ConsumerState<SparepartEditor> {
                         setState(() => busy = true);
                         final approved = await confirmWorkshopAction(
                           context,
-                          'Arsipkan sparepart ini? Transaksi stok baru dinonaktifkan; ledger dan riwayat tetap tersimpan.',
-                          title: 'Arsipkan sparepart?',
-                          confirmLabel: 'Arsipkan',
+                          'Nonaktifkan sparepart ini? Transaksi stok baru dihentikan sementara; ledger dan riwayat tetap tersimpan.',
+                          title: 'Nonaktifkan sparepart?',
+                          confirmLabel: 'Nonaktifkan',
                         );
                         if (!mounted) return;
                         if (!approved) {
@@ -610,9 +643,22 @@ class SparepartDetailScreen extends ConsumerWidget {
                             ),
                           ),
                           TextButton.icon(
-                            onPressed: () => open(SparepartEditor(part: p)),
+                            onPressed: () async {
+                              final result = await Navigator.push<Object?>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SparepartEditor(part: p),
+                                ),
+                              );
+                              if (!context.mounted) return;
+                              if (result == 'deleted') {
+                                Navigator.pop(context);
+                              } else {
+                                ref.invalidate(sparepartProvider(sku));
+                              }
+                            },
                             icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Edit / arsipkan master'),
+                            label: const Text('Edit / hapus master'),
                           ),
                         ],
                         const SizedBox(height: 8),

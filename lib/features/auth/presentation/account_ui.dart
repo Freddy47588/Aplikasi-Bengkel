@@ -118,17 +118,17 @@ class AccountNotice extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        height: 1.4,
-                      ),
+                    color: AppColors.muted,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -204,10 +204,7 @@ class AccountProfileHeader extends StatelessWidget {
                     fontSize: 13.5,
                   ),
                 ),
-                if (badge != null) ...[
-                  const SizedBox(height: 10),
-                  badge!,
-                ],
+                if (badge != null) ...[const SizedBox(height: 10), badge!],
               ],
             ),
           ),

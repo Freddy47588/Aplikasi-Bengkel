@@ -162,7 +162,7 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(18),
@@ -174,8 +174,8 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                       Text(
                         'Buat Booking Servis',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       const Text(
@@ -185,7 +185,6 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
                 if (vehicles.isLoading || services.isLoading)
                   const Center(child: CircularProgressIndicator()),
                 if (vehicles.hasError || services.hasError)
@@ -223,6 +222,14 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                                 : null,
                             isExpanded: true,
                             itemHeight: null,
+                            menuMaxHeight: 320,
+                            borderRadius: BorderRadius.circular(16),
+                            dropdownColor: Colors.white,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.primary,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Kendaraan',
                               prefixIcon: Icon(Icons.directions_car_outlined),
@@ -252,6 +259,14 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                                 : null,
                             isExpanded: true,
                             itemHeight: null,
+                            menuMaxHeight: 320,
+                            borderRadius: BorderRadius.circular(16),
+                            dropdownColor: Colors.white,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.primary,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Jenis layanan',
                               prefixIcon: Icon(Icons.build_outlined),
@@ -301,34 +316,82 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                                       ),
                                     );
                                     if (selected != null && mounted) {
-                                      setState(() => date = selected);
+                                      final wibNow = DateTime.now().toUtc().add(
+                                        const Duration(hours: 7),
+                                      );
+                                      final isToday =
+                                          selected.year == wibNow.year &&
+                                          selected.month == wibNow.month &&
+                                          selected.day == wibNow.day;
+                                      setState(() {
+                                        date = selected;
+                                        if (isToday &&
+                                            hour != null &&
+                                            hour! <= wibNow.hour) {
+                                          hour = null;
+                                        }
+                                      });
                                     }
                                   },
                           ),
                           const SizedBox(height: 16),
-                          DropdownButtonFormField<int>(
-                            isExpanded: true,
-                            itemHeight: null,
-                            initialValue: hour,
-                            decoration: const InputDecoration(
-                              labelText: 'Jam servis',
-                              prefixIcon: Icon(Icons.schedule_outlined),
-                            ),
-                            items: serviceHours
-                                .map(
-                                  (h) => DropdownMenuItem(
-                                    value: h,
-                                    child: Text(
-                                      '${h.toString().padLeft(2, '0')}:00',
-                                    ),
+                          Builder(
+                            builder: (context) {
+                              final wibNow = DateTime.now().toUtc().add(
+                                const Duration(hours: 7),
+                              );
+                              final isToday =
+                                  date != null &&
+                                  date!.year == wibNow.year &&
+                                  date!.month == wibNow.month &&
+                                  date!.day == wibNow.day;
+                              final slots = isToday
+                                  ? serviceHours
+                                        .where((h) => h > wibNow.hour)
+                                        .toList()
+                                  : serviceHours;
+                              final activeHour = slots.contains(hour)
+                                  ? hour
+                                  : null;
+                              return DropdownButtonFormField<int>(
+                                key: ValueKey('hour:${slots.join(',')}'),
+                                isExpanded: true,
+                                itemHeight: null,
+                                menuMaxHeight: 320,
+                                borderRadius: BorderRadius.circular(16),
+                                dropdownColor: Colors.white,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                ),
+                                initialValue: activeHour,
+                                decoration: InputDecoration(
+                                  labelText: 'Jam servis (WIB)',
+                                  helperText: isToday && slots.isEmpty
+                                      ? 'Slot hari ini sudah tutup; pilih tanggal besok.'
+                                      : 'Jam operasional WIB (istirahat 12:00).',
+                                  prefixIcon: const Icon(
+                                    Icons.schedule_outlined,
                                   ),
-                                )
-                                .toList(),
-                            onChanged: busy
-                                ? null
-                                : (value) => setState(() => hour = value),
-                            validator: (value) =>
-                                value == null ? 'Pilih jam servis.' : null,
+                                ),
+                                items: slots
+                                    .map(
+                                      (h) => DropdownMenuItem(
+                                        value: h,
+                                        child: Text(
+                                          '${h.toString().padLeft(2, '0')}:00',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: busy || slots.isEmpty
+                                    ? null
+                                    : (value) => setState(() => hour = value),
+                                validator: (value) =>
+                                    value == null ? 'Pilih jam servis.' : null,
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -356,7 +419,11 @@ class _CustomerBookingState extends ConsumerState<CustomerBookingScreen> {
                           ),
                         ),
                       if (busy)
-                        const Center(child: CircularProgressIndicator()),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      const SizedBox(height: 16),
                       FilledButton(
                         onPressed: busy || reviewing || !catalogReady
                             ? null

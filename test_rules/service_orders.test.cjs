@@ -2,7 +2,7 @@ const { before, after, beforeEach, test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { initializeTestEnvironment, assertFails, assertSucceeds } = require('@firebase/rules-unit-testing');
-const { doc, setDoc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit,
+const { doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, collection, query, where, orderBy, limit,
   runTransaction, writeBatch, serverTimestamp, Timestamp, onSnapshot, startAfter } = require('firebase/firestore');
 let env;
 const db = (uid, claims = {}) => env.authenticatedContext(uid, { email_verified: true, ...claims }).firestore();
@@ -91,6 +91,9 @@ test('technician provisioning stays trusted; operational fields admin only, lock
   await assertFails(getDocs(query(collection(db('customer'), 'technicians'), limit(20))));
   await create(a, 'one'); await assign(a, 'one', 'ta');
   await assertFails(updateDoc(doc(a, 'technicians', 'ta'), { active: false, updatedAt: stamp(), updatedBy: 'admin' }));
+  await assertFails(deleteDoc(doc(a, 'technicians', 'ta')));
+  await assertFails(deleteDoc(doc(db('customer'), 'technicians', 'tb')));
+  await assertSucceeds(deleteDoc(doc(a, 'technicians', 'tb')));
   await assertFails(updateDoc(doc(a, 'technicians', 'ta'), { currentOrderId: null }));
 });
 

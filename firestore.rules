@@ -42,7 +42,7 @@ service cloud.firestore {
       allow update: if customer() && resource.data.ownerId == request.auth.uid && resource.data.active == true
         && valid(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'plate', 'kind', 'notes', 'active', 'updatedAt']);
-      allow delete: if false;
+      allow delete: if customer() && resource.data.ownerId == request.auth.uid;
     }
 
     match /services/{id} {
@@ -169,7 +169,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'specialization', 'active', 'available', 'updatedAt', 'updatedBy'])
         && (!request.resource.data.active || trustedTech(uid))
         && (request.resource.data.active || resource.data.currentOrderId == null));
-      allow delete: if false;
+      allow delete: if admin() && resource.data.currentOrderId == null;
     }
     match /serviceOrders/{id} {
       function valid(d) {
@@ -321,8 +321,7 @@ service cloud.firestore {
       allow update: if admin() && valid(request.resource.data) && request.resource.data.version == resource.data.version + 1
         && (stockChange(request.resource.data, resource.data)
           || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'category', 'unit', 'supplier', 'buyPrice', 'sellPrice', 'minimumStock', 'active', 'lowStock', 'version', 'updatedAt', 'updatedBy']));
-      // Archive instead of deleting or freeing a historical SKU.
-      allow delete: if false;
+      allow delete: if admin();
     }
     match /stockMovements/{id} {
       function valid(d) {

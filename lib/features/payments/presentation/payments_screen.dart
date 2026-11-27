@@ -289,7 +289,9 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleSmall
-                                          ?.copyWith(fontWeight: FontWeight.w800),
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                     ),
                                   ),
                                   PaymentBadge(status: i.text('status')),
@@ -298,9 +300,7 @@ class _PaymentsState extends ConsumerState<PaymentsScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 i.text('serviceName'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: AppColors.muted),
                               ),
                               const SizedBox(height: 8),

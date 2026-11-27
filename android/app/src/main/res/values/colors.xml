@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_navy">#1E3A5F</color>
-    <color name="brand_offwhite">#F8FAFC</color>
+    <color name="brand_navy">#131925</color>
+    <color name="brand_carbon">#131925</color>
+    <color name="brand_offwhite">#131925</color>
+    <color name="splash_bg">#050B0B</color>
+    <color name="crisp_bg">#F5F6F8</color>
 </resources>

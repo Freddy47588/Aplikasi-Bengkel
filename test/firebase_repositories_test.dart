@@ -142,7 +142,7 @@ void main() {
     },
   );
   test(
-    'vehicle create/update/archive persists and owner cannot be reassigned through repository',
+    'vehicle create/update/delete persists and owner cannot be reassigned through repository',
     () async {
       final vehicles = FirestoreVehicleRepository(db);
       await vehicles.save('a', 'Honda', 'b1234xyz');
@@ -181,10 +181,8 @@ void main() {
       expect((await restarted.watch('a').first).single.id, first.id);
       await restarted.delete('a', first.id);
       expect(await restarted.watch('a').first, isEmpty);
-      final archived =
-          (await restarted.watch('a', includeArchived: true).first).single;
-      expect(archived.active, false);
-      expect(archived.notes, 'Putih');
+      expect(await restarted.watch('a', includeArchived: true).first, isEmpty);
+      expect((await db.doc('vehicles/${first.id}').get()).exists, false);
       await expectLater(
         restarted.save('a', 'Again', 'B 9 A', id: first.id),
         throwsStateError,

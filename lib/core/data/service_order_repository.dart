@@ -23,6 +23,7 @@ abstract class ServiceOrderRepository {
     bool active,
     bool available,
   );
+  Future<void> deleteTechnician(String uid);
   Future<void> create(String bookingId);
   Future<void> setLaborPrice(String id, int revision, int rupiah);
   Future<void> assign(String id, String technicianId, int revision);
@@ -159,6 +160,24 @@ class FirestoreServiceOrderRepository implements ServiceOrderRepository {
         'updatedAt': now,
         'updatedBy': uid,
       });
+    });
+  }
+
+  @override
+  Future<void> deleteTechnician(String target) async {
+    requireAdmin();
+    final id = target.trim();
+    if (id.isEmpty || id.contains('/')) {
+      throw ArgumentError('UID teknisi valid diperlukan.');
+    }
+    final ref = technicians.doc(id);
+    await db.runTransaction((tx) async {
+      final old = await tx.get(ref);
+      if (!old.exists) throw StateError('Teknisi tidak ditemukan.');
+      if (old.data()?['currentOrderId'] != null) {
+        throw StateError('Selesaikan atau alihkan tugas sebelum menghapus.');
+      }
+      tx.delete(ref);
     });
   }
 
